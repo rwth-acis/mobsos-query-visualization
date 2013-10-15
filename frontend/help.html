@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Query Visualizer - Help</title>
+</head>
+<body>
+<h1>Query Visualizer - Help</h1>
+<p>The Query Visualizer is a tool that gives a user the ability to create and visualize database queries in various ways. It also provides export options of a query result in various formats. The third function is the storing of a query to visualize it without having to log on everytime. Then the query and its visualization parameters are stored onto the LAS-Server. The user can easily embed a query visualization into his website by just adding three lines of codes to it. See (3) for a walkthrough.
+
+<p align="center"><img src="images/help_overview.png" alt="Screenshot of the Query Visualizer"></p>
+
+<h2>Account Management</h2>
+This section deals with how to setup your filters and databases. These settings are account specific and will be persisted on the LAS-Server. On your first login to the service, it creates a sample database and some sample filters. These can of course be deleted.
+<p align="center"><img src="images/help_manage.png" alt="Screenshot of the account management windows"></p>
+<h3>(1) Manage Filters</h3>
+<p>The left screenshot shows the creation of the sample filter 'User'. A filter is basically just a query that is saved. You have to specify a name, a database and the query. By clicking on 'Add Filter' it is saved.</p>
+
+<h3>(2) Manage Databases</h3>
+<p>The right screenshot shows how to add a new database. The key is used to identifiy the database in the service.</p>
+
+<br>
+
+<h2>Visualization of Queries</h2>
+<p>This can be read as a step by step walkthrough to formulate, visualize and export a query.</p>
+
+<h3>(3) Formulation of a Query</h3>
+<p>After having selected the database the user wants to query, the user has to use SQL-Syntax to formulate his query.</p>
+
+<h3>(4) Working with Filters</h3>
+<p>By clicking the filter button, a list of availible filters and their values as a dropdown list will be shown. The corresponding database of the filter is written in brackets. A user can make use of a filter by inserting $FilterName$ into his query. When visualizing (or exporting) the query, this will then be replaced by the value that is currently selected in the dropdown list. If the query is stored, the filter values are inserted into the stored query (meaning that the stored query does not contain any filter information but the data that was chosen while saving the query). The filter's database does not have to be the same as the query's database. Of course it is possible to use several filters (or a filter twice) in one query.</p>
+
+<h3>(5) Adding a Modification Function</h3>
+<p>The dropdown list shows the different modification functions that can be used to manipulate the query result. If no modification is desired, the modification 'Identity' should be used. Currently, the availiable modifications are:
+<ul>
+  <li>Identity</li>
+  <li>Logarithmic</li>
+  <li>Normalization</li>
+</ul>
+Note, that not every modification can be applied to every result. If the modification function can not be applied, an error message is shown.
+</p>
+
+<h3>(6) Selecting an Output Format</h3>
+<p>The dropdown list shows the availiable output formats. If no visualization is desired (for example if a user only wants to export the resulting data) the visualization 'Google Table' should be used, since this can be used to display every result and also to sort the columns quickly. Currently, the availiable visualizations are:
+<ul>
+  <li>Google Table</li>
+  <li>Google Pie Chart</li>
+  <li>Google Bar Chart</li>
+  <li>Google Line Chart</li>
+  <li>Google Timeline Chart</li>
+  <li>Google Radar Chart</li>
+</ul>
+Note, that not every visualization can be applied to every result. If the visualization can not be applied, an error message is shown.
+</p>
+
+<h3>(7) Adding Metadata to the Query (only needed for stored queries)</h3>
+<p>By clicking the metadata button, four metadata parameters will be shown. These parameters will be stored alongside with the query and will be used when visualizing it afterwards. If the 'Use Cache' option is checked, everytime the stored query is executed, the service will look for a cached result and if availiable, use this. Currently, the time a result remains in cache is set to 90 minutes. This option does not effect the preview visualization.</p>
+
+<br>
+
+<h2>Visualization and Export Results</h2>
+<p align="center"><img src="images/help_result_detail.png" alt="Screenshot of the result section"></p>
+
+<h3>(8) Preview of the Query</h3>
+<p>After clicking on 'Visualize!' the result of the query is visualized as predefined by the user in the 'Preview'-section.</p>
+
+<h3>(9) Generate HTML-Code</h3>
+<p>This does save the query. A HTML-Code will be generated that can be implemented in any website. It visualizes the query in the predefined way. This does NOT visualize a saved dataset but does query the database each time it is called, meaning that this will fail if the queried database is not availiable (and result is not cached / no cache is used).</p>
+
+<h3>(10) Generate Widget XML-Code</h3>
+<p>Does integrate the result of (9) into a widget.</p>
+
+
+<h3>(11) Export Options</h3>
+<p>Currently, the availiable visualizations are:
+<ul>
+  <li>A HTML Table</li>
+  <li>CSV Data (the first row contains the column names, the second the datatypes)</li>
+  <li>XML</li>
+  <li>JSON (as an array, first element contains the column names, the second element contains the datatypes)</li>
+</ul>
+</p>
+
+<h3>(12) Save the Export Data</h3>
+<p>By clicking this button, a file download will be triggered that contains the data in the desired export format.</p>
+
+</body>
+</html>

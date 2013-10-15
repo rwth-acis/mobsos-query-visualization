@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="java"/>
+	<classpathentry kind="lib" path="lib/commons-codec-1.7.jar"/>
+	<classpathentry kind="lib" path="lib/db2jcc_license_cu-0.jar"/>
+	<classpathentry kind="lib" path="lib/db2jcc-0.jar"/>
+	<classpathentry kind="lib" path="lib/FreePastry-2.1.jar"/>
+	<classpathentry kind="lib" path="lib/guava-9.jar"/>
+	<classpathentry kind="lib" path="lib/i5-httpServer-0.3.jar"/>
+	<classpathentry kind="lib" path="lib/i5-simpleXML-0.2.jar"/>
+	<classpathentry kind="lib" path="lib/las2peer-0.0.2.jar" sourcepath="/LAS2peer"/>
+	<classpathentry kind="lib" path="lib/mysqlConnectorJava-5.1.16.jar"/>
+	<classpathentry kind="lib" path="lib/ojdbc-14.jar"/>
+	<classpathentry kind="lib" path="lib/xpp3-1.1.4c.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
+	<classpathentry kind="output" path="tmp"/>
+</classpath>

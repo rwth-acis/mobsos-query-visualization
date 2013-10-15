@@ -1,0 +1,108 @@
+body {
+    font-size: 100.01%;
+    font-family: sans-serif;
+}
+
+.main {
+    width: 600px;
+    margin: 20px auto;
+    padding: 30px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+}
+
+form {
+    width: 100%;
+}
+
+textarea,
+select,
+input,
+#qv_generated_html,
+#qv_generated_widget{
+    font-size: 1.2em;
+    margin: 2% auto;
+    padding:2px;
+    width: 95%;
+    display: block;
+    border: 1px solid #999;
+    border-radius: 3px;
+}
+
+input[type=checkbox] {
+    display: inline;
+    width: auto;
+}
+
+.tabpane {
+    min-height: 20px;
+    border: 1px solid #999;
+    border-top-width: 0;
+    border-radius: 0 0 3px 3px;
+    padding: .5em 1em;
+}
+
+ul.tabs {
+    font-size: 1.2em;
+    margin: 1em 0 0 0;
+    border-bottom: 1px solid #999;
+    list-style-type: none;
+    padding: 3px .7em;
+}
+
+ul.tabs li {
+    display: inline;
+}
+
+ul.tabs li a {
+    padding: .2em .4em;
+    border: 1px solid #999;
+    color: #000;
+    text-decoration: none;
+    border-bottom: none;
+}
+
+ul.tabs li.active a {
+    background: #fff;
+    position: relative;
+    top: 1px;
+    padding-top: 5px;
+}
+
+ul.tabs a:hover {
+    background: #eee;
+}
+
+.loading {
+    background: white url(../images/loading.gif) center center no-repeat;
+    height: 200px;
+    overflow: hidden;
+}
+
+#qv_preview {
+    overflow: hidden;
+}
+
+#qv_chart.locked .tabs li a {
+    background: #eee;
+    color: #aaa;
+}
+
+#qv_chart.locked .tabs li.active a {
+    background: #fff;
+    color: #000;
+}
+
+h2 a {
+    color: #666;
+    text-decoration: none;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    padding: 3px;
+    font-size: .8em;
+}
+
+#qv_metadata, #qv_filter {
+    font-size: .8em;
+    padding-left: 5%;
+}

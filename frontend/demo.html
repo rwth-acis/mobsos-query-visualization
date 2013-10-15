@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Query Visualizer Demo</title>
+    <link rel="stylesheet" type="text/css" href="css/style.css" media="all">
+    <script type="text/javascript" src="js/json2.js"></script>
+    <script type="text/javascript" src="js/storage.js"></script>
+    <script type="text/javascript" src="js/lasAjaxClient.js"></script>
+    <script type="text/javascript" src="js/queryviz.js"></script>
+    <script type="text/javascript" src="js/jquery-1.8.0.min.js"></script>
+    <script type="text/javascript" src="js/ICanHaz.min.js"></script>
+    <script id="qv_code_template" type="text/html">
+{{! <!--}}<script type="text/javascript" src="http://role-is.dbis.rwth-aachen.de:9080/gadgets/queryvisualizer/js/qv.js"></script>
+<script type="text/javascript">
+    QV.fromKey("{{key}}");
+</script>{{! -->}}
+    </script>
+    <!-- Test widget: http://www.gmodules.com/gadgets/ifr?nocache=1&view=default&url=<path-to-widget.xml> -->
+    <script id="qv_widget_template" type="text/html">
+{{! <!--}}<?xml version="1.0" encoding="UTF-8" ?>
+<Module>
+    <ModulePrefs title="Query Visualizer Widget">
+        <Require feature="opensocial-0.8" />
+    </ModulePrefs>
+    <Content type="html">
+        <![CDATA[
+{{>qv_code_template}}
+        ]]>
+    </Content>
+</Module>{{! -->}}
+    </script>
+    <script id="qv_database_key_option_template" type="text/html">
+        {{! <!--}}<option value="{{key}}">{{key}}</option>{{! -->}}
+    </script>
+    <script id="qv_filter_key_option_template" type="text/html">
+        {{! <!--}}<option value="{{key}}">{{name}}</option>{{! -->}}
+    </script>
+    <script id="qv_filter_template" type="text/html">
+        {{! <!--}}<h3><label for="qv_filter_{{key_lc}}">{{name}}:</label></h3>
+        <select id="qv_filter_{{key_lc}}">
+        {{#values}}
+            <option value="{{.}}">{{.}}</option>
+        {{/values}}
+        </select>{{! -->}}
+    </script>
+</head>
+<body>
+<div class="main">
+    <h1>Query Visualizer</h1>
+    <form id="qv_loginform" action="javascript:login_form_submit()">
+	<p>Please login with your LAS2peer credentials.</p>
+        <h2><label for="qv_username">Username:</label></h2>
+        <input type="text" id="qv_username" value="" />
+        <h2><label for="qv_password">Password:</label></h2>
+        <input type="password" id="qv_password" value="" />
+        <input style="margin: 5% auto; font-size: 1.5em;" type="submit" value="Login!"/>
+    </form>
+    <form id="qv_add_database_form" action="javascript:add_database_form_submit()">
+        <a style="float: right; color: black; font-size: 1.2em;" href="javascript:show_query_form()">back</a>
+        <h2>Add Database:</h2>
+        <label>Database Key: <input id="qv_add_database_database_key" type="text" /></label>
+        <label>Type Code:
+            <select id="qv_add_database_type_code" onchange="suggest_default_port()">
+                <option value="1" selected>DB2</option>
+                <option value="2">MySQL</option>
+                <option value="3">Firebird</option>
+                <option value="4">MsSQL</option>
+                <option value="5">PostgreSQL</option>
+                <option value="6">Derby</option>
+                <option value="7">Oracle</option>
+            </select>
+        </label>
+        <label>Username: <input id="qv_add_database_username" type="text" /></label>
+        <label>Password: <input id="qv_add_database_password" type="password" /></label>
+        <label>Database: <input id="qv_add_database" type="text" /></label>
+        <label>Host: <input id="qv_add_database_host" type="text" /></label>
+        <label>Port: <input id="qv_add_database_port" type="number" value="50000"/></label>
+        <input type="submit" value="Add Database" />
+    </form>
+    <form id="qv_remove_database_form" action="javascript:remove_database_form_submit()">
+        <h2><label for="qv_remove_database">Remove Database:</label></h2>
+        <select id="qv_remove_database">
+        </select>
+        <input type="submit" value="Remove Database" />
+    </form>
+    <form id="qv_add_filter_form" action="javascript:add_filter_form_submit()">
+        <a style="float: right; color: black; font-size: 1.2em;" href="javascript:show_query_form()">back</a>
+        <h2>Add Filter</h2>
+        <label>Filter Key: <input id="qv_add_filter_filter_key" type="text" /></label>
+        <label>Database:
+            <select id="qv_add_filter_database">
+            </select>
+        </label>
+        <label>Query:
+            <textarea id="qv_add_filter_query" rows="5" cols=""></textarea>
+        </label>
+        <input type="submit" value="Add Filter" />
+    </form>
+    <form id="qv_remove_filter_form" action="javascript:remove_filter_form_submit()">
+        <h2><label for="qv_remove_filter">Remove Filter:</label></h2>
+        <select id="qv_remove_filter">
+        </select>
+        <input type="submit" value="Remove Filter" />
+    </form>
+    <form id="qv_queryform" action="javascript:visualization_form_submit()">
+        <a style="float: right; color: black; margin-left: 5px;" href="javascript:logout()">Logout</a>
+        <a style="float: right; color: black; margin-left: 5px;" href="javascript:show_database_management()">Manage Databases</a>
+        <a style="float: right; color: black; margin-left: 5px;" href="javascript:show_filter_management()">Manage Filters</a>
+        <a style="float: right; color: black; margin-left: 5px;" href="javascript:show_help()">Help</a>
+        <h2><label for="qv_database">Database:</label></h2>
+        <select id="qv_database">
+        </select>
+        <h2><label for="qv_query">Query statement:</label></h2>
+        <!--<textarea id="qv_query" rows="5" cols="">select est_date, count(*) as New_Posts from db2info5.bw_entries where est_date > current_date - 3 months and est_date < current_date group by est_date order by est_date asc</textarea>-->
+        <textarea id="qv_query" rows="5" cols="">SELECT DATE(m.REQUEST_STARTTIME) as DATE, COUNT(*) as ACTIVITY FROM MOBSOS.MONITORING m WHERE m.UID = 'renzel' GROUP BY DATE(m.REQUEST_STARTTIME) ORDER BY DATE(m.REQUEST_STARTTIME) DESC</textarea>
+        <h2><a href="javascript:toggle_filter()">+ Filter</a></h2>
+        <div id="qv_filter"></div>
+        <h2><label for="qv_modification_type">Modification Function:</label></h2>
+        <select id="qv_modification_type">
+            <option value="0">Identity</option>
+            <option value="1">Logarithmic</option>
+            <option value="2">Normalization</option>
+        </select>
+        <h2><label for="qv_visualization_type">Output Format:</label></h2>
+        <select id="qv_visualization_type">
+            <option value="9" selected>Google Table</option>
+            <option value="4">Google Pie Chart</option>
+            <option value="5">Google Bar Chart</option>
+            <option value="6">Google Line Chart</option>
+            <option value="7">Google Timeline Chart</option>
+            <option value="8">Google Radar Chart</option>
+        </select>
+        <h2><a href="javascript:toggle_metadata()">+ Metadata</a></h2>
+        <div id="qv_metadata">
+            <label><strong>Chart Title:</strong><input id="qv_chart_title" type="text" /></label>
+            <label><strong>Width:</strong><input id="qv_width" type="number" value="450"/></label>
+            <label><strong>Height:</strong><input id="qv_height" type="number" value="320"/></label>
+            <label><strong>Use Cache:</strong> <input id="qv_cache" type="checkbox"/></label>
+        </div>
+        <input style="margin: 5% auto; font-size: 1.5em;" type="submit" value="Visualize!"/>
+    </form>
+    <div id="qv_chart">
+        <ul class="tabs" id="tabset1">
+            <li><a href="javascript:load_preview()">Visualization</a></li>
+            <li><a href="javascript:load_export_html()">Export Data</a></li>
+        </ul>
+        <div class="tabpane tabs1">
+            <ul class="tabs" id="tabset2">
+                <li><a href="javascript:load_preview()">Preview</a></li>
+                <li><a href="javascript:load_html()">HTML</a></li>
+                <li><a href="javascript:load_widget_xml()">Widget XML</a></li>
+            </ul>
+            <div class="tabpane tabs2">
+                <div id="qv_preview"></div>
+            </div>
+            <div class="tabpane tabs2">
+                <div id="qv_generated_html_wrapper">
+                    <textarea id="qv_generated_html" rows="5" cols="200" style="white-space: nowrap;" readonly="readonly"></textarea>
+                    <a download="result.html"  id='qv_save_html_link'><button>Save (Will just work in Chrome)</button></a>
+                </div>
+            </div>
+            <div class="tabpane tabs2">
+                <div id="qv_generated_widget_wrapper">
+                    <textarea id="qv_generated_widget" rows="15" cols="200" style="white-space: nowrap;" readonly="readonly"></textarea>
+                    <a download="widget.xml"  id='qv_save_widget_link'><button>Save (Will just work in Chrome)</button></a>
+                </div>
+            </div>
+        </div>
+        <div class="tabpane tabs1">
+            <ul class="tabs" id="tabset3">
+                <li><a href="javascript:load_export_html()">HTML</a></li>
+                <li><a href="javascript:load_export_csv()">CSV</a></li>
+                <li><a href="javascript:load_export_xml()">XML</a></li>
+                <li><a href="javascript:load_export_json()">JSON</a></li>
+            </ul>
+            <div class="tabpane tabs3">
+                <div id="qv_export_html_wrapper">
+                    <textarea id="qv_export_html" rows="20" cols="200" style="white-space: nowrap;" readonly="readonly"></textarea>
+                    <a download="data.html"  id='qv_save_export_html_link'><button>Save (Will just work in Chrome)</button></a>
+                </div>
+            </div>
+            <div class="tabpane tabs3">
+                <div id="qv_export_csv_wrapper">
+                    <textarea id="qv_export_csv" rows="20" cols="200" style="white-space: nowrap;" readonly="readonly"></textarea>
+                    <a download="data.csv"  id='qv_save_export_csv_link'><button>Save (Will just work in Chrome)</button></a>
+                </div>
+            </div>
+            <div class="tabpane tabs3">
+                <div id="qv_export_xml_wrapper">
+                    <textarea id="qv_export_xml" rows="20" cols="200" style="white-space: nowrap;" readonly="readonly"></textarea>
+                    <a download="data.xml"  id='qv_save_export_xml_link'><button>Save (Will just work in Chrome)</button></a>
+                </div>
+            </div>
+            <div class="tabpane tabs3">
+                <div id="qv_export_json_wrapper">
+                    <textarea id="qv_export_json" rows="20" cols="200" style="white-space: nowrap;" readonly="readonly"></textarea>
+                    <a download="data.json"  id='qv_save_export_json_link'><button>Save (Will just work in Chrome)</button></a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript" src="js/demo.js"></script>
+</body>
+</html>

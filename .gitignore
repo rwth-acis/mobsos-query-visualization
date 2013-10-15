@@ -1,6 +1,6 @@
-*.class
-
-# Package Files #
-*.jar
-*.war
-*.ear
+/export
+/.las2peer
+/log
+/tmp
+/lib
+/ivy
