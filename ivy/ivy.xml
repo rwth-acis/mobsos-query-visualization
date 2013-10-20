@@ -1,0 +1,11 @@
+<ivy-module version="2.0">
+    <info organisation="i5" module="las2peer-qvs"/>
+    <dependencies>
+        <dependency org="i5" name="las2peer" rev="0.0.2" />
+		<dependency org="com.google.guava" name="guava" rev="r09"/>
+		<dependency org="mysql" name="mysql-connector-java" rev="5.1.16"/>
+		<dependency org="OracleJDBC" name="OracleJDBC" rev="14"/>
+		<dependency org="IBMJDBC" name="db2jcc" rev="0"/>
+		<dependency org="IBMJDBC" name="db2jcc_Licence" rev="0"/>
+    </dependencies>
+</ivy-module>
