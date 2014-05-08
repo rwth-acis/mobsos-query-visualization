@@ -98,6 +98,7 @@
 			<manifest>
 				<attribute name="Library-Version" value="0.0.1" />
 				<attribute name="Library-SymbolicName" value="i5.las2peer.services.queryVisualization" />
+				<attribute name="Import-Library" value='db2jcc;version="0",db2jcc_license_cu;version="0",db2jcc;version="0",mysqlConnectorJava;version="5.1.16",guava;version="9",jsr305;version="1.3.7",oracleJDBC;version="14"' />
 			</manifest>
 		</jar>
 		<!-- Add the same Jar to the lib directory !-->
@@ -108,6 +109,7 @@
 			<manifest>
 				<attribute name="Library-Version" value="0.0.1" />
 				<attribute name="Library-SymbolicName" value="i5.las2peer.services.queryVisualization" />
+				<attribute name="Import-Library" value='db2jcc;version="0",db2jcc_license_cu;version="0",db2jcc;version="0",mysqlConnectorJava;version="5.1.16",guava;version="9",jsr305;version="1.3.7",oracleJDBC;version="14"' />
 			</manifest>
 		</jar>
 	</target>
