@@ -1,5 +1,6 @@
 package i5.las2peer.services.queryVisualization.database;
 
+import i5.las2peer.api.Service;
 import i5.las2peer.execution.L2pThread;
 import i5.las2peer.logging.NodeObserver.Event;
 import i5.las2peer.p2p.Node;
@@ -26,6 +27,7 @@ public class SQLDatabaseManager {
 	
 		
 	private Envelope storedDBs = null;
+	private Service service = null;
 	
 	
 	
@@ -36,12 +38,7 @@ public class SQLDatabaseManager {
 	 * @return the L2pThread we're currently running in
 	 */
 	public final L2pThread getL2pThread () {
-		Thread t = Thread.currentThread();
-		
-		if (! ( t instanceof L2pThread ))
-			throw new IllegalStateException ( "Not executed in a L2pThread environment!");
-		
-		return (L2pThread) t;
+		return service.getL2pThread();
 	}
 	
 	/** 
@@ -84,8 +81,9 @@ public class SQLDatabaseManager {
 	}	
 	
 	
-	public SQLDatabaseManager() {
-		
+	public SQLDatabaseManager(Service service) {
+		this.service = service;
+
 		// get the user's security object which contains the database information
 		Agent user = getActiveAgent();
 		

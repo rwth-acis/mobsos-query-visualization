@@ -1,6 +1,8 @@
-<!DOCTYPE html>
 <html>
 <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Query Visualizer Demo</title>
     <link rel="stylesheet" type="text/css" href="css/style.css" media="all">
     <script type="text/javascript" src="js/json2.js"></script>
@@ -43,17 +45,27 @@
         {{/values}}
         </select>{{! -->}}
     </script>
+    	<!-- import jQuery for AJAX calls (must) -->
+<script type="text/javascript" src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+<!-- import Bootstrap for responsive UI (must) -->
+<script src="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
+<!-- import JWS and JSRSASIGN (must) -->
+<script type="text/javascript" src="js/jws-2.0.min.js"></script>
+<script type="text/javascript" src="./js/jsrsasign-4.7.0-all-min.js"></script>
 </head>
 <body>
 <div class="main">
     <h1>Query Visualizer</h1>
+    <span class="oidc-signin"
+    data-callback="signinCallback"
+    data-name="Learning Layers"
+    data-logo="logo.png"
+    data-server="https://api.learning-layers.eu/o/oauth2"
+    data-clientid="e000b840-fe19-4ff4-8d3c-16e4581e3103" 
+    data-size="lg" 
+    data-scope="openid phone email address profile">
+</span>
     <form id="qv_loginform" action="javascript:login_form_submit()">
-	<p>Please login with your LAS2peer credentials.</p>
-        <h2><label for="qv_username">Username:</label></h2>
-        <input type="text" id="qv_username" value="" />
-        <h2><label for="qv_password">Password:</label></h2>
-        <input type="password" id="qv_password" value="" />
-        <input style="margin: 5% auto; font-size: 1.5em;" type="submit" value="Login!"/>
     </form>
     <form id="qv_add_database_form" action="javascript:add_database_form_submit()">
         <a style="float: right; color: black; font-size: 1.2em;" href="javascript:show_query_form()">back</a>
@@ -103,7 +115,7 @@
         <input type="submit" value="Remove Filter" />
     </form>
     <form id="qv_queryform" action="javascript:visualization_form_submit()">
-        <a style="float: right; color: black; margin-left: 5px;" href="javascript:logout()">Logout</a>
+        <!-- <a style="float: right; color: black; margin&#45;left: 5px;" href="javascript:logout()">Logout</a> -->
         <a style="float: right; color: black; margin-left: 5px;" href="javascript:show_database_management()">Manage Databases</a>
         <a style="float: right; color: black; margin-left: 5px;" href="javascript:show_filter_management()">Manage Filters</a>
         <a style="float: right; color: black; margin-left: 5px;" href="javascript:show_help()">Help</a>
@@ -200,6 +212,19 @@
         </div>
     </div>
 </div>
+<!-- import client library for service -->
+<script type="text/javascript" src="js/client.js"></script>
 <script type="text/javascript" src="js/demo.js"></script>
+    <!-- Place this asynchronous JavaScript just before your </body> tag -->
+<script type="text/javascript">
+  (function() {
+    var po = document.createElement('script'); 
+    po.type = 'text/javascript'; 
+    po.async = true;
+    po.src = './js/oidc-button.js';
+    var s = document.getElementsByTagName('script')[0]; 
+    s.parentNode.insertBefore(po, s);
+  })();
+</script>
 </body>
 </html>

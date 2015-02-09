@@ -173,12 +173,31 @@ var load_filter_values = function(keys){
 };
 
 /**
+ * Callback for the logging in with openid
+ */
+var signinCallback = function(result){
+    if(result === "success"){
+        // authenticated
+
+        // OpenID Connect user info
+        console.log(oidc_userinfo);
+        $("#uname").html(oidc_userinfo.name);
+        $(".authenticated").removeClass("hidden");
+        show_query_form();
+        load_database_keys();
+        load_filter_keys();
+    } else {
+        // anonymous
+    }
+};
+
+/**
  * Callback for the submission of the Login Form. Tries to login to LAS and shows the Query Form on success
  */
 var login_form_submit = function(){
     var username = usernameNode.value,
         password = passwordNode.value;
-    if(username != ""){
+    if(username !== ""){
         demo.login(username,password,function(){
             show_query_form();
             load_database_keys();
@@ -195,9 +214,9 @@ var add_database_form_submit = function(){
         load_database_keys();
         addDatabaseDatabaseKeyNode.value = "";
         addDatabaseTypeCodeNode.selectedIndex = 0;
-        addDatabaseUsernameNode = "";
+        addDatabaseUsernameNode.value = "";
         addDatabasePasswordNode.value = "";
-        addDatabaseDatabaseNode = "";
+        addDatabaseDatabaseNode.value = "";
         addDatabaseHostNode.value = "";
         suggest_default_port();
     });
@@ -316,7 +335,7 @@ var logout = function(){
 var lock_preview = function(){
     locked = true;
     $(previewSectionNode).addClass('locked');
-}
+};
 
 /**
  * Unlock Tabs
@@ -324,7 +343,7 @@ var lock_preview = function(){
 var unlock_preview = function(){
     locked = false;
     $(previewSectionNode).removeClass('locked');
-}
+};
 
 /**
  * Callback for the submission of the Query Form.

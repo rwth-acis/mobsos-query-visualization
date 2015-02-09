@@ -194,7 +194,7 @@ public class SQLFilterManager {
 	}
 	
 	
-	public String getFilterValues(String filterKey, Integer visualizationTypeIndex, QueryVisualizationService.AgentSession agentSession) throws Exception {
+	public String getFilterValues(String filterKey, Integer visualizationTypeIndex, QueryVisualizationService agent) throws Exception {
 		try {
 			String filterValues = loadedFilterValues.get(filterKey + ":" + visualizationTypeIndex);
 			
@@ -210,7 +210,7 @@ public class SQLFilterManager {
 				// get the filter values from the database...
 				String query = filterSettings.getQuery();
 				String databaseKey = filterSettings.getDatabaseKey();
-				filterValues = agentSession.createQuery(query, null, databaseKey, true, ModificationType.IDENTITIY.ordinal(), visualizationTypeIndex, null,false);
+				filterValues = agent.createQueryString(query, null, databaseKey, true, ModificationType.IDENTITIY.ordinal(), visualizationTypeIndex, null,false);
 
 				// store/cache the filter values (note: the output format is added in case the values for the same filter are requested multiple times but in different output formats)
 				loadedFilterValues.put(filterKey + ":" + visualizationTypeIndex, filterValues);
