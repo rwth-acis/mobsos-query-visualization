@@ -294,11 +294,13 @@ var QV = (function(QV){
                 if(!restClient.loggedIn()) return;
 
                 var success = function(result, type, status) {
-                    try{
-                        result = JSON.parse(result);
-                    } catch (e){
-                        alert("Error! Failed to parse JSON");
-                        return;
+                    if (typeof result !== "object") {
+                        try{
+                            result = JSON.parse(result);
+                        } catch (e){
+                            alert("Error! Failed to parse JSON");
+                            return;
+                        }
                     }
                     if(result[2] == databaseKey){
                         alert("Database added!");
@@ -331,11 +333,13 @@ var QV = (function(QV){
                 if(!restClient.loggedIn()) return;
 
                 var success = function(result, type, status) {
-                    try{
-                        result = JSON.parse(result);
-                    } catch (e){
-                        alert("Error! Failed to parse JSON");
-                        return;
+                    if (typeof result !== "object") {
+                        try{
+                            result = JSON.parse(result);
+                        } catch (e){
+                            alert("Error! Failed to parse JSON");
+                            return;
+                        }
                     }
                     if(result[2] == databaseKey){
                         alert("Database removed!");
@@ -362,11 +366,13 @@ var QV = (function(QV){
                 if(!restClient.loggedIn()) return;
 
                 var success = function(result, type, status) {
-                    try{
-                        result = JSON.parse(result);
-                    } catch (e){
-                        alert("Error! Failed to parse JSON");
-                        return;
+                    if (typeof result !== "object") {
+                        try{
+                            result = JSON.parse(result);
+                        } catch (e){
+                            alert("Error! Failed to parse JSON");
+                            return;
+                        }
                     }
                     if(result[2] == filterKey){
                         alert("Filter added!");
@@ -395,11 +401,13 @@ var QV = (function(QV){
                 if(!restClient.loggedIn()) return;
 
                 var success = function(result, type, status) {
-                    try{
-                        result = JSON.parse(result);
-                    } catch (e){
-                        alert("Error! Failed to parse JSON");
-                        return;
+                    if (typeof result !== "object") {
+                        try{
+                            result = JSON.parse(result);
+                        } catch (e){
+                            alert("Error! Failed to parse JSON");
+                            return;
+                        }
                     }
                     if(result[2] == filterKey){
                         alert("Filter removed!");
@@ -425,11 +433,13 @@ var QV = (function(QV){
                 if(!restClient.loggedIn()) return;
 
                 var success = function(result, type, status) {
-                    try{
-                        result = JSON.parse(result);
-                    } catch (e){
-                        log("Error! Failed to parse JSON");
-                        return;
+                    if (typeof result !== "object") {
+                        try{
+                            result = JSON.parse(result);
+                        } catch (e){
+                            log("Error! Failed to parse JSON");
+                            return;
+                        }
                     }
                     if(typeof callback == 'function'){
                         callback(result.slice(2));
@@ -450,11 +460,13 @@ var QV = (function(QV){
                 if(!restClient.loggedIn()) return;
 
                 var success = function(result, type, status) {
-                    try{
-                        result = JSON.parse(result);
-                    } catch (e){
-                        log("Error! Failed to parse JSON");
-                        return;
+                    if (typeof result !== "object") {
+                        try{
+                            result = JSON.parse(result);
+                        } catch (e){
+                            log("Error! Failed to parse JSON");
+                            return;
+                        }
                     }
                     if(typeof callback == 'function'){
                         callback(result.slice(2));
@@ -476,11 +488,13 @@ var QV = (function(QV){
                 if(!restClient.loggedIn()) return;
 
                 var success = function(result, type, status) {
-                    try{
-                        result = JSON.parse(result);
-                    } catch (e){
-                        log("Error! Failed to parse JSON");
-                        return;
+                    if (typeof result !== "object") {
+                        try{
+                            result = JSON.parse(result);
+                        } catch (e){
+                            log("Error! Failed to parse JSON");
+                            return;
+                        }
                     }
                     if(typeof callback == 'function'){
                         callback(result.slice(2));
