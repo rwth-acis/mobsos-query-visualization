@@ -4,10 +4,11 @@ import i5.las2peer.api.Service;
 import i5.las2peer.execution.L2pThread;
 import i5.las2peer.logging.NodeObserver.Event;
 import i5.las2peer.p2p.Node;
-import i5.las2peer.persistency.Envelope;
 import i5.las2peer.security.Agent;
-import i5.las2peer.security.Context;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -26,9 +27,53 @@ public class SQLDatabaseManager {
 	private HashMap<String, SQLDatabase> loadedDatabases = new HashMap<String, SQLDatabase>();
 	
 		
-	private Envelope storedDBs = null;
+	private SQLDatabase storageDatabase = null;
+	private boolean connected = false;
+	private long user = 0;
 	private Service service = null;
 	
+	private boolean connect() {
+		try {
+			storageDatabase.connect();
+			connected = true;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+		return true;
+	}
+	
+	private void disconnect(boolean wasConnected) {
+		if (!wasConnected && connected) {
+			storageDatabase.disconnect();
+			connected = false;
+		}
+	}
+
+	private void disconnect() {
+		disconnect(false);
+	}
+	
+	
+	private boolean initializeUser() {
+		if (connected || connect()) {
+			try {
+				PreparedStatement p = storageDatabase.prepareStatement("SELECT DISTINCT ID FROM QVS.USERS WHERE ID = ?");
+				p.setLong(1, user);
+				ResultSet s = p.executeQuery();
+				if (!s.next()) {
+					p = storageDatabase.prepareStatement("REPLACE INTO USERS (ID) VALUES (?)");
+					p.setLong(1, user);
+					p.executeUpdate();
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+				return false;
+			}
+			return true;
+		}
+		return false;
+	}
 	
 	
 	/*************** "service" helper methods *************************/
@@ -81,50 +126,60 @@ public class SQLDatabaseManager {
 	}	
 	
 	
-	public SQLDatabaseManager(Service service) {
+	public SQLDatabaseManager(Service service, SQLDatabase storageDatabase) {
 		this.service = service;
-
+		this.storageDatabase = storageDatabase;
 		// get the user's security object which contains the database information
-		Agent user = getActiveAgent();
+		Agent agent = getActiveAgent();
+		this.user = agent.getId();
+
+		initializeUser();
 		
 		SQLDatabaseSettings[] settings = null;
 		
 		try {
-			storedDBs = Context.getCurrent().getStoredObject(SQLDatabaseSettings[].class, getEnvelopeId (user) );
-			storedDBs.open();
-			
-			settings = storedDBs.getContent(SQLDatabaseSettings[].class);
+			connect();
+			PreparedStatement p = storageDatabase.prepareStatement(
+					"SELECT * FROM QVS.DATABASE_CONNECTIONS WHERE USER_ID = ?;");
+			p.setLong(1, user);
+			ResultSet databases = p.executeQuery();
+			settings = SQLDatabaseSettings.fromResultSet(databases);
 		} catch ( Exception e ) {
-			try {
-				storedDBs = Envelope.createClassIdEnvelope(new SQLDatabaseSettings[0], getEnvelopeId(user), user);
-				storedDBs.open();
-				storedDBs.addSignature(getActiveAgent());
-				storedDBs.store();
-				logMessage("Failed to get the users' SQL settings from the net -- using a fresh one! " + e.getMessage());
-			} catch ( Exception e2 ) {
-				logMessage("Failed to generate a new envelope for storing user filters! " + e2 );
-			}
+			logMessage("Failed to get the users' SQL settings. " + e.getMessage());
+		} finally {
+			disconnect();
 		}
 		
-		if(settings == null || settings.length <= 0) {
-			// there are no database settings available yet...
-		} else {
-			for ( SQLDatabaseSettings setting: settings )
-				userDatabaseMap.put ( setting.getKey(), setting);
-		}
+		for ( SQLDatabaseSettings setting: settings )
+			userDatabaseMap.put ( setting.getKey(), setting);
 	}
 	
 	// add database to users' security object
 	public boolean addDatabase(String key, SQLDatabaseType jdbcInfo, String username, String password, String database, String host, int port) throws Exception {
 		try {			
 			//TODO: sanity checks for the parameters
-			if(exitsDatabase(key)) {
+			if(databaseExists(key)) {
 				throw new Exception("Database with key " + key + " already exists!");
 			}
 			
 			SQLDatabaseSettings databaseSettings = new SQLDatabaseSettings(key, jdbcInfo, username, password, database, host, port);
+			if (!connect()) {
+				throw new Exception("Could not connect to the database");
+			}
+			PreparedStatement p = storageDatabase.prepareStatement(
+					"REPLACE INTO `DATABASE_CONNECTIONS`(`JDBCINFO`, `KEY`, `USERNAME`, `PASSWORD`,"
+					+ "`DATABASE`, `HOST`, `PORT`, `USER_ID`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+			p.setInt(1, databaseSettings.getJdbcInfo().ordinal());
+			p.setString(2, databaseSettings.getKey());
+			p.setString(3, databaseSettings.getUsername());
+			p.setString(4, databaseSettings.getPassword());
+			p.setString(5, databaseSettings.getDatabase());
+			p.setString(6, databaseSettings.getHost());
+			p.setInt(7, databaseSettings.getPort());
+			p.setLong(8, user);
+			p.executeUpdate();
+			disconnect();
 			userDatabaseMap.put(databaseSettings.getKey(), databaseSettings);
-			storeDBList();
 			
 			return true;
 		}
@@ -138,14 +193,15 @@ public class SQLDatabaseManager {
 	// removes a database from the hashmap and the security objects
 	public boolean removeDatabase(String key) throws Exception {
 		try {
-			if(!exitsDatabase(key)) {
-				throw new Exception("Database with key " + key + " does not exists!");
+			if(!databaseExists(key)) {
+//				throw new Exception("Database with key " + key + " does not exists!");
+				return false;
 			}
 			
 			if(userDatabaseMap != null && userDatabaseMap.containsKey( key )) {
-				// delete from hash map
+				// delete from hash map and database
+				removeDB(key);
 				userDatabaseMap.remove(key);
-				storeDBList();
 			}
 			
 			return true;
@@ -157,7 +213,7 @@ public class SQLDatabaseManager {
 		}
 	}
 	
-	public boolean exitsDatabase(String key) {
+	public boolean databaseExists(String key) {
 		try {
 			return (userDatabaseMap.get(key) != null);
 		}
@@ -248,7 +304,7 @@ public class SQLDatabaseManager {
 					throw new Exception("The requested database is not known/configured! (Requested:" + databaseKey + ", Available: "+dbKeyListString + ")");
 				}
 				
-				sqlDatabase = new SQLDatabase(databaseSettings.getJdbcInfo(), databaseSettings.getUsername(), databaseSettings.getPassword(), databaseSettings.getDatabase(), databaseSettings.getHost(), databaseSettings.getPort());
+				sqlDatabase = new SQLDatabase(databaseSettings);
 			
 				// try to connect ...
 				sqlDatabase.connect();
@@ -286,21 +342,19 @@ public class SQLDatabaseManager {
 		return false;
 	}
 		
-	
 	/**
-	 * store the current database list to the backend
+	 * Remove given database from the database
 	 */
-	public void storeDBList () {
-		SQLDatabaseSettings[] databases = userDatabaseMap.values().toArray(new SQLDatabaseSettings[0]);
+	private void removeDB(String databaseKey) throws SQLException {
 		try {
-			storedDBs = Context.getCurrent().getStoredObject(SQLDatabaseSettings[].class, getEnvelopeId ( getActiveAgent()) );
-			storedDBs.open();
-			storedDBs.updateContent ( databases );
-			storedDBs.addSignature(getActiveAgent());
-			storedDBs.store();
-			logMessage("stored Database list");
+			connect();
+			PreparedStatement s = storageDatabase.prepareStatement("DELETE FROM `DATABASE_CONNECTIONS` WHERE `KEY` = ? AND `USER_ID` = ?");
+			s.setString(1, databaseKey);
+			s.setLong(2, user);
+			s.executeUpdate();
+			disconnect();
 		} catch (Exception e) {
-			logMessage("Error storing the Database list! " + e);
+			logMessage("Error removing the Database! " + e);
 			System.out.println ( "QV critical:");
 			e.printStackTrace();
 		}

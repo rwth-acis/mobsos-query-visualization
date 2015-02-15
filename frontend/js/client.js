@@ -64,19 +64,19 @@ TemplateServiceClient.prototype.postMethod = function(input, successCallback, er
 *   - errorCallback: a callback function invoked in case the request failed. Expects two parameters "error" and "status" representing the error occurred and "status" containing the HTTP error return code.
 */
 TemplateServiceClient.prototype.get = function(path, content, successCallback, errorCallback) {
-	this.sendRequest("GET", path, content, "application/json", "", successCallback, errorCallback);
+	this.sendRequest("GET", path, content, "application/json", null, successCallback, errorCallback);
 };
 
 TemplateServiceClient.prototype.post = function(path, content, successCallback, errorCallback) {
-	this.sendRequest("POST", path, "", "application/json", content, successCallback, errorCallback);
+	this.sendRequest("POST", path, content, "application/json", null, successCallback, errorCallback);
 };
 
 TemplateServiceClient.prototype.put = function(path, content, successCallback, errorCallback) {
-	this.sendRequest("PUT", path, "", "application/json", content, successCallback, errorCallback);
+	this.sendRequest("PUT", path, content, "application/json", null, successCallback, errorCallback);
 };
 
 TemplateServiceClient.prototype.delete = function(path, content, successCallback, errorCallback) {
-	this.sendRequest("DELETE", path, "", "application/json", content, successCallback, errorCallback);
+	this.sendRequest("DELETE", path, content, "application/json", null, successCallback, errorCallback);
 };
 
 /**
@@ -113,7 +113,7 @@ TemplateServiceClient.prototype.sendRequest = function(method, relativePath, con
 	var ajaxObj = {
 		url: rurl,
 		type: method.toUpperCase(),
-		data: content,
+		data: JSON.stringify(content),
 		contentType: mtype,
 		crossDomain: true,
 		headers: {},

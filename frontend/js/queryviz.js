@@ -235,9 +235,9 @@ var QV = (function(QV){
                 cache: useCache,
                 modtypei: modficationTypeIndex,
                 vtypei: visualizationTypeIndex,
-                vparam1: visualizationOptions[0],
-                vparam2: visualizationOptions[1],
-                vparam3: visualizationOptions[2],
+                title: visualizationOptions[0],
+                width: visualizationOptions[1],
+                height: visualizationOptions[2],
                 save: save
             };
 
@@ -319,7 +319,7 @@ var QV = (function(QV){
                     database: database,
                     dbhost: host,
                     port: port,
-                    vtypei: QV.VISUALIZATIONTYPE.JSON
+                    vtypei: ""+QV.VISUALIZATIONTYPE.JSON
                 };
 
                 restClient.put("database/" + databaseKey, headerData, success, error);
@@ -350,7 +350,7 @@ var QV = (function(QV){
                 };
 
                 var headerData = {
-                    vtypei: QV.VISUALIZATIONTYPE.JSON
+                    vtypei: ""+QV.VISUALIZATIONTYPE.JSON
                 };
 
                 restClient.delete("database/" + databaseKey, headerData, success, error);
@@ -387,7 +387,7 @@ var QV = (function(QV){
                 var headerData = {
                     query: query,
                     dbkey: databaseKey,
-                    vtypei: QV.VISUALIZATIONTYPE.JSON
+                    vtypei: ""+QV.VISUALIZATIONTYPE.JSON
                 };
 
                 restClient.put("filter/" + filterKey, headerData, success, error);
@@ -420,7 +420,7 @@ var QV = (function(QV){
                 };
 
                 var headerData = {
-                    vtypei: QV.VISUALIZATIONTYPE.JSON
+                    vtypei: ""+QV.VISUALIZATIONTYPE.JSON
                 };
 
                 restClient.delete("filter/" + filterKey, headerData, success, error);
@@ -447,7 +447,7 @@ var QV = (function(QV){
                 };
 
                 var headerData = {
-                    vtypei: QV.VISUALIZATIONTYPE.JSON
+                    vtypei: ""+QV.VISUALIZATIONTYPE.JSON
                 };
 
                 restClient.get("database", headerData, success, error);
@@ -474,7 +474,7 @@ var QV = (function(QV){
                 };
 
                 var headerData = {
-                    vtypei: QV.VISUALIZATIONTYPE.JSON
+                    vtypei: ""+QV.VISUALIZATIONTYPE.JSON
                 };
 
                 restClient.get("filter", headerData, success, error);
@@ -502,7 +502,7 @@ var QV = (function(QV){
                 };
 
                 var headerData = {
-                    vtypei: QV.VISUALIZATIONTYPE.JSON
+                    vtypei: ""+QV.VISUALIZATIONTYPE.JSON
                 };
 
                 restClient.get("filter/" + filterKey, headerData, success, error);

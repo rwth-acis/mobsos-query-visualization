@@ -3,12 +3,13 @@ package i5.las2peer.services.queryVisualization.database;
 import i5.las2peer.execution.L2pThread;
 import i5.las2peer.logging.NodeObserver.Event;
 import i5.las2peer.p2p.Node;
-import i5.las2peer.persistency.Envelope;
 import i5.las2peer.security.Agent;
-import i5.las2peer.security.Context;
 import i5.las2peer.services.queryVisualization.QueryVisualizationService;
 import i5.las2peer.services.queryVisualization.encoding.ModificationType;
+import i5.las2peer.services.queryVisualization.database.SQLFilterSettings;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -24,8 +25,27 @@ public class SQLFilterManager {
 	private HashMap<String, SQLFilterSettings> userFilterMap = new HashMap<String, SQLFilterSettings>();
 	private HashMap<String, String> loadedFilterValues = new HashMap<String, String>();
 		
-	private Envelope storedFilters = null;
+	private SQLDatabase storageDatabase;
+	private boolean connected = false;
 	
+	private boolean connect() {
+		try {
+			storageDatabase.connect();
+			connected = true;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+		return true;
+	}
+	
+	private void disconnect(boolean wasConnected) {
+		if (!wasConnected && connected) {
+			storageDatabase.disconnect();
+			connected = false;
+		}
+	}
+
 	/*************** "service" helper methods *************************/
 	
 	/**
@@ -82,27 +102,25 @@ public class SQLFilterManager {
 	}
 	
 	
-	public SQLFilterManager() {
-		
+	public SQLFilterManager(SQLDatabase storageDatabase) {
+		this.storageDatabase = storageDatabase;
 		// get the user's security object which contains the database information
 		Agent user = getActiveAgent();
 		
 		SQLFilterSettings[] settings = null;
 
+		boolean wasConnected = connected;
 		try {
-			storedFilters = Context.getCurrent().getStoredObject(SQLFilterSettings[].class, getEnvelopeId ( user) );
-			storedFilters.open();
-			settings = storedFilters.getContent(SQLFilterSettings[].class);
+			connect();
+			PreparedStatement p = storageDatabase.prepareStatement(
+					"SELECT * FROM QVS.FILTERS WHERE UID = ?;");
+			p.setLong(1, user.getId());
+			ResultSet set = p.executeQuery();
+			settings = SQLFilterSettings.fromResultSet(set);
 		} catch ( Exception e ) {
-			try {
-				storedFilters = Envelope.createClassIdEnvelope(new SQLFilterSettings[0], getEnvelopeId(user), user);
-				storedFilters.open();
-				storedFilters.addSignature(getActiveAgent());
-				storedFilters.store();
-				logMessage("Failed to get the users' SQL settings from the net -- using a fresh one! " + e.getMessage());			
-			} catch ( Exception e2 ) {
-				logMessage("Failed to generate a new envelope for storing user filters! " + e2 );
-			}
+			logMessage("Failed to get the users' SQL settings from the database! " + e.getMessage());			
+		} finally {
+			disconnect(wasConnected);
 		}
 		
 		if(settings == null || settings.length <= 0) {
@@ -117,13 +135,22 @@ public class SQLFilterManager {
 	public boolean addFilter(String filterKey, String SQLQuery, String databaseKey) throws Exception {
 		try {			
 			//TODO: sanity checks for the parameters
-			if(exitsFilter(filterKey)) {
+			if(filterExists(filterKey)) {
 				throw new Exception("Filter with key " + filterKey + " already exists!");
 			}
 			
 			SQLFilterSettings filterSettings = new SQLFilterSettings(filterKey, SQLQuery, databaseKey);
+			boolean wasConnected = connected;
+			connect();
+			PreparedStatement p = storageDatabase.prepareStatement(
+					"INSERT INTO `FILTERS` (`KEY`, `QUERY`, `UID`, `DB_KEY`) VALUES (?,	?,	?,	?);");
+			p.setString(1, filterKey);
+			p.setString(2, SQLQuery);
+			p.setLong(3, getActiveAgent().getId());
+			p.setString(4, databaseKey);
+			p.executeUpdate();
+			disconnect(wasConnected);
 			userFilterMap.put(filterSettings.getKey(), filterSettings);
-			storeFilterList();
 			
 			return true;
 		}
@@ -136,14 +163,21 @@ public class SQLFilterManager {
 	
 	public boolean deleteFilter(String filterKey) throws Exception {
 		try {
-			if(!exitsFilter(filterKey)) {
-				throw new Exception("Filter with key " + filterKey + " does not exists!");
+			if(!filterExists(filterKey)) {
+//				throw new Exception("Filter with key " + filterKey + " does not exists!");
+				return false;
 			}
 			
 			if(userFilterMap != null && userFilterMap.containsKey(filterKey)) {
 				// delete from hash map
+				boolean wasConnected = connected;
+				connect();
+				PreparedStatement s = storageDatabase.prepareStatement("DELETE FROM `FILTERS` WHERE `KEY` = ? AND `UID` = ?");
+				s.setString(1, filterKey);
+				s.setLong(2, getActiveAgent().getId());
+				s.executeUpdate();
+				disconnect(wasConnected);
 				userFilterMap.remove(filterKey);
-				storeFilterList();
 			}
 			
 			return true;
@@ -155,7 +189,7 @@ public class SQLFilterManager {
 		}
 	}
 	
-	public boolean exitsFilter(String key) {
+	public boolean filterExists(String key) {
 		try {
 			return (userFilterMap.get(key) != null);
 		}
@@ -224,22 +258,4 @@ public class SQLFilterManager {
 			throw e;
 		}
 	}
-	
-	
-	public void storeFilterList () {
-		SQLFilterSettings[] filters = userFilterMap.values().toArray(new SQLFilterSettings[0]);
-		
-		try {
-			storedFilters = Context.getCurrent().getStoredObject(SQLFilterSettings[].class, getEnvelopeId ( getActiveAgent()) );
-			storedFilters.open();
-			storedFilters.updateContent ( filters );
-			storedFilters.addSignature(getActiveAgent());
-			storedFilters.store();
-		} catch (Exception e) {
-			logMessage("Error storing the filter list! " + e);
-			System.out.println ( "QV critical:");
-			e.printStackTrace();
-		}
-	}
-	
 }

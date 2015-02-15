@@ -7,6 +7,10 @@ import i5.las2peer.services.queryVisualization.database.SQLDatabaseType;
 import i5.simpleXML.Element;
 
 import java.io.Serializable;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.LinkedList;
 
 
 /**
@@ -21,6 +25,7 @@ public class Query implements XmlAble, Serializable {
 	private static final long serialVersionUID = -4423072045695775785L;
 	
 	private String key = null;
+	private long user = 0;
 	private String username = null;
 	private String password = null;
 	private SQLDatabaseType jdbcInfo;
@@ -33,12 +38,11 @@ public class Query implements XmlAble, Serializable {
 	private int visualizationTypeIndex = -1;
 	private String[] visualizationParameters = null;
 	
-	public Query(){
-	}
 	
-	public Query(SQLDatabaseType jdbcInfo, String username, String password, String database, String host, int port,
+	public Query(long user, SQLDatabaseType jdbcInfo, String username, String password, String database, String host, int port,
 			String queryStatement, boolean useCache, int modificationTypeIndex, int visualizationTypeIndex, String[] visualizationParameters, String key) {
 				
+		this.user = user;
 		this.jdbcInfo = jdbcInfo;
 		this.username = username;
 		this.password = password;
@@ -154,4 +158,64 @@ public class Query implements XmlAble, Serializable {
 		return xmlString;
 	}
 	
+	public PreparedStatement prepareStatement(PreparedStatement s) throws SQLException {
+		s.setString(1, key);
+		s.setLong(2, user);
+		s.setString(3, username);
+		s.setString(4, password);
+		s.setInt(5, jdbcInfo.getCode());
+		s.setString(6, databaseName);
+		s.setString(7, host);
+		s.setInt(8, port);
+		s.setInt(9, useCache ? 1 : 0);
+		s.setString(10, queryStatement);
+		s.setInt(11, modificationTypeIndex);
+		s.setInt(12, visualizationTypeIndex);
+		String title = visualizationParameters[0];
+		int height = Integer.parseInt(visualizationParameters[1]);
+		int width = Integer.parseInt(visualizationParameters[2]);
+		s.setString(13, title);
+		s.setInt(14, height);
+		s.setInt(15, width);
+	return s;
+	}
+	
+	public static String getReplace() {
+		return "REPLACE INTO `QUERIES` (`KEY`, `USER`, `USERNAME`, `PASSWORD`, `JDBCINFO`,"
+				+ "`DATABASE_NAME`, `HOST`, `PORT`, `USE_CACHE`, `QUERY_STATEMENT`,"
+				+ "`MODIFICATION_TYPE`, `VISUALIZATION_TYPE`, `VISUALIZATION_TITLE`,"
+				+ "`VISUALIZATION_HEIGHT`, `VISUALIZATION_WIDTH`) VALUES"
+				+ "(?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?);";
+	}
+	
+	public static Query[] fromResultSet(ResultSet set) {
+		LinkedList<Query> qs = new LinkedList<Query>();
+		try {
+			while (set.next()) {
+				String key = set.getString("KEY");
+				long user = set.getLong("USER");
+				String username = set.getString("USERNAME");
+				String password = set.getString("PASSWORD");
+				SQLDatabaseType jdbcInfo = SQLDatabaseType.getSQLDatabaseType(set.getInt("JDBCINFO"));
+				String databaseName = set.getString("DATABASE_NAME");
+				String host = set.getString("HOST");
+				int port = set.getInt("PORT");
+				boolean useCache = set.getInt("USE_CACHE") == 1;
+				String queryStatement = set.getString("QUERY_STATEMENT");
+				int modificationTypeIndex = set.getInt("MODIFICATION_TYPE");
+				int visualizationTypeIndex = set.getInt("VISUALIZATION_TYPE");
+				String visualizationTitle = set.getString("VISUALIZATION_TITLE");
+				int visualizationHeight = set.getInt("VISUALIZATION_HEIGHT");
+				int visualizationWidth = set.getInt("VISUALIZATION_WIDTH");
+				String[] s = new String[] {visualizationTitle, ""+visualizationHeight, ""+visualizationWidth};
+				Query q = new Query(user, jdbcInfo, username, password, databaseName, host, port,
+						queryStatement, useCache, modificationTypeIndex, visualizationTypeIndex, s, key);
+				qs.add(q);
+			}
+			return qs.toArray(new Query[]{});
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
 }

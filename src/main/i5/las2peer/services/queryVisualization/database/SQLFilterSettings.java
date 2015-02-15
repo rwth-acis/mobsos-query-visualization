@@ -7,6 +7,9 @@ import i5.las2peer.security.Context;
 import i5.simpleXML.Element;
 
 import java.io.Serializable;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.LinkedList;
 
 /**
  * SQLFilterSettings.java
@@ -73,4 +76,16 @@ public class SQLFilterSettings implements XmlAble, Serializable {
 		return xmlString;
 	}
 
+	public static SQLFilterSettings[] fromResultSet(ResultSet set) throws SQLException {
+		LinkedList<SQLFilterSettings> settings = new LinkedList<SQLFilterSettings>();
+		try {
+			while (set.next()) {
+				SQLFilterSettings setting = new SQLFilterSettings(set.getString("KEY"), set.getString("QUERY"), set.getString("DB_KEY") );
+				settings.add(setting);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return settings.toArray(new SQLFilterSettings[]{});
+	}
 }

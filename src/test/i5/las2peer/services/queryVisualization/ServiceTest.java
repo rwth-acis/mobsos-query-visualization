@@ -4,8 +4,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import i5.las2peer.p2p.LocalNode;
+import i5.las2peer.restMapper.data.Pair;
 import i5.las2peer.security.ServiceAgent;
 import i5.las2peer.security.UserAgent;
+import i5.las2peer.services.queryVisualization.database.SQLDatabaseType;
 import i5.las2peer.testing.MockAgentFactory;
 import i5.las2peer.webConnector.WebConnector;
 import i5.las2peer.webConnector.client.ClientResponse;
@@ -13,6 +15,10 @@ import i5.las2peer.webConnector.client.MiniClient;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+
+import net.minidev.json.JSONArray;
+import net.minidev.json.JSONObject;
+import net.minidev.json.JSONValue;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -39,7 +45,21 @@ public class ServiceTest {
 	
 	private static final String testServiceClass = QueryVisualizationService.class.getCanonicalName();
 	
-	private static final String mainPath = "QSV/";
+	private static final String mainPath = "QVS/";
+
+	static JSONObject testQuery = new JSONObject();
+	private static final String queryPath = "query";
+
+	static JSONObject testDB = new JSONObject();
+	private static final String testDBName = "newTestDB";
+	private static final String dbPath = "database";
+
+	static JSONObject testFilter = new JSONObject();
+	private static final String testFilterName = "newTestFilter";
+	private static final String filterPath = "filter";
+
+	@SuppressWarnings("unchecked")
+	Pair<String>[] emptyPairs = (Pair<String>[])new Pair[0];
 	
 	
 	/**
@@ -74,6 +94,26 @@ public class ServiceTest {
 		
         connector.updateServiceList();
         //avoid timing errors: wait for the repository manager to get all services before continuing
+        testDB.put("db_code", SQLDatabaseType.MySQL);
+        testDB.put("username", "qv_user");
+        testDB.put("password", "qv_password");
+        testDB.put("database", "QVS");
+        testDB.put("dbhost", "localhost");
+        testDB.put("port", "3306");
+
+        testFilter.put("query", "SELECT * FROM USERS");
+        testFilter.put("dbkey", testDBName);
+
+        testQuery.put("query", "SELECT * FROM `DATABASE_CONNECTIONS` WHERE `KEY` = ?");
+        testQuery.put("dbkey", testDBName);
+        testQuery.put("queryparams", testDBName);
+        testQuery.put("cache", true);
+        testQuery.put("modtypei", 0);
+        testQuery.put("title", "testQuery");
+        testQuery.put("width", "100");
+        testQuery.put("height", "100");
+        testQuery.put("save", true);
+
         try
         {
             System.out.println("waiting..");
@@ -96,6 +136,18 @@ public class ServiceTest {
 	@AfterClass
 	public static void shutDownServer () throws Exception {
 		
+		MiniClient c = new MiniClient();
+		c.setAddressPort(HTTP_ADDRESS, HTTP_PORT);
+		
+		try
+		{
+			c.setLogin(Long.toString(testAgent.getId()), testPass);
+			cleanUp(c);
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail ( "Exception: " + e );
+		}
+
 		connector.stop();
 		node.shutDown();
 		
@@ -110,6 +162,13 @@ public class ServiceTest {
 		System.out.println(logStream.toString());
 		
     }
+	
+	private static void cleanUp(MiniClient c) {
+		c.sendRequest("DELETE", mainPath + filterPath + "/" + testDBName, "");
+		c.sendRequest("DELETE", mainPath + filterPath + "/" + testFilterName, "");
+		c.sendRequest("DELETE", mainPath + dbPath + "/" + testDBName, "");
+		c.sendRequest("DELETE", mainPath + dbPath + "/" + testFilterName, "");
+	}
 	
 	
 	/**
@@ -165,6 +224,283 @@ public class ServiceTest {
 		}
 		
     }
+
+	/**
+	 * Tests Listing of a database keys
+	 */
+	@Test
+	public void testGetDatabases() {
+		MiniClient c = new MiniClient();
+		c.setAddressPort(HTTP_ADDRESS, HTTP_PORT);
+		
+		try
+		{
+			c.setLogin(Long.toString(testAgent.getId()), testPass);
+            c.sendRequest("PUT", mainPath + dbPath + "/" + testDBName, testDB.toJSONString(), "application/json", "application/json", emptyPairs);
+            ClientResponse result = c.sendRequest("GET", mainPath + dbPath, ""); // Remove DB first
+            assertEquals(200, result.getHttpCode());
+            JSONArray expected = new JSONArray();
+            for (String s : new String[]{"DatabaseKeys", "string", testDBName, "storage"}) {
+            	JSONArray inner = new JSONArray();
+            	inner.add(s);
+            	expected.add(inner);
+			}
+            assertEquals(expected, (JSONArray)JSONValue.parse(result.getResponse()));
+            
+			System.out.println("Result of 'GetDatabases': " + result.getResponse().trim());
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+			fail ( "Exception: " + e );
+		}
+	}
+
+	/**
+	 * Tests creation of a database 
+	 */
+	@Test
+	public void testAddDatabase()
+	{
+		MiniClient c = new MiniClient();
+		c.setAddressPort(HTTP_ADDRESS, HTTP_PORT);
+		
+		try
+		{
+			c.setLogin(Long.toString(testAgent.getId()), testPass);
+			cleanUp(c);
+
+            ClientResponse result = c.sendRequest("PUT", mainPath + dbPath + "/" + testDBName, testFilter.toJSONString(), "application/json", "application/json", emptyPairs);
+            assertEquals(400, result.getHttpCode());
+
+            result = c.sendRequest("PUT", mainPath + dbPath + "/" + testDBName, testDB.toJSONString(), "application/json", "application/json", emptyPairs);
+			cleanUp(c);
+            assertEquals(201, result.getHttpCode());
+            JSONArray expected = new JSONArray();
+            for (String s : new String[]{"AddedDatabase", "string", testDBName}) {
+            	JSONArray inner = new JSONArray();
+            	inner.add(s);
+            	expected.add(inner);
+			}
+            assertEquals(expected, (JSONArray)JSONValue.parse(result.getResponse()));
+            
+			System.out.println("Result of 'addDatabase': " + result.getResponse().trim());
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+			fail ( "Exception: " + e );
+		}
+    }
+
+	/**
+	 * Tests removal of a database 
+	 */
+	@Test
+	public void testRemoveDatabase() {
+		MiniClient c = new MiniClient();
+		c.setAddressPort(HTTP_ADDRESS, HTTP_PORT);
+		
+		try
+		{
+			c.setLogin(Long.toString(testAgent.getId()), testPass);
+			cleanUp(c);
+
+            ClientResponse result = c.sendRequest("DELETE", mainPath + dbPath + "/asohusnaoue", "");
+            assertEquals(404, result.getHttpCode());
+
+            c.sendRequest("PUT", mainPath + dbPath + "/" + testDBName, testDB.toJSONString(), "application/json", "application/json", emptyPairs);
+            result = c.sendRequest("DELETE", mainPath + dbPath + "/" + testDBName, "");
+            assertEquals(200, result.getHttpCode());
+            JSONArray expected = new JSONArray();
+            for (String s : new String[]{"RemovedDatabase", "string", testDBName}) {
+            	JSONArray inner = new JSONArray();
+            	inner.add(s);
+            	expected.add(inner);
+			}
+            assertEquals(expected, (JSONArray)JSONValue.parse(result.getResponse()));
+            
+			System.out.println("Result of 'removeDatabase': " + result.getResponse().trim());
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+			fail ( "Exception: " + e );
+		}
+		
+    }
+
+	/**
+	 * Tests Listing of a database keys
+	 */
+	@Test
+	public void testGetFilters() {
+		MiniClient c = new MiniClient();
+		c.setAddressPort(HTTP_ADDRESS, HTTP_PORT);
+		
+		try
+		{
+			c.setLogin(Long.toString(testAgent.getId()), testPass);
+
+			// Test Empty filter list
+            ClientResponse result = c.sendRequest("GET", mainPath + filterPath, "");
+            assertEquals(200, result.getHttpCode());
+
+            // Add a filter
+            result = c.sendRequest("PUT", mainPath + dbPath + "/" + testDBName, testDB.toJSONString(), "application/json", "application/json", emptyPairs);
+            result = c.sendRequest("PUT", mainPath + filterPath + "/" + testFilterName, testFilter.toJSONString(), "application/json", "application/json", emptyPairs);
+
+            result = c.sendRequest("GET", mainPath + filterPath, "");
+            assertEquals(200, result.getHttpCode());
+            JSONArray expected = new JSONArray();
+            JSONArray inner = new JSONArray();
+            inner.add("FilterKeys");
+            inner.add("DatabaseKeys");
+            expected.add(inner);
+
+            inner = new JSONArray();
+            inner.add("string");
+            inner.add("string");
+            expected.add(inner);
+
+            inner = new JSONArray();
+            inner.add(testFilterName);
+            inner.add(testDBName);
+            expected.add(inner);
+            
+            assertEquals(expected, (JSONArray)JSONValue.parse(result.getResponse()));
+            
+			System.out.println("Result of 'GetFilters': " + result.getResponse().trim());
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+			fail ( "Exception: " + e );
+		}
+	}
+
+	/**
+	 * Tests Creation of Filter
+	 */
+	@Test
+	public void testAddFilter() {
+		MiniClient c = new MiniClient();
+		c.setAddressPort(HTTP_ADDRESS, HTTP_PORT);
+		
+		try
+		{
+			c.setLogin(Long.toString(testAgent.getId()), testPass);
+			cleanUp(c);
+
+            ClientResponse result = c.sendRequest("PUT", mainPath + filterPath + "/" + testFilterName, testDB.toJSONString(), "application/json", "application/json", emptyPairs);
+            assertEquals(400, result.getHttpCode());
+
+            result = c.sendRequest("PUT", mainPath + filterPath + "/" + testFilterName, testFilter.toJSONString(), "application/json", "application/json", emptyPairs);
+            assertEquals(400, result.getHttpCode()); // testDB does not exist yet!
+
+            result = c.sendRequest("PUT", mainPath + dbPath + "/" + testDBName, testDB.toJSONString(), "application/json", "application/json", emptyPairs);
+            assertEquals(201, result.getHttpCode());
+            result = c.sendRequest("PUT", mainPath + filterPath + "/" + testFilterName, testFilter.toJSONString(), "application/json", "application/json", emptyPairs);
+            assertEquals(201, result.getHttpCode()); // testDB exists now!
+            JSONArray expected = new JSONArray();
+            for (String s : new String[]{"AddedFilter", "string", testFilterName}) {
+            	JSONArray inner = new JSONArray();
+            	inner.add(s);
+            	expected.add(inner);
+			}
+            assertEquals(expected, (JSONArray)JSONValue.parse(result.getResponse()));
+            
+			System.out.println("Result of 'AddFilter': " + result.getResponse().trim());
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+			fail ( "Exception: " + e );
+		}
+	}
+
+	/**
+	 * Tests removal of a filter 
+	 */
+	@Test
+	public void testRemoveFilter() {
+		MiniClient c = new MiniClient();
+		c.setAddressPort(HTTP_ADDRESS, HTTP_PORT);
+		
+		try
+		{
+			c.setLogin(Long.toString(testAgent.getId()), testPass);
+			cleanUp(c);
+
+            ClientResponse result = c.sendRequest("DELETE", mainPath + filterPath + "/asohusnaoue", "");
+            assertEquals(404, result.getHttpCode());
+
+            result = c.sendRequest("PUT", mainPath + dbPath + "/" + testDBName, testDB.toJSONString(), "application/json", "application/json", emptyPairs);
+            result = c.sendRequest("PUT", mainPath + filterPath + "/" + testFilterName, testFilter.toJSONString(), "application/json", "application/json", emptyPairs);
+            result = c.sendRequest("DELETE", mainPath + filterPath + "/" + testFilterName, "");
+            assertEquals(200, result.getHttpCode());
+            JSONArray expected = new JSONArray();
+            for (String s : new String[]{"DeletedFilter", "string", testFilterName}) {
+            	JSONArray inner = new JSONArray();
+            	inner.add(s);
+            	expected.add(inner);
+			}
+            assertEquals(expected, (JSONArray)JSONValue.parse(result.getResponse()));
+            
+			System.out.println("Result of 'removeFilter': " + result.getResponse().trim());
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+			fail ( "Exception: " + e );
+		}
+    }
+
+	/**
+	 * Tests Creation of Queries
+	 */
+	@Test
+	public void testQuery() {
+		MiniClient c = new MiniClient();
+		c.setAddressPort(HTTP_ADDRESS, HTTP_PORT);
+		
+		try
+		{
+			c.setLogin(Long.toString(testAgent.getId()), testPass);
+			cleanUp(c);
+
+			// Not a valid Query
+            ClientResponse result = c.sendRequest("POST", mainPath + queryPath , testDB.toJSONString(), "application/json", "application/json", emptyPairs);
+            assertEquals(400, result.getHttpCode());
+
+            // Database does not exist yet
+            result = c.sendRequest("POST", mainPath + queryPath, testQuery.toJSONString(), "application/json", "application/json", emptyPairs);
+            assertEquals(400, result.getHttpCode());
+
+            // Now create database first
+            result = c.sendRequest("PUT", mainPath + dbPath + "/" + testDBName, testDB.toJSONString(), "application/json", "application/json", emptyPairs);
+            assertEquals(201, result.getHttpCode());
+            result = c.sendRequest("POST", mainPath + queryPath, testQuery.toJSONString(), "application/json", "application/json", emptyPairs);
+            assertEquals(201, result.getHttpCode());
+            Integer key = 0;
+            try {
+            	key = Integer.parseInt(JSONValue.parse(result.getResponse()).toString());
+			} catch (Exception e) {
+				fail("Received data is not a query id: " + JSONValue.parse(result.getResponse()).toString());
+			}
+            
+            result = c.sendRequest("GET", mainPath + queryPath + "/" + key, "");
+            assertEquals(200, result.getHttpCode());
+            
+            
+			System.out.println("Result of 'AddFilter': " + result.getResponse().trim());
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+			fail ( "Exception: " + e );
+		}
+	}
 
 	/**
 	 * Test the ServiceClass for valid rest mapping.

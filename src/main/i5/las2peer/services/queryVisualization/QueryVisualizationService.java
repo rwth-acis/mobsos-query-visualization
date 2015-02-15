@@ -5,9 +5,11 @@ import i5.las2peer.execution.L2pServiceException;
 import i5.las2peer.restMapper.HttpResponse;
 import i5.las2peer.restMapper.MediaType;
 import i5.las2peer.restMapper.RESTMapper;
+import i5.las2peer.restMapper.annotations.Consumes;
+import i5.las2peer.restMapper.annotations.ContentParam;
 import i5.las2peer.restMapper.annotations.DELETE;
 import i5.las2peer.restMapper.annotations.GET;
-import i5.las2peer.restMapper.annotations.HeaderParam;
+import i5.las2peer.restMapper.annotations.POST;
 import i5.las2peer.restMapper.annotations.PUT;
 import i5.las2peer.restMapper.annotations.Path;
 import i5.las2peer.restMapper.annotations.PathParam;
@@ -27,6 +29,7 @@ import i5.las2peer.services.queryVisualization.caching.MethodResultCache;
 import i5.las2peer.services.queryVisualization.database.DatabaseManager;
 import i5.las2peer.services.queryVisualization.database.SQLDatabase;
 import i5.las2peer.services.queryVisualization.database.SQLDatabaseManager;
+import i5.las2peer.services.queryVisualization.database.SQLDatabaseSettings;
 import i5.las2peer.services.queryVisualization.database.SQLDatabaseType;
 import i5.las2peer.services.queryVisualization.database.SQLFilterManager;
 import i5.las2peer.services.queryVisualization.encoding.MethodResult;
@@ -62,6 +65,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import net.minidev.json.JSONObject;
+import net.minidev.json.JSONValue;
+
 /**
  * LAS2peer Service
  * 
@@ -82,35 +88,37 @@ import java.util.regex.Pattern;
 public class QueryVisualizationService extends Service {
 
 	/*** configuration ***/
-	public static final String DEFAULT_DATABASE_KEY = "Default Database";
-	public static final String DEFAULT_DB2_HOST = "This value should be replaced automatically by configuration file!"; 
-	public static final int DEFAULT_DB2_PORT = 0; //This value should be replaced automatically by configuration file!
-	public static final String DEFAULT_DB2_DATABASE = "This value should be replaced automatically by configuration file!"; 
-	public static final String DEFAULT_DB2_USER = "This value should be replaced automatically by configuration file!";
-	public static final String DEFAULT_DB2_PASSWORD = "This value should be replaced automatically by configuration file!";
+	public static final String DEFAULT_DATABASE_KEY = "storage";
+	public static final String DEFAULT_HOST = "This value should be replaced automatically by configuration file!"; 
+	public static final int DEFAULT_PORT = 0; //This value should be replaced automatically by configuration file!
+	public static final String DEFAULT_DATABASE = "This value should be replaced automatically by configuration file!"; 
+	public static final String DEFAULT_USER = "This value should be replaced automatically by configuration file!";
+	public static final String DEFAULT_PASSWORD = "This value should be replaced automatically by configuration file!";
 	
 	public static final String DEFAULT_RESULT_TIMEOUT = "90";
 	public static final long DEFAULT_SESSION_TIMEOUT = 3600000; // 1h
 	public static final long DEFAULT_TIDY_SLEEPTIME_MS = 300000; // 5 min
 	
-	protected String databaseKey = DEFAULT_DATABASE_KEY;
-	protected String db2Host = DEFAULT_DB2_HOST; 
-	protected int db2Port = DEFAULT_DB2_PORT; 
-	protected String db2Database = DEFAULT_DB2_DATABASE; 
-	protected String db2User = DEFAULT_DB2_USER; 
-	protected String db2Password = DEFAULT_DB2_PASSWORD; 
+	protected String stDbKey = DEFAULT_DATABASE_KEY;
+	protected String stDbHost = DEFAULT_HOST; 
+	protected int stDbPort = DEFAULT_PORT; 
+	protected String stDbDatabase = DEFAULT_DATABASE; 
+	protected String stDbUser = DEFAULT_USER; 
+	protected String stDbPassword = DEFAULT_PASSWORD; 
+
+	protected String exKey;
+	protected String exHost; 
+	protected int exPort; 
+	protected String exDatabase; 
+	protected String exUser; 
+	protected String exPassword; 
+	protected String exType; 
 	
 	protected String resultTimeout = DEFAULT_RESULT_TIMEOUT;
 
-	protected String defaultDBKey = DEFAULT_DATABASE_KEY;
-
-	private String jdbcDriverClassName;
-	private String jdbcLogin;
-	private String jdbcPass;
-	private String jdbcUrl;
-	private String jdbcSchema;
-	private DatabaseManager dbm;
 	
+	private SQLDatabaseSettings databaseSettings = null;
+	private SQLDatabase storageDatabase = null;
 	private SQLDatabaseManager databaseManager = null;
 	private SQLFilterManager filterManager = null;
 	private QueryManager queryManager = null;
@@ -118,14 +126,39 @@ public class QueryVisualizationService extends Service {
 	private VisualizationManager visualizationManager = null;
 	private VisualizationException visualizationException = null;
 	private ModificationManager modificationManager = null;
+	
+	private static String stringfromJSON(JSONObject obj, String key) throws SQLException {
+		String s = (String) obj.get(key);
+		if (s == null) {
+			throw new SQLException("Key " + key + " is missing in JSON");
+		}
+		return s;
+	}
+
+	private static int intfromJSON(JSONObject obj, String key) {
+		try {
+			return (int)Integer.parseInt((String) obj.get(key));
+		} catch (Exception e) {
+			return (int) obj.get(key);
+		}
+	}
+
+	private static boolean boolfromJSON(JSONObject obj, String key) {
+		try {
+			return (boolean) obj.get(key);
+		} catch (Exception e) {
+			String b = (String) obj.get(key);
+			if (b == "1") {
+				return true;
+			}
+			return (boolean)Boolean.parseBoolean(b);
+		}
+	}
 
 	public QueryVisualizationService() {
 		// read and set properties values
 		// IF THE SERVICE CLASS NAME IS CHANGED, THE PROPERTIES FILE NAME NEED TO BE CHANGED TOO!
 		setFieldValues();
-		// instantiate a database manager to handle database connection pooling and credentials
-		dbm = new DatabaseManager(jdbcDriverClassName, jdbcLogin, jdbcPass, jdbcUrl, jdbcSchema);
-
 	}		
 	
 	public void initializeDBConnection() {
@@ -133,16 +166,20 @@ public class QueryVisualizationService extends Service {
 			return;
 		}
 		try {
-			if(db2Host == null || db2Port < 1 || db2Database == null || db2User == null || db2Password == null) {
+			if(stDbHost == null || stDbPort < 1 || stDbDatabase == null || stDbUser == null || stDbPassword == null) {
 				logError("Provided invalid parameters (default database) for the service! Please check you service config file!");
 			}
 			if(resultTimeout == null) {
 				resultTimeout = "90";
 			}
 
+			databaseSettings = new SQLDatabaseSettings(stDbKey, SQLDatabaseType.MySQL, stDbUser,
+					stDbPassword, stDbDatabase, stDbHost, stDbPort);
+
 			// setup the database manager
-			databaseManager = new SQLDatabaseManager(this);
-			queryManager = new QueryManager();
+			storageDatabase = new SQLDatabase(databaseSettings);
+			databaseManager = new SQLDatabaseManager(this, storageDatabase);
+			queryManager = new QueryManager(this, storageDatabase);
 			visualizationManager = VisualizationManager.getInstance();
 			visualizationException = VisualizationException.getInstance();
 			modificationManager = ModificationManager.getInstance();
@@ -165,22 +202,59 @@ public class QueryVisualizationService extends Service {
 
 			if(this.databaseManager.getDatabaseCount() < 1) {
 
-				// the user has no databases yet - add the default database
-				if(!this.databaseManager.addDatabase(defaultDBKey, SQLDatabaseType.MySQL, db2User, db2Password, db2Database, db2Host, db2Port)) {
-					// failed to add the database...
-					throw new Exception("Failed to add the default database for the user!");
-				}
+				// the user has no databases yet - add the example database
+				addDatabase(stDbKey, SQLDatabaseType.valueOf(exType).getCode(), exUser, exPassword, exDatabase, exHost, exPort, 1);
+//				if(!this.databaseManager.addExampleDB()) {
+//					// failed to add the database...
+//					throw new Exception("Failed to add the default database for the user!");
+//				}
 			}
 
 			// get the result cache
 			this.resultCache = MethodResultCache.getInstance(Integer.parseInt(resultTimeout));
 
 		} 
-		catch (NoSuchMethodException e) {
-			logError(e);
-		} 
 		catch(Exception e) {
 			logError(e);
+		}
+	}
+
+	/**
+	 * Adds a sql database to the users available/usable databases (via the sqldatabase manager).
+	 * 
+	 * @param databaseKey key which is later used to identify the database
+	 * @param content Credentials for the database
+	 * 
+	 * @return success or error message, if possible in the requested encoding/format
+	 */
+	@PUT
+	@Path("database/{key}")
+	@Summary("Adds a database with a specified key")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@ApiResponses(value={
+			  @ApiResponse(code = 201, message = "Database added successfully."),
+			  @ApiResponse(code = 400, message = "Database data invalid.")})
+	public HttpResponse addDatabase(
+			@PathParam("key") String databaseKey,
+			@QueryParam(name="vtypei", defaultValue="1") Integer vtypei,
+			@ContentParam String content) {
+		JSONObject o;
+		try{	
+			o = (JSONObject) JSONValue.parseWithException(content);
+			int dbcode = SQLDatabaseType.valueOf(stringfromJSON(o, "db_code")).getCode();
+			String username = stringfromJSON(o, "username");
+			String password = stringfromJSON(o, "password");
+			String database = stringfromJSON(o, "database");
+			String dbhost = stringfromJSON(o, "dbhost");
+			Integer port = intfromJSON(o, "port");
+			return addDatabase(databaseKey,
+					dbcode, username, password, database, dbhost, port, vtypei);
+		} catch (Exception e) {
+			logError(e);
+			HttpResponse res = new HttpResponse(visualizationException.generate(e, "Received invalid JSON"));
+			res.setStatus(400);
+			return res;
 		}
 	}
 
@@ -198,22 +272,8 @@ public class QueryVisualizationService extends Service {
 	 * 
 	 * @return success or error message, if possible in the requested encoding/format
 	 */
-	@PUT
-	@Path("database/{key}")
-	@Summary("Adds a database with a specified key")
-	@Produces(MediaType.APPLICATION_JSON)
-	@ApiResponses(value={
-			  @ApiResponse(code = 201, message = "Database added successfully."),
-			  @ApiResponse(code = 400, message = "Database data invalid.")})
-	public HttpResponse addDatabase(
-			@PathParam("key") String databaseKey,
-			@HeaderParam(name="db_code", defaultValue="2") Integer databaseTypeCode,
-			@HeaderParam(name="username", defaultValue="") String username,
-			@HeaderParam(name="password", defaultValue="") String password,
-			@HeaderParam(name="database", defaultValue="") String database,
-			@HeaderParam(name="dbhost", defaultValue="") String host,
-			@HeaderParam(name="port", defaultValue="0") Integer port,
-			@HeaderParam(name="vtypei", defaultValue="0") Integer visualizationTypeIndex) {
+	public HttpResponse addDatabase( String databaseKey, Integer databaseTypeCode, String username, String password,
+			String database, String host, Integer port, Integer visualizationTypeIndex) {
 		try {
 			if(databaseKey == null || databaseKey.length() < 3) {
 				throw new Exception("Databasekey is too short (Use at least 2 characters).");
@@ -256,7 +316,7 @@ public class QueryVisualizationService extends Service {
 		}
 	}
 	
-
+	
 	/**
 	 * Removes a database from the user's list of configured databases (so that the user can not access the database anymore).
 	 * Other user's database settings are not changed.
@@ -274,14 +334,18 @@ public class QueryVisualizationService extends Service {
 			  @ApiResponse(code = 400, message = "Database removal failed.")})
 	public HttpResponse removeDatabase(
 			@PathParam("key") String databaseKey,
-			@HeaderParam(name="vtypei", defaultValue="0")  Integer visualizationTypeIndex) {
+			@QueryParam(name="vtypei", defaultValue="1") Integer vtypei) {
 		try {			
 			if(databaseKey.equalsIgnoreCase("MonitoringDefault")) {
-				databaseKey = defaultDBKey;
+				databaseKey = stDbKey;
 			}
+			
+			initializeDBConnection();
 
-			if(!databaseManager.removeDatabase(databaseKey)) {
-				throw new Exception("A unknown error occurred!");
+			if (!databaseManager.removeDatabase(databaseKey)) {
+				HttpResponse res = new HttpResponse("Database " + databaseKey + " does not exist!");
+				res.setStatus(404);
+				return res;
 			}
 
 			MethodResult result = new MethodResult();
@@ -291,7 +355,7 @@ public class QueryVisualizationService extends Service {
 			result.addRow(defaultDatabase);
 
 			HttpResponse res = new HttpResponse(
-					visualizationManager.getVisualization(VisualizationType.fromInt(visualizationTypeIndex)).generate(result, null));
+					visualizationManager.getVisualization(VisualizationType.fromInt(vtypei)).generate(result, null));
 			res.setStatus(200);
 			return res;
 		}
@@ -318,7 +382,7 @@ public class QueryVisualizationService extends Service {
 			  @ApiResponse(code = 200, message = "Got Database keys."),
 			  @ApiResponse(code = 400, message = "Retrieving keys failed.")})
 	public HttpResponse getDatabaseKeys(
-			@QueryParam(name="vtypei", defaultValue="0") Integer visualizationTypeIndex) {
+			@QueryParam(name="vtypei", defaultValue="1") Integer visualizationTypeIndex) {
 		try {
 			initializeDBConnection();
 			List<String> keyList = this.databaseManager.getDatabaseKeyList();
@@ -337,7 +401,7 @@ public class QueryVisualizationService extends Service {
 				Object[] currentDatabaseKey = {iterator.next()};
 
 				if(((String)currentDatabaseKey[0]).equalsIgnoreCase("MonitoringDefault")) {
-					currentDatabaseKey[0] = defaultDBKey;
+					currentDatabaseKey[0] = stDbKey;
 				}
 
 				result.addRow(currentDatabaseKey);
@@ -371,12 +435,12 @@ public class QueryVisualizationService extends Service {
 			  @ApiResponse(code = 200, message = "Got filter keys."),
 			  @ApiResponse(code = 400, message = "Retrieving filter keys failed.")})
 	public HttpResponse getFilterKeys(
-			@QueryParam(name="vtypei", defaultValue="0") Integer visualizationTypeIndex) {
+			@QueryParam(name="vtypei", defaultValue="1") Integer visualizationTypeIndex) {
 		try {
 			initializeDBConnection();
 			if(this.filterManager == null) {
 				// initialize filter manager
-				this.filterManager = new SQLFilterManager();
+				this.filterManager = new SQLFilterManager(storageDatabase);
 			}
 
 			List<String> keyList = this.filterManager.getFilterKeyList();
@@ -388,7 +452,7 @@ public class QueryVisualizationService extends Service {
 			if(keyList.isEmpty()) {
 				// in order to encounter the cold-start...
 				// add some examples for the default DB
-				this.addFilter("User", "SELECT DISTINCT user FROM databases.dbs", defaultDBKey, visualizationTypeIndex);
+				this.addFilter("Customers", "SELECT DISTINCT customerNumber FROM `customers`", exKey, visualizationTypeIndex);
 //				this.addFilter("User", "SELECT DISTINCT UID FROM MOBSOS.SESSION", defaultDBKey, visualizationTypeIndex);
 //				this.addFilter("Community", "SELECT DISTINCT CID FROM MOBSOS.MCONTEXT", defaultDBKey, visualizationTypeIndex);
 //				this.addFilter("Service", "SELECT DISTINCT SCODE FROM MOBSOS.INVOCATION", defaultDBKey, visualizationTypeIndex);
@@ -441,12 +505,12 @@ public class QueryVisualizationService extends Service {
 			  @ApiResponse(code = 400, message = "Retrieving filter keys failed.")})
 	public HttpResponse getFilterValues(
 			@PathParam("key") String filterKey,
-			@QueryParam(name="vtypei", defaultValue="0") Integer visualizationTypeIndex) {
+			@QueryParam(name="vtypei", defaultValue="1") Integer visualizationTypeIndex) {
 		try {
 			initializeDBConnection();
 			if(this.filterManager == null) {
 				// initialize filter manager
-				this.filterManager = new SQLFilterManager();
+				this.filterManager = new SQLFilterManager(storageDatabase);
 			}
 
 			HttpResponse res = new HttpResponse(
@@ -467,7 +531,7 @@ public class QueryVisualizationService extends Service {
 	 * 
 	 * @param filterKey the Key that should be used for this filter
 	 * @param SQLQuery SQL  query which is used to retrieve the filter values
-	 * @param databaseKey	key of the database for which the filter has been configured
+	 * @param stDbKey	key of the database for which the filter has been configured
 	 * @param visualizationTypeIndex  encoding of the returned message
 	 * 
 	 * @return success or error message, if possible in the requested encoding/format
@@ -480,16 +544,30 @@ public class QueryVisualizationService extends Service {
 			  @ApiResponse(code = 201, message = "Added filter."),
 			  @ApiResponse(code = 400, message = "Adding filter failed.")})
 	public HttpResponse addFilter(@PathParam("key") String filterKey,
-			@HeaderParam(name="query", defaultValue="") String SQLQuery,
-			@HeaderParam(name="dbkey", defaultValue="") String databaseKey,
-			@HeaderParam(name="vtypei", defaultValue="0") Integer visualizationTypeIndex) {
+			@ContentParam String content,
+			@QueryParam(name="vtypei", defaultValue="1") Integer visualizationTypeIndex) {
+		JSONObject o;
+		try{	
+			o = (JSONObject) JSONValue.parseWithException(content);
+			String query = stringfromJSON(o, "query");
+			String dbkey = stringfromJSON(o, "dbkey");
+			return addFilter(filterKey, query, dbkey, visualizationTypeIndex);
+		} catch (Exception e) {
+			logError(e);
+			HttpResponse res = new HttpResponse(visualizationException.generate(e, "Received invalid JSON"));
+			res.setStatus(400);
+			return res;
+		}
+	}
+
+	public HttpResponse addFilter(String filterKey, String SQLQuery, String databaseKey, Integer visualizationTypeIndex) {
 		try {
 			initializeDBConnection();
 			//TODO: parameter sanity checks
 
 			if(this.filterManager == null) {
 				// initialize filter manager
-				this.filterManager = new SQLFilterManager();
+				this.filterManager = new SQLFilterManager(storageDatabase);
 			}
 
 			if(!this.filterManager.addFilter(filterKey, SQLQuery, databaseKey)) {
@@ -541,16 +619,18 @@ public class QueryVisualizationService extends Service {
 			  @ApiResponse(code = 200, message = "Deleted filter."),
 			  @ApiResponse(code = 400, message = "Deleting filter failed.")})
 	public HttpResponse deleteFilter(@PathParam("key") String filterKey,
-			@HeaderParam(name="vtypei", defaultValue="0") Integer visualizationTypeIndex) {
+			@QueryParam(name="vtypei", defaultValue="1") Integer visualizationTypeIndex) {
 		try {		
 			initializeDBConnection();
 			if(this.filterManager == null) {
 				// initialize filter manager
-				this.filterManager = new SQLFilterManager();
+				this.filterManager = new SQLFilterManager(storageDatabase);
 			}
 
 			if(!this.filterManager.deleteFilter(filterKey)) {
-				throw new Exception("A unknown error occurred!");
+				HttpResponse res = new HttpResponse("Filter " + filterKey + " does not exist!");
+				res.setStatus(404);
+				return res;
 			}
 
 			MethodResult result = new MethodResult();
@@ -573,32 +653,47 @@ public class QueryVisualizationService extends Service {
 	}
 
 
-	@PUT
+	@POST
 	@Path("query")
 	@ResourceListApi(description = "Manage a users queries")
 	@Summary("Creates a new query")
 	@Produces(MediaType.APPLICATION_JSON)
 	@ApiResponses(value={
-			  @ApiResponse(code = 200, message = "Created query."),
-			  @ApiResponse(code = 400, message = "Creating filter failed.")})
+			  @ApiResponse(code = 201, message = "Created query."),
+			  @ApiResponse(code = 400, message = "Creating Query failed.")})
 	public HttpResponse createQuery(
-			@QueryParam(name="query", defaultValue="") String query,
-			@QueryParam(name="queryparams", defaultValue="") String queryParameters,
-			@QueryParam(name="dbkey", defaultValue="") String databaseKey,
-			@QueryParam(name="cache", defaultValue="True") boolean useCache,
-			@QueryParam(name="modtypei", defaultValue="0") int modificationTypeIndex,
-			@QueryParam(name="vtypei", defaultValue="0") int visualizationTypeIndex,
-			@QueryParam(name="vparam1", defaultValue="") String visualizationParameter1,
-			@QueryParam(name="vparam2", defaultValue="") String visualizationParameter2,
-			@QueryParam(name="vparam3", defaultValue="") String visualizationParameter3,
-			@QueryParam(name="save", defaultValue="True") boolean save) {
+			@QueryParam(name="vtypei", defaultValue="1") Integer vtypei,
+			@ContentParam String content) {
+		JSONObject o;
+		try{	
+			o = (JSONObject) JSONValue.parseWithException(content);
+			String query = stringfromJSON(o, "query");
+			String dbKey = stringfromJSON(o, "dbkey");
+			String queryParameters = stringfromJSON(o, "queryparams");
+			boolean useCache = boolfromJSON(o, "cache");
+			Integer modificationTypeIndex = intfromJSON(o, "modtypei");
+			String title = stringfromJSON(o, "title");
+			String width = stringfromJSON(o, "width");
+			String height = stringfromJSON(o, "height");
+			boolean save = boolfromJSON(o, "save");
+			return createQuery(query, queryParameters, dbKey, useCache, modificationTypeIndex, vtypei, title, width, height, save);
+		} catch (Exception e) {
+			logError(e);
+			HttpResponse res = new HttpResponse(visualizationException.generate(e, "Received invalid JSON"));
+			res.setStatus(400);
+			return res;
+		}
+	}
 
-		String queryString = createQueryString(query, new String[]{queryParameters}, databaseKey, useCache, modificationTypeIndex, visualizationTypeIndex, new String[]{visualizationParameter1, visualizationParameter2, visualizationParameter3}, save);
+	public HttpResponse createQuery(String query, String queryParameters, String databaseKey, boolean useCache,
+			int modificationTypeIndex, int visualizationTypeIndex, String title, String width, String height,
+			boolean save) {
+		String queryString = createQueryString(query, new String[]{queryParameters}, databaseKey, useCache, modificationTypeIndex, visualizationTypeIndex, new String[]{title, width, height}, save);
 		HttpResponse res = new HttpResponse(queryString);
 		if (queryString.startsWith("The Query has lead to an error.")) {
 			res.setStatus(400);
 		} else {
-			res.setStatus(200);
+			res.setStatus(201);
 		}
 		return res;
 	}
@@ -680,8 +775,10 @@ public class QueryVisualizationService extends Service {
 	@ApiResponses(value={
 			  @ApiResponse(code = 200, message = "Visualization created."),
 			  @ApiResponse(code = 400, message = "Creating visualization failed."),
-			  @ApiResponse(code = 400, message = "Didn't find requested visualization.")})
+			  @ApiResponse(code = 404, message = "Didn't find requested visualization.")})
 	public HttpResponse visualizeQuery(@PathParam("key") String key) {
+		
+		initializeDBConnection();
 
 		Query query = null;
 		try {
@@ -732,8 +829,10 @@ public class QueryVisualizationService extends Service {
 		String queryKey = ""; //If empty, the query generates a new one
 		try {
 			database = databaseManager.getDatabaseInstance(databaseKey);
-			query = new Query(database.getJdbcInfo(), database.getUser(), database.getPassword(), database.getDatabase(), database.getHost(), database.getPort(),
-					queryStatement, useCache, modificationTypeIndex, visualizationTypeIndex, visualizationParamaters, queryKey);
+			query = new Query(getL2pThread().getContext().getMainAgent().getId(), database.getJdbcInfo(),
+					database.getUser(), database.getPassword(), database.getDatabase(), database.getHost(),
+					database.getPort(), queryStatement, useCache, modificationTypeIndex, visualizationTypeIndex,
+					visualizationParamaters, queryKey);
 			queryManager.storeQuery(query);
 		} catch (Exception e) {
 			logError(e.getMessage());
@@ -757,9 +856,9 @@ public class QueryVisualizationService extends Service {
 		}
 
 		if(methodResult == null) { //query was not cached or no cached result desired
-			SQLDatabase sqlDatabase = new SQLDatabase(query.getJdbcInfo(), query.getUsername(), query.getPassword(), 
-					query.getDatabase(), query.getHost(), query.getPort());
+			SQLDatabase sqlDatabase = new SQLDatabase(query);
 
+			sqlDatabase.connect();
 			ResultSet resultSet = sqlDatabase.executeQuery(query.getQueryStatement());
 			if(resultSet == null) {
 				return visualizationException.generate(new Exception(), "Failed to get a result set from the desired database!");
@@ -770,6 +869,7 @@ public class QueryVisualizationService extends Service {
 			else{
 				methodResult = transformToMethodResult(resultSet, ""); //No caching desired by this query
 			}
+			sqlDatabase.disconnect();
 		}
 
 		Modification modification = modificationManager.getModification(ModificationType.fromInt(query.getModificationTypeIndex()));
@@ -804,9 +904,14 @@ public class QueryVisualizationService extends Service {
 
 			// go through the query, replace placeholders by the values from the query parameters
 			int parameterCount = queryParameters.length;
-			Pattern placeholderPattern = Pattern.compile("\\$.*?\\$");
+			Pattern placeholderPattern = Pattern.compile("\\?");
 			for(int i=0; i<parameterCount; i++) {
-				query = placeholderPattern.matcher(query).replaceFirst(queryParameters[i]);
+				try {
+					Integer.parseInt(queryParameters[i]);
+					query = placeholderPattern.matcher(query).replaceFirst(queryParameters[i]);
+				} catch (NumberFormatException e) {
+					query = placeholderPattern.matcher(query).replaceFirst('"' + queryParameters[i] + '"');
+				}
 			}
 			return query;
 		}
@@ -968,7 +1073,7 @@ public class QueryVisualizationService extends Service {
 	private ResultSet getResultSet(String sqlQuery, String databaseKey) throws L2pServiceException {
 		try{
 			if(databaseKey == null || databaseKey.isEmpty() || databaseKey.equalsIgnoreCase("undefined") || databaseKey.equalsIgnoreCase("MonitoringDefault")) {
-				databaseKey = defaultDBKey;
+				databaseKey = stDbKey;
 				logMessage("No database key has been provided. Using default DB: " + databaseKey);
 			}
 

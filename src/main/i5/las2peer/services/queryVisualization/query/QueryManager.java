@@ -1,11 +1,16 @@
 package i5.las2peer.services.queryVisualization.query;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+
 import i5.las2peer.execution.L2pThread;
 import i5.las2peer.logging.NodeObserver.Event;
 import i5.las2peer.p2p.Node;
 import i5.las2peer.persistency.Envelope;
 import i5.las2peer.security.Agent;
 import i5.las2peer.security.Context;
+import i5.las2peer.services.queryVisualization.QueryVisualizationService;
+import i5.las2peer.services.queryVisualization.database.SQLDatabase;
 
 /**
  * 
@@ -16,7 +21,9 @@ import i5.las2peer.security.Context;
  */
 public class QueryManager {
 	
+	private long user = 0;
 	private Envelope storedQuery = null;
+	private SQLDatabase storageDatabase = null;
 	
 	
 	/*************** "service" helper methods *************************/
@@ -74,7 +81,9 @@ public class QueryManager {
 	}	
 	
 	
-	public QueryManager() {
+	public QueryManager(QueryVisualizationService service, SQLDatabase dbm) {
+		user = getL2pThread().getContext().getMainAgent().getId();
+		storageDatabase = dbm;
 	}
 	
 	// add a query to the p2p storage
@@ -82,12 +91,11 @@ public class QueryManager {
 		Query[] queryArray = new Query[1];
 		queryArray[0] = query;
 		try {
-			Agent anonymous = getAnonymousAgent();
-			storedQuery = Envelope.createClassIdEnvelope(new Query[0], getEnvelopeId(query.getKey()), getAnonymousAgent());
-			storedQuery.open(anonymous);
-			storedQuery.updateContent ( queryArray );
-			storedQuery.addSignature(anonymous);
-			storedQuery.store();
+			storageDatabase.connect();
+			PreparedStatement p = storageDatabase.prepareStatement(Query.getReplace());
+			query.prepareStatement(p);
+			p.executeUpdate();
+			storageDatabase.disconnect();
 			logMessage("stored query: " + query.getKey());	
 			return true;
 		} catch (Exception e) {
@@ -101,9 +109,14 @@ public class QueryManager {
 	// get a query from the p2p storage
 	public Query getQuery(String queryKey) {
 		try {
-			storedQuery = Context.getCurrent().getStoredObject(Query[].class, getEnvelopeId (queryKey));
-			storedQuery.open(getAnonymousAgent());
-			Query[] queryArray = storedQuery.getContent(Query[].class);
+			storageDatabase.connect();
+			PreparedStatement s = storageDatabase.prepareStatement("SELECT * FROM `QUERIES` WHERE `USER` = ? AND `KEY` = ?");
+			s.setLong(1, getL2pThread().getContext().getMainAgent().getId());
+			s.setString(2, queryKey);
+			ResultSet r = s.executeQuery();
+			Query[] queryArray = Query.fromResultSet(r);
+			storageDatabase.disconnect();
+
 			return queryArray[0];
 		} catch ( Exception e ) {
 			logMessage("Failed to load query with key! " + queryKey + " Exception: " +e);

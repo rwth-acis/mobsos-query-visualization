@@ -1,12 +1,15 @@
 package i5.las2peer.services.queryVisualization.database;
 
 import i5.las2peer.security.Context;
+import i5.las2peer.services.queryVisualization.query.Query;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+
 
 /**
  * SQLDatabase.java
@@ -25,8 +28,9 @@ public class SQLDatabase {
 	private String database = null;
 	private String host = null;
 	private int port = -1;
+	private String key = null;
 	
-	public SQLDatabase(SQLDatabaseType jdbcInfo, String username, String password, String database, String host, int port) {
+	public SQLDatabase(SQLDatabaseType jdbcInfo, String username, String password, String database, String host, int port, String key) {
 
 		//TODO: check parameters
 		
@@ -36,6 +40,27 @@ public class SQLDatabase {
 		this.host = host;
 		this.port = port;
 		this.database = database;
+		this.key = key;
+	}
+	
+	public SQLDatabase(SQLDatabaseSettings settings) {
+		this.jdbcInfo = settings.getJdbcInfo();
+		this.username = settings.getUsername();
+		this.password = settings.getPassword();
+		this.host = settings.getHost();
+		this.port = settings.getPort();
+		this.database = settings.getDatabase();
+		this.key = settings.getKey();
+	}
+
+	public SQLDatabase(Query query) {
+		this.jdbcInfo = query.getJdbcInfo();
+		this.username = query.getUsername();
+		this.password = query.getPassword();
+		this.host = query.getHost();
+		this.port = query.getPort();
+		this.database = query.getDatabase();
+		this.key = query.getKey();
 	}
 	
 	public boolean connect() throws Exception {
@@ -96,17 +121,11 @@ public class SQLDatabase {
 	public ResultSet executeQuery(String sqlQuery) throws Exception  {
 
 		// I don't allow escape characters...
-		// at least some very basic escape checking (I don't think it is sufficient for a real attack though....)
+		// at least some very basic escape checking
+		// (I don't think it is sufficient for a real attack though....)
 		sqlQuery = sqlQuery.replace("\\", "\\\\");
 		sqlQuery = sqlQuery.replace("\0", "\\0");
 		sqlQuery = sqlQuery.replace(";", "");
-		
-		// make sure one is connected to a database
-		if(!isConnected()) {
-			if(!connect()) {
-				return null;
-			}
-		}
 		
 		try {
 			Statement statement = connection.createStatement();
@@ -114,14 +133,14 @@ public class SQLDatabase {
 			
 			return resultSet;
 		}
-		catch (SQLException e) {
-			Context.logMessage(this, e.getMessage());
-			throw e;
-		}
 		catch(Exception e) {
 			Context.logMessage(this, e.getMessage());
 			throw e;
 		}
+	}
+	
+	public PreparedStatement prepareStatement(String sql) throws SQLException {
+		return connection.prepareStatement(sql);
 	}
 
 	public String getUser()  {
@@ -143,8 +162,13 @@ public class SQLDatabase {
 	public int getPort() {
 		return this.port;
 	}
+
+	public String getKey() {
+		return this.key;
+	}
 	
 	public SQLDatabaseType getJdbcInfo() {
 		return jdbcInfo;
 	}
+
 }
