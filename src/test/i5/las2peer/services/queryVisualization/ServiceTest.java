@@ -99,7 +99,7 @@ public class ServiceTest {
         testDB.put("password", "qv_password");
         testDB.put("database", "QVS");
         testDB.put("dbhost", "localhost");
-        testDB.put("port", "3306");
+        testDB.put("port", 3306);
 
         testFilter.put("query", "SELECT * FROM USERS");
         testFilter.put("dbkey", testDBName);

@@ -145,11 +145,7 @@ public class QueryVisualizationService extends Service {
 	}
 
 	private static int intfromJSON(JSONObject obj, String key) {
-		try {
-			return (int)Integer.parseInt((String) obj.get(key));
-		} catch (Exception e) {
-			return (int) obj.get(key);
-		}
+		return (int) obj.get(key);
 	}
 
 	private static boolean boolfromJSON(JSONObject obj, String key) {
