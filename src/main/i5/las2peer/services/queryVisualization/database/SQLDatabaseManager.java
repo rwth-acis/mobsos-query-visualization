@@ -140,7 +140,7 @@ public class SQLDatabaseManager {
 		try {
 			connect();
 			PreparedStatement p = storageDatabase.prepareStatement(
-					"SELECT * FROM QVS.DATABASE_CONNECTIONS WHERE USER_ID = ?;");
+					"SELECT * FROM QVS.DATABASE_CONNECTIONS WHERE USER = ?;");
 			p.setLong(1, user);
 			ResultSet databases = p.executeQuery();
 			settings = SQLDatabaseSettings.fromResultSet(databases);
@@ -168,8 +168,8 @@ public class SQLDatabaseManager {
 			}
 			PreparedStatement p = storageDatabase.prepareStatement(
 					"REPLACE INTO `DATABASE_CONNECTIONS`(`JDBCINFO`, `KEY`, `USERNAME`, `PASSWORD`,"
-					+ "`DATABASE`, `HOST`, `PORT`, `USER_ID`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-			p.setInt(1, databaseSettings.getJdbcInfo().ordinal());
+					+ "`DATABASE`, `HOST`, `PORT`, `USER`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+			p.setInt(1, databaseSettings.getJdbcInfo().getCode());
 			p.setString(2, databaseSettings.getKey());
 			p.setString(3, databaseSettings.getUsername());
 			p.setString(4, databaseSettings.getPassword());
@@ -285,14 +285,12 @@ public class SQLDatabaseManager {
 	public SQLDatabase getDatabaseInstance(String databaseKey) throws Exception {
 		try {
 			SQLDatabase sqlDatabase = loadedDatabases.get(databaseKey);
-			
+
 			if(sqlDatabase != null) {
 				//TODO: check that the database is still open/valid
-			}
-			
-			else {
+			} else {
 				SQLDatabaseSettings databaseSettings = userDatabaseMap.get(databaseKey);
-				
+
 				if(databaseSettings == null) {
 					// the requested database is not known
 					String dbKeyListString = "";
@@ -300,12 +298,12 @@ public class SQLDatabaseManager {
 					while(iterator.hasNext()) {
 						dbKeyListString += " " + iterator.next();
 					}
-					
+
 					throw new Exception("The requested database is not known/configured! (Requested:" + databaseKey + ", Available: "+dbKeyListString + ")");
 				}
-				
+
 				sqlDatabase = new SQLDatabase(databaseSettings);
-			
+
 				// try to connect ...
 				sqlDatabase.connect();
 			}
@@ -348,7 +346,7 @@ public class SQLDatabaseManager {
 	private void removeDB(String databaseKey) throws SQLException {
 		try {
 			connect();
-			PreparedStatement s = storageDatabase.prepareStatement("DELETE FROM `DATABASE_CONNECTIONS` WHERE `KEY` = ? AND `USER_ID` = ?");
+			PreparedStatement s = storageDatabase.prepareStatement("DELETE FROM `DATABASE_CONNECTIONS` WHERE `KEY` = ? AND `USER` = ?");
 			s.setString(1, databaseKey);
 			s.setLong(2, user);
 			s.executeUpdate();

@@ -113,7 +113,7 @@ public class SQLFilterManager {
 		try {
 			connect();
 			PreparedStatement p = storageDatabase.prepareStatement(
-					"SELECT * FROM QVS.FILTERS WHERE UID = ?;");
+					"SELECT * FROM QVS.FILTERS WHERE USER = ?;");
 			p.setLong(1, user.getId());
 			ResultSet set = p.executeQuery();
 			settings = SQLFilterSettings.fromResultSet(set);
@@ -143,7 +143,7 @@ public class SQLFilterManager {
 			boolean wasConnected = connected;
 			connect();
 			PreparedStatement p = storageDatabase.prepareStatement(
-					"INSERT INTO `FILTERS` (`KEY`, `QUERY`, `UID`, `DB_KEY`) VALUES (?,	?,	?,	?);");
+					"INSERT INTO `FILTERS` (`KEY`, `QUERY`, `USER`, `DB_KEY`) VALUES (?,	?,	?,	?);");
 			p.setString(1, filterKey);
 			p.setString(2, SQLQuery);
 			p.setLong(3, getActiveAgent().getId());
@@ -172,7 +172,7 @@ public class SQLFilterManager {
 				// delete from hash map
 				boolean wasConnected = connected;
 				connect();
-				PreparedStatement s = storageDatabase.prepareStatement("DELETE FROM `FILTERS` WHERE `KEY` = ? AND `UID` = ?");
+				PreparedStatement s = storageDatabase.prepareStatement("DELETE FROM `FILTERS` WHERE `KEY` = ? AND `USER` = ?");
 				s.setString(1, filterKey);
 				s.setLong(2, getActiveAgent().getId());
 				s.executeUpdate();
