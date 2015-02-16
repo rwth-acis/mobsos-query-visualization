@@ -6,9 +6,7 @@ import java.sql.ResultSet;
 import i5.las2peer.execution.L2pThread;
 import i5.las2peer.logging.NodeObserver.Event;
 import i5.las2peer.p2p.Node;
-import i5.las2peer.persistency.Envelope;
 import i5.las2peer.security.Agent;
-import i5.las2peer.security.Context;
 import i5.las2peer.services.queryVisualization.QueryVisualizationService;
 import i5.las2peer.services.queryVisualization.database.SQLDatabase;
 
@@ -21,8 +19,6 @@ import i5.las2peer.services.queryVisualization.database.SQLDatabase;
  */
 public class QueryManager {
 	
-	private long user = 0;
-	private Envelope storedQuery = null;
 	private SQLDatabase storageDatabase = null;
 	
 	
@@ -71,18 +67,7 @@ public class QueryManager {
 	
 	/************************** end of service helper methods ************************************/
 	
-	/**
-	 * get an id String for the envelope stored for an user
-	 * 
-	 * @param queryKey
-	 */
-	public static String getEnvelopeId (String queryKey) {
-		return "query-" + queryKey;
-	}	
-	
-	
 	public QueryManager(QueryVisualizationService service, SQLDatabase dbm) {
-		user = getL2pThread().getContext().getMainAgent().getId();
 		storageDatabase = dbm;
 	}
 	
