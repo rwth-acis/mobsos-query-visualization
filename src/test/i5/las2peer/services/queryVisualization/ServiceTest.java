@@ -94,7 +94,7 @@ public class ServiceTest {
 		
         connector.updateServiceList();
         //avoid timing errors: wait for the repository manager to get all services before continuing
-        testDB.put("db_code", SQLDatabaseType.MySQL);
+        testDB.put("db_code", SQLDatabaseType.MySQL.getCode());
         testDB.put("username", "qv_user");
         testDB.put("password", "qv_password");
         testDB.put("database", "QVS");
