@@ -106,7 +106,9 @@ public class ServiceTest {
 
         testQuery.put("query", "SELECT * FROM `DATABASE_CONNECTIONS` WHERE `KEY` = ?");
         testQuery.put("dbkey", testDBName);
-        testQuery.put("queryparams", testDBName);
+        JSONArray qp = new JSONArray();
+        qp.add(testDBName);
+        testQuery.put("queryparams", qp);
         testQuery.put("cache", true);
         testQuery.put("modtypei", 0);
         testQuery.put("title", "testQuery");
@@ -240,12 +242,13 @@ public class ServiceTest {
             ClientResponse result = c.sendRequest("GET", mainPath + dbPath, ""); // Remove DB first
             assertEquals(200, result.getHttpCode());
             JSONArray expected = new JSONArray();
-            for (String s : new String[]{"DatabaseKeys", "string", testDBName, "storage"}) {
+            JSONArray actual = (JSONArray)JSONValue.parse(result.getResponse());
+            for (String s : new String[]{"DatabaseKeys", "string", testDBName}) {
             	JSONArray inner = new JSONArray();
             	inner.add(s);
             	expected.add(inner);
+            	assertTrue(inner.toString() + " should be in the data. Actual data: " + actual, actual.contains(inner));
 			}
-            assertEquals(expected, (JSONArray)JSONValue.parse(result.getResponse()));
             
 			System.out.println("Result of 'GetDatabases': " + result.getResponse().trim());
 		}
@@ -353,22 +356,25 @@ public class ServiceTest {
             result = c.sendRequest("GET", mainPath + filterPath, "");
             assertEquals(200, result.getHttpCode());
             JSONArray expected = new JSONArray();
-            JSONArray inner = new JSONArray();
-            inner.add("FilterKeys");
-            inner.add("DatabaseKeys");
-            expected.add(inner);
+            JSONArray names = new JSONArray();
+            names.add("FilterKeys");
+            names.add("DatabaseKeys");
+            expected.add(names);
 
-            inner = new JSONArray();
-            inner.add("string");
-            inner.add("string");
-            expected.add(inner);
+            JSONArray types = new JSONArray();
+            types.add("string");
+            types.add("string");
+            expected.add(types);
 
-            inner = new JSONArray();
-            inner.add(testFilterName);
-            inner.add(testDBName);
-            expected.add(inner);
+            JSONArray content = new JSONArray();
+            content.add(testFilterName);
+            content.add(testDBName);
+            expected.add(content);
             
-            assertEquals(expected, (JSONArray)JSONValue.parse(result.getResponse()));
+            JSONArray actual = (JSONArray)JSONValue.parse(result.getResponse());
+            assertTrue(expected.contains(names));
+            assertTrue(expected.contains(types));
+            assertTrue(expected.contains(content));
             
 			System.out.println("Result of 'GetFilters': " + result.getResponse().trim());
 		}
@@ -474,13 +480,13 @@ public class ServiceTest {
             assertEquals(400, result.getHttpCode());
 
             // Database does not exist yet
-            result = c.sendRequest("POST", mainPath + queryPath, testQuery.toJSONString(), "application/json", "application/json", emptyPairs);
+            result = c.sendRequest("POST", mainPath + queryPath, testQuery.toJSONString(), "application/json", "*/*", emptyPairs);
             assertEquals(400, result.getHttpCode());
 
             // Now create database first
             result = c.sendRequest("PUT", mainPath + dbPath + "/" + testDBName, testDB.toJSONString(), "application/json", "application/json", emptyPairs);
             assertEquals(201, result.getHttpCode());
-            result = c.sendRequest("POST", mainPath + queryPath, testQuery.toJSONString(), "application/json", "application/json", emptyPairs);
+            result = c.sendRequest("POST", mainPath + queryPath, testQuery.toJSONString(), "application/json", "*/*", emptyPairs);
             assertEquals(201, result.getHttpCode());
             Integer key = 0;
             try {
