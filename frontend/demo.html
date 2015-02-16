@@ -124,7 +124,7 @@
         </select>
         <h2><label for="qv_query">Query statement:</label></h2>
         <!--<textarea id="qv_query" rows="5" cols="">select est_date, count(*) as New_Posts from db2info5.bw_entries where est_date > current_date - 3 months and est_date < current_date group by est_date order by est_date asc</textarea>-->
-        <textarea id="qv_query" rows="5" cols="">SELECT DATE(m.REQUEST_STARTTIME) as DATE, COUNT(*) as ACTIVITY FROM MOBSOS.MONITORING m WHERE m.UID = 'renzel' GROUP BY DATE(m.REQUEST_STARTTIME) ORDER BY DATE(m.REQUEST_STARTTIME) DESC</textarea>
+        <textarea id="qv_query" rows="5" cols="">SELECT * FROM `employees` WHERE `employeeNumber` > '1500' LIMIT 50</textarea>
         <h2><a href="javascript:toggle_filter()">+ Filter</a></h2>
         <div id="qv_filter"></div>
         <h2><label for="qv_modification_type">Modification Function:</label></h2>
