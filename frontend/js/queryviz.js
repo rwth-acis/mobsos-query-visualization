@@ -68,6 +68,7 @@ var QV = (function(QV){
             return '';
         });
 
+        /* jshint ignore:start */
         if (window.execScript){
             window.execScript(scripts);
         } else {
@@ -79,6 +80,7 @@ var QV = (function(QV){
             head.appendChild(scriptElement);
             head.removeChild(scriptElement);
         }
+        /* jshint ignore:end */
         return cleaned;
     };
 
@@ -224,24 +226,31 @@ var QV = (function(QV){
                     outputNode.innerHTML = QV.HELPER.stripAndExecuteScript(" " + output);
                 }
                 if(typeof callback == 'function'){
-                    callback(result);
+                    if (result === null) {
+                        restClient.post("query", content, qParams, success, error);
+                    } else {
+                        callback(result);
+                    }
                 }
             };
 
-            var headerData = {
+            var content = {
                 query: query,
-                queryParams: queryParams,
+                queryparams: queryParams,
                 dbkey: databaseKey,
                 cache: useCache,
                 modtypei: modficationTypeIndex,
-                vtypei: visualizationTypeIndex,
                 title: visualizationOptions[0],
                 width: visualizationOptions[1],
                 height: visualizationOptions[2],
                 save: save
             };
 
-            restClient.get("query", headerData, success, error);
+            var qParams = {
+                vtypei: visualizationTypeIndex
+            };
+
+            restClient.post("query", content, qParams, success, error);
         };
 
         /**
@@ -256,7 +265,11 @@ var QV = (function(QV){
             var success = function(result, type, status) {
                 outputnode.innerHTML = QV.HELPER.stripAndExecuteScript(" " + result);
                 if(typeof callback == 'function'){
-                    callback(result);
+                    if (result === null) {
+                        restClient.get("query/" + key, null, success, error);
+                    } else {
+                        callback(result);
+                    }
                 }
             };
 
@@ -293,6 +306,18 @@ var QV = (function(QV){
             addDatabase: function(databaseKey,databaseTypeCode,username,password,database,host,port,callback){
                 if(!restClient.loggedIn()) return;
 
+                var content = {
+                    db_code: databaseTypeCode,
+                    username: username,
+                    password: password,
+                    database: database,
+                    dbhost: host,
+                    port: port,
+                };
+                var queryParams = {
+                    vtypei: QV.VISUALIZATIONTYPE.JSON
+                };
+
                 var success = function(result, type, status) {
                     if (typeof result !== "object") {
                         try{
@@ -305,24 +330,18 @@ var QV = (function(QV){
                     if(result[2] == databaseKey){
                         alert("Database added!");
                         if(typeof callback == 'function'){
-                            callback(result.slice(2));
+                            if (result === null) {
+                                restClient.put("database/" + databaseKey, content, queryParams, success, error);
+                            } else {
+                                callback(result.slice(2));
+                            }
                         }
                     } else {
                         alert("Database addition failed");
                     }
                 };
 
-                var headerData = {
-                    db_code: databaseTypeCode,
-                    username: username,
-                    password: password,
-                    database: database,
-                    dbhost: host,
-                    port: port,
-                    vtypei: ""+QV.VISUALIZATIONTYPE.JSON
-                };
-
-                restClient.put("database/" + databaseKey, headerData, success, error);
+                restClient.put("database/" + databaseKey, content, queryParams, success, error);
             },
             /**
              * Removes a database of the set of the configured databases of the user currently logged in
@@ -331,6 +350,10 @@ var QV = (function(QV){
              */
             removeDatabase: function(databaseKey,callback){
                 if(!restClient.loggedIn()) return;
+
+                var queryParams = {
+                    vtypei: QV.VISUALIZATIONTYPE.JSON
+                };
 
                 var success = function(result, type, status) {
                     if (typeof result !== "object") {
@@ -344,16 +367,16 @@ var QV = (function(QV){
                     if(result[2] == databaseKey){
                         alert("Database removed!");
                         if(typeof callback == 'function'){
-                            callback(result.slice(2));
+                            if (result === null) {
+                                restClient.delete("database/" + databaseKey, null, queryParams, success, error);
+                            } else {
+                                callback(result.slice(2));
+                            }
                         }
                     }
                 };
 
-                var headerData = {
-                    vtypei: ""+QV.VISUALIZATIONTYPE.JSON
-                };
-
-                restClient.delete("database/" + databaseKey, headerData, success, error);
+                restClient.delete("database/" + databaseKey, null, queryParams, success, error);
             },
             /**
              * Adds a new filter to the set of the configured filters of the user currently logged in
@@ -364,6 +387,15 @@ var QV = (function(QV){
              */
             addFilter: function(filterKey,query,databaseKey,callback){
                 if(!restClient.loggedIn()) return;
+
+                var content = {
+                    query: query,
+                    dbkey: databaseKey,
+                };
+
+                var queryParams = {
+                    vtypei: QV.VISUALIZATIONTYPE.JSON
+                };
 
                 var success = function(result, type, status) {
                     if (typeof result !== "object") {
@@ -377,20 +409,18 @@ var QV = (function(QV){
                     if(result[2] == filterKey){
                         alert("Filter added!");
                         if(typeof callback == 'function'){
-                            callback(result.slice(2));
+                            if (result === null) {
+                                restClient.put("filter/" + filterKey, content, queryParams, success, error);
+                            } else {
+                                callback(result.slice(2));
+                            }
                         }
                     } else {
                         alert("Filter addition failed");
                     }
                 };
 
-                var headerData = {
-                    query: query,
-                    dbkey: databaseKey,
-                    vtypei: ""+QV.VISUALIZATIONTYPE.JSON
-                };
-
-                restClient.put("filter/" + filterKey, headerData, success, error);
+                restClient.put("filter/" + filterKey, content, queryParams, success, error);
             },
             /**
              * Removes a filter of the set of the configured filters of the user currently logged in
@@ -399,6 +429,10 @@ var QV = (function(QV){
              */
             removeFilter: function(filterKey,callback){
                 if(!restClient.loggedIn()) return;
+
+                var queryParams = {
+                    vtypei: QV.VISUALIZATIONTYPE.JSON
+                };
 
                 var success = function(result, type, status) {
                     if (typeof result !== "object") {
@@ -412,18 +446,18 @@ var QV = (function(QV){
                     if(result[2] == filterKey){
                         alert("Filter removed!");
                         if(typeof callback == 'function'){
-                            callback(result.slice(2));
+                            if (result === null) {
+                                restClient.delete("filter/" + filterKey, null, queryParams, success, error);
+                            } else {
+                                callback(result.slice(2));
+                            }
                         }
                     } else {
                         alert("Filter removal failed");
                     }
                 };
 
-                var headerData = {
-                    vtypei: ""+QV.VISUALIZATIONTYPE.JSON
-                };
-
-                restClient.delete("filter/" + filterKey, headerData, success, error);
+                restClient.delete("filter/" + filterKey, null, queryParams, success, error);
             },
             /**
              * Retrieves the keys of the databases configured for the user currently logged in
@@ -432,6 +466,10 @@ var QV = (function(QV){
             retrieveDatabaseKeys: function(callback){
                 if(!restClient.loggedIn()) return;
 
+                var queryParams = {
+                    vtypei: QV.VISUALIZATIONTYPE.JSON
+                };
+
                 var success = function(result, type, status) {
                     if (typeof result !== "object") {
                         try{
@@ -442,15 +480,15 @@ var QV = (function(QV){
                         }
                     }
                     if(typeof callback == 'function'){
-                        callback(result.slice(2));
+                        if (result === null) {
+                            restClient.get("database", null, queryParams, success, error);
+                        } else {
+                            callback(result.slice(2));
+                        }
                     }
                 };
 
-                var headerData = {
-                    vtypei: ""+QV.VISUALIZATIONTYPE.JSON
-                };
-
-                restClient.get("database", headerData, success, error);
+                restClient.get("database", null, queryParams, success, error);
             },
             /**
              * Retrieves the keys of the filters configured for the user currently logged in
@@ -459,6 +497,10 @@ var QV = (function(QV){
             retrieveFilterKeys: function(callback){
                 if(!restClient.loggedIn()) return;
 
+                var queryParams = {
+                    vtypei: QV.VISUALIZATIONTYPE.JSON
+                };
+
                 var success = function(result, type, status) {
                     if (typeof result !== "object") {
                         try{
@@ -469,15 +511,15 @@ var QV = (function(QV){
                         }
                     }
                     if(typeof callback == 'function'){
-                        callback(result.slice(2));
+                        if (result === null) {
+                            restClient.get("filter", null, queryParams, success, error);
+                        } else {
+                            callback(result.slice(2));
+                        }
                     }
                 };
 
-                var headerData = {
-                    vtypei: ""+QV.VISUALIZATIONTYPE.JSON
-                };
-
-                restClient.get("filter", headerData, success, error);
+                restClient.get("filter", null, queryParams, success, error);
             },
             /**
              * Retrieves the values for a specific filter specified by its key
@@ -501,11 +543,11 @@ var QV = (function(QV){
                     }
                 };
 
-                var headerData = {
-                    vtypei: ""+QV.VISUALIZATIONTYPE.JSON
+                var queryParams = {
+                    vtypei: QV.VISUALIZATIONTYPE.JSON
                 };
 
-                restClient.get("filter/" + filterKey, headerData, success, error);
+                restClient.get("filter/" + filterKey, null, queryParams, success, error);
             },
             /**
              * Retrieves the visualization for a query and a set of database and modification options
@@ -608,7 +650,9 @@ var QV = (function(QV){
      */
     QV.fromKey = function(key){
         var randomId = QV.HELPER.getRandomId(10,true);
+        /* jshint ignore:start */
         document.write('<div id="' + randomId + '" ></div>');
+        /* jshint ignore:end */
         var container = document.getElementById(randomId);
         var qv = new QV.Visualizer();
         qv.fromKey(key,container);

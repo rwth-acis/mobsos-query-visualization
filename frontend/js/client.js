@@ -63,20 +63,20 @@ TemplateServiceClient.prototype.postMethod = function(input, successCallback, er
 *   - successCallback: a callback function invoked in case the request succeeded. Expects three parameters "data", "type" and "status", where "data" represents the content of the response, "type" describes the MIME-type of the response and "status" contains the HTTP return code.
 *   - errorCallback: a callback function invoked in case the request failed. Expects two parameters "error" and "status" representing the error occurred and "status" containing the HTTP error return code.
 */
-TemplateServiceClient.prototype.get = function(path, content, successCallback, errorCallback) {
-	this.sendRequest("GET", path, content, "application/json", null, successCallback, errorCallback);
+TemplateServiceClient.prototype.get = function(path, content, queryParams, successCallback, errorCallback) {
+	this.sendRequest("GET", path, content, queryParams, "application/json", null, successCallback, errorCallback);
 };
 
-TemplateServiceClient.prototype.post = function(path, content, successCallback, errorCallback) {
-	this.sendRequest("POST", path, content, "application/json", null, successCallback, errorCallback);
+TemplateServiceClient.prototype.post = function(path, content, queryParams, successCallback, errorCallback) {
+	this.sendRequest("POST", path, content, queryParams, "application/json", null, successCallback, errorCallback);
 };
 
-TemplateServiceClient.prototype.put = function(path, content, successCallback, errorCallback) {
-	this.sendRequest("PUT", path, content, "application/json", null, successCallback, errorCallback);
+TemplateServiceClient.prototype.put = function(path, content, queryParams, successCallback, errorCallback) {
+	this.sendRequest("PUT", path, content, queryParams, "application/json", null, successCallback, errorCallback);
 };
 
-TemplateServiceClient.prototype.delete = function(path, content, successCallback, errorCallback) {
-	this.sendRequest("DELETE", path, content, "application/json", null, successCallback, errorCallback);
+TemplateServiceClient.prototype.delete = function(path, content, queryParams, successCallback, errorCallback) {
+	this.sendRequest("DELETE", path, content, queryParams, "application/json", null, successCallback, errorCallback);
 };
 
 /**
@@ -85,13 +85,14 @@ TemplateServiceClient.prototype.delete = function(path, content, successCallback
 *   - method: the HTTP method used
 *	- relativePath: the path relative to the client's endpoint URL
 *   - content: the content to be sent in the HTTP request's body
+*   - queryParams: Parameters that are added to the URL.
 *   - mime: the MIME-type of the content
 *   - customHeaders: a JSON string with additional header parameters to be sent
 *   - successCallback: a callback function invoked in case the request succeeded. Expects three parameters "data", "type" and "status", where "data" represents the content of the response, "type" describes the MIME-type of the response and "status" contains the HTTP return code.
 *   - errorCallback: a callback function invoked in case the request failed. Expects two parameters "error" and "status" representing the error occurred and "status" containing the HTTP error return code.
 *
 */
-TemplateServiceClient.prototype.sendRequest = function(method, relativePath, content, mime, customHeaders, successCallback, errorCallback) {
+TemplateServiceClient.prototype.sendRequest = function(method, relativePath, content, queryParams, mime, customHeaders, successCallback, errorCallback) {
 	var mtype = "text/plain; charset=UTF-8";
 	if(mime !== undefined) {
 		mtype = mime;
@@ -110,13 +111,21 @@ TemplateServiceClient.prototype.sendRequest = function(method, relativePath, con
 		console.log("Anonymous request... ");
 	}
 
+    if (typeof queryParams == "object") {
+        for (var param in queryParams) {
+            if(rurl.indexOf("?") > 0){
+                rurl += "&" + param + "=" + queryParams[param];
+            } else {
+                rurl += "?" + param + "=" + queryParams[param];
+            }
+        }
+    }
+
 	var ajaxObj = {
 		url: rurl,
 		type: method.toUpperCase(),
-		data: JSON.stringify(content),
 		contentType: mtype,
 		crossDomain: true,
-		headers: {},
 
 		error: function (xhr, errorType, error) {
 			console.log(error);
@@ -131,6 +140,10 @@ TemplateServiceClient.prototype.sendRequest = function(method, relativePath, con
 			successCallback(data, type, xhr.status);
 		},
 	};
+
+    if (content) {
+        ajaxObj.data = JSON.stringify(content);
+    }
 
 	if (customHeaders !== undefined && customHeaders !== null) {
 		$.extend(ajaxObj.headers, customHeaders);
