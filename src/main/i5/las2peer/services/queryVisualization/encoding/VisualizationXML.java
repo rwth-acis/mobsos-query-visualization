@@ -35,22 +35,25 @@ public class VisualizationXML extends Visualization {
 			Iterator<Object[]> iterator = methodResult.getRowIterator();
 			int columnCount = columnTypes.length;
 			
-			String xmlRowStart = "<param type=\"Array\" class=\"String\" length=\"" + columnCount + "\">\n";
-			String xmlRowEnd = "</param>\n";
+			String xmlRowStart = "\t<param type=\"Array\" class=\"String\" length=\"" + columnCount + "\">\n";
+			String xmlRowEnd = "\t</param>\n";
+
+			String xmlStart = "<?xml version=\"1.0\"?>\n<rows>\n";
+			String xmlEnd = "\n</rows>";
 			
-			String xmlResult = "<?xml version=\"1.0\"?>\n";
+			String xmlResult = "";
 			
 			// add the column names
 			xmlResult += xmlRowStart;
 			for(int i=0; i<columnCount; i++) {
-				xmlResult += "\t<element><![CDATA["+columnNames[i]+"]]></element>\n";
+				xmlResult += "\t\t<element><![CDATA["+columnNames[i]+"]]></element>\n";
 			}
 			xmlResult += xmlRowEnd;
 			
 			// add the column data types
 			xmlResult += xmlRowStart;
 			for(int i=0; i<columnCount; i++) {
-				xmlResult += "\t<element><![CDATA[";
+				xmlResult += "\t\t<element><![CDATA[";
 				
 				switch(columnTypes[i]) {
 					case Types.BOOLEAN:
@@ -92,12 +95,18 @@ public class VisualizationXML extends Visualization {
 				// add the row...
 				xmlResult += xmlRowStart;
 				for(int i=0; i<columnCount; i++) {
-					xmlResult += "\t<element><![CDATA["+currentRow[i]+"]]></element>\n";
+					if (currentRow[i] instanceof String) {
+						String s = (String)currentRow[i];
+						s = s.replace("]]>", "]]]]><![CDATA[>"); //Otherwise problems with xml transportation
+						xmlResult += "\t\t<element><![CDATA["+s+"]]></element>\n";
+					} else {
+						xmlResult += "\t\t<element><![CDATA["+currentRow[i]+"]]></element>\n";
+					}
 				}
 				xmlResult += xmlRowEnd;
 			}
 						
-			xmlResult = xmlResult.replace("]]>", "]]]]><![CDATA[>"); //Otherwise problems with xml transportation
+			xmlResult = xmlStart +  xmlResult.trim() + xmlEnd;
 			return xmlResult;
 		
 		}
