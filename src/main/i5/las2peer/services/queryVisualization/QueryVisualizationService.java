@@ -26,7 +26,6 @@ import i5.las2peer.restMapper.tools.XMLCheck;
 import i5.las2peer.security.L2pSecurityException;
 import i5.las2peer.security.UserAgent;
 import i5.las2peer.services.queryVisualization.caching.MethodResultCache;
-import i5.las2peer.services.queryVisualization.database.DatabaseManager;
 import i5.las2peer.services.queryVisualization.database.SQLDatabase;
 import i5.las2peer.services.queryVisualization.database.SQLDatabaseManager;
 import i5.las2peer.services.queryVisualization.database.SQLDatabaseSettings;
@@ -65,6 +64,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import net.minidev.json.JSONValue;
 
@@ -135,6 +135,15 @@ public class QueryVisualizationService extends Service {
 		return s;
 	}
 
+	private static String[] stringArrayfromJSON(JSONObject obj, String key) throws SQLException {
+		JSONArray ja = (JSONArray)obj.get(key);
+		if (ja == null) {
+			throw new SQLException("Key " + key + " is missing in JSON");
+		}
+		String[] s = ja.toArray(new String[0]);
+		return s;
+	}
+
 	private static int intfromJSON(JSONObject obj, String key) {
 		try {
 			return (int)Integer.parseInt((String) obj.get(key));
@@ -153,6 +162,26 @@ public class QueryVisualizationService extends Service {
 			}
 			return (boolean)Boolean.parseBoolean(b);
 		}
+	}
+	
+	private static HttpResponse setContentType(HttpResponse res, Integer vtypei) {
+		switch (vtypei) {
+		case 0:
+			res.setHeader("Content-Type", MediaType.TEXT_CSV);
+			break;
+		case 1:
+			res.setHeader("Content-Type", MediaType.APPLICATION_JSON);
+			break;
+		case 2:
+			res.setHeader("Content-Type", MediaType.TEXT_HTML);
+			break;
+		case 3:
+			res.setHeader("Content-Type", MediaType.TEXT_XML);
+			break;
+		default:
+			res.setHeader("Content-Type", "text/plain");
+		}
+		return res;
 	}
 
 	public QueryVisualizationService() {
@@ -203,7 +232,7 @@ public class QueryVisualizationService extends Service {
 			if(this.databaseManager.getDatabaseCount() < 1) {
 
 				// the user has no databases yet - add the example database
-				addDatabase(stDbKey, SQLDatabaseType.valueOf(exType).getCode(), exUser, exPassword, exDatabase, exHost, exPort, 1);
+				addDatabase(exKey, SQLDatabaseType.valueOf(exType).getCode(), exUser, exPassword, exDatabase, exHost, exPort, 1);
 //				if(!this.databaseManager.addExampleDB()) {
 //					// failed to add the database...
 //					throw new Exception("Failed to add the default database for the user!");
@@ -242,7 +271,7 @@ public class QueryVisualizationService extends Service {
 		JSONObject o;
 		try{	
 			o = (JSONObject) JSONValue.parseWithException(content);
-			int dbcode = SQLDatabaseType.valueOf(stringfromJSON(o, "db_code")).getCode();
+			Integer dbcode = intfromJSON(o, "db_code");
 			String username = stringfromJSON(o, "username");
 			String password = stringfromJSON(o, "password");
 			String database = stringfromJSON(o, "database");
@@ -453,9 +482,6 @@ public class QueryVisualizationService extends Service {
 				// in order to encounter the cold-start...
 				// add some examples for the default DB
 				this.addFilter("Customers", "SELECT DISTINCT customerNumber FROM `customers`", exKey, visualizationTypeIndex);
-//				this.addFilter("User", "SELECT DISTINCT UID FROM MOBSOS.SESSION", defaultDBKey, visualizationTypeIndex);
-//				this.addFilter("Community", "SELECT DISTINCT CID FROM MOBSOS.MCONTEXT", defaultDBKey, visualizationTypeIndex);
-//				this.addFilter("Service", "SELECT DISTINCT SCODE FROM MOBSOS.INVOCATION", defaultDBKey, visualizationTypeIndex);
 
 				keyList = this.filterManager.getFilterKeyList();
 			}
@@ -540,6 +566,7 @@ public class QueryVisualizationService extends Service {
 	@Path("filter/{key}")
 	@Summary("Adds a filter with a specified key")
 	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
 	@ApiResponses(value={
 			  @ApiResponse(code = 201, message = "Added filter."),
 			  @ApiResponse(code = 400, message = "Adding filter failed.")})
@@ -658,6 +685,7 @@ public class QueryVisualizationService extends Service {
 	@ResourceListApi(description = "Manage a users queries")
 	@Summary("Creates a new query")
 	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
 	@ApiResponses(value={
 			  @ApiResponse(code = 201, message = "Created query."),
 			  @ApiResponse(code = 400, message = "Creating Query failed.")})
@@ -669,14 +697,16 @@ public class QueryVisualizationService extends Service {
 			o = (JSONObject) JSONValue.parseWithException(content);
 			String query = stringfromJSON(o, "query");
 			String dbKey = stringfromJSON(o, "dbkey");
-			String queryParameters = stringfromJSON(o, "queryparams");
+			String[] queryParameters = stringArrayfromJSON(o, "queryparams");
 			boolean useCache = boolfromJSON(o, "cache");
 			Integer modificationTypeIndex = intfromJSON(o, "modtypei");
 			String title = stringfromJSON(o, "title");
 			String width = stringfromJSON(o, "width");
 			String height = stringfromJSON(o, "height");
 			boolean save = boolfromJSON(o, "save");
-			return createQuery(query, queryParameters, dbKey, useCache, modificationTypeIndex, vtypei, title, width, height, save);
+			HttpResponse res = createQuery(query, queryParameters, dbKey, useCache, modificationTypeIndex, vtypei, title, width, height, save);
+			setContentType(res, vtypei);
+			return res;
 		} catch (Exception e) {
 			logError(e);
 			HttpResponse res = new HttpResponse(visualizationException.generate(e, "Received invalid JSON"));
@@ -685,10 +715,10 @@ public class QueryVisualizationService extends Service {
 		}
 	}
 
-	public HttpResponse createQuery(String query, String queryParameters, String databaseKey, boolean useCache,
+	public HttpResponse createQuery(String query, String[] queryParameters, String databaseKey, boolean useCache,
 			int modificationTypeIndex, int visualizationTypeIndex, String title, String width, String height,
 			boolean save) {
-		String queryString = createQueryString(query, new String[]{queryParameters}, databaseKey, useCache, modificationTypeIndex, visualizationTypeIndex, new String[]{title, width, height}, save);
+		String queryString = createQueryString(query, queryParameters, databaseKey, useCache, modificationTypeIndex, visualizationTypeIndex, new String[]{title, width, height}, save);
 		HttpResponse res = new HttpResponse(queryString);
 		if (queryString.startsWith("The Query has lead to an error.")) {
 			res.setStatus(400);
