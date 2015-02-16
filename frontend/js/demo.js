@@ -513,8 +513,9 @@ var load_export_xml = function(){
             $(exportXMLWrapperNode).addClass("loading");
             demo.retrieve(form_data['query'],form_data['queryParams'],form_data['databaseKey'],form_data['modificationTypeIndex'],QV.VISUALIZATIONTYPE.XML,form_data['visualizationOptions'],null,function(data){
                 ready['export_xml'] = true;
-                exportXMLNode.value = data.replace(/(\r\n|\r|\n)/g, '\r\n').replace(/\r\n$/,"");
-                saveExportXMLLinkNode.href='data:text/plain;base64,' + btoa(data);
+                var serialized = new XMLSerializer().serializeToString(data)
+                exportXMLNode.value = serialized.replace(/(\r\n|\r|\n)/g, '\r\n').replace(/\r\n$/,"");
+                saveExportXMLLinkNode.href='data:text/plain;base64,' + btoa(serialized);
                 $(exportXMLWrapperNode).children().show();
                 $(exportXMLWrapperNode).removeClass("loading");
             });
@@ -534,8 +535,9 @@ var load_export_json = function(){
             $(exportJSONWrapperNode).addClass("loading");
             demo.retrieve(form_data['query'],form_data['queryParams'],form_data['databaseKey'],form_data['modificationTypeIndex'],QV.VISUALIZATIONTYPE.JSON,form_data['visualizationOptions'],null,function(data){
                 ready['export_json'] = true;
-                exportJSONNode.value = data.replace(/(\r\n|\r|\n)/g, '\r\n').replace(/\r\n$/,"");
-                saveExportJSONLinkNode.href='data:text/plain;base64,' + btoa(data);
+                var serialized = JSON.stringify(data);
+                exportJSONNode.value = serialized.replace(/(\r\n|\r|\n)/g, '\r\n').replace(/\r\n$/,"");
+                saveExportJSONLinkNode.href='data:text/plain;base64,' + btoa(serialized);
                 $(exportJSONWrapperNode).children().show();
                 $(exportJSONWrapperNode).removeClass("loading");
             });
