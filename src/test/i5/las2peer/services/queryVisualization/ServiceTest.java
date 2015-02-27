@@ -8,6 +8,7 @@ import i5.las2peer.restMapper.data.Pair;
 import i5.las2peer.security.ServiceAgent;
 import i5.las2peer.security.UserAgent;
 import i5.las2peer.services.queryVisualization.database.SQLDatabaseType;
+import i5.las2peer.services.queryVisualization.encoding.VisualizationType;
 import i5.las2peer.testing.MockAgentFactory;
 import i5.las2peer.webConnector.WebConnector;
 import i5.las2peer.webConnector.client.ClientResponse;
@@ -94,7 +95,7 @@ public class ServiceTest {
 		
         connector.updateServiceList();
         //avoid timing errors: wait for the repository manager to get all services before continuing
-        testDB.put("db_code", SQLDatabaseType.MySQL.getCode());
+        testDB.put("db_code", SQLDatabaseType.MYSQL.toString().toLowerCase());
         testDB.put("username", "qv_user");
         testDB.put("password", "qv_password");
         testDB.put("database", "QVS");

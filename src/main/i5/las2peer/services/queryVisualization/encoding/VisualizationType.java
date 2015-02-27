@@ -33,6 +33,7 @@ public enum VisualizationType {
 	GRAPH;
 	
 	
+	
 	/* Some auxiliary functions */
     private static VisualizationType[] values = null;
     public static VisualizationType fromInt(int i) {

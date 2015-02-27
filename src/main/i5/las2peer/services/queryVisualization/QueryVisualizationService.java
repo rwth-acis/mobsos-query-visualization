@@ -198,7 +198,7 @@ public class QueryVisualizationService extends Service {
 				resultTimeout = "90";
 			}
 
-			databaseSettings = new SQLDatabaseSettings(stDbKey, SQLDatabaseType.MySQL, stDbUser,
+			databaseSettings = new SQLDatabaseSettings(stDbKey, SQLDatabaseType.MYSQL, stDbUser,
 					stDbPassword, stDbDatabase, stDbHost, stDbPort);
 
 			// setup the database manager
@@ -228,7 +228,7 @@ public class QueryVisualizationService extends Service {
 			if(this.databaseManager.getDatabaseCount() < 1) {
 
 				// the user has no databases yet - add the example database
-				addDatabase(exKey, SQLDatabaseType.valueOf(exType).getCode(), exUser, exPassword, exDatabase, exHost, exPort, 1);
+				addDatabase(exKey, SQLDatabaseType.valueOf(exType.toUpperCase()), exUser, exPassword, exDatabase, exHost, exPort, VisualizationType.JSON);
 //				if(!this.databaseManager.addExampleDB()) {
 //					// failed to add the database...
 //					throw new Exception("Failed to add the default database for the user!");
@@ -248,6 +248,7 @@ public class QueryVisualizationService extends Service {
 	 * Adds a sql database to the users available/usable databases (via the sqldatabase manager).
 	 * 
 	 * @param databaseKey key which is later used to identify the database
+	 * @param vtypei Type of the response
 	 * @param content Credentials for the database
 	 * 
 	 * @return success or error message, if possible in the requested encoding/format
@@ -262,19 +263,19 @@ public class QueryVisualizationService extends Service {
 			  @ApiResponse(code = 400, message = "Database data invalid.")})
 	public HttpResponse addDatabase(
 			@PathParam("key") String databaseKey,
-			@QueryParam(name="vtypei", defaultValue="1") Integer vtypei,
+			@QueryParam(name="format", defaultValue="JSON") String vtypei,
 			@ContentParam String content) {
 		JSONObject o;
 		try{	
 			o = (JSONObject) JSONValue.parseWithException(content);
-			Integer dbcode = intfromJSON(o, "db_code");
+			String dbcode = stringfromJSON(o, "db_code");
 			String username = stringfromJSON(o, "username");
 			String password = stringfromJSON(o, "password");
 			String database = stringfromJSON(o, "database");
 			String dbhost = stringfromJSON(o, "dbhost");
 			Integer port = intfromJSON(o, "port");
-			return addDatabase(databaseKey,
-					dbcode, username, password, database, dbhost, port, vtypei);
+			return addDatabase(databaseKey, SQLDatabaseType.valueOf(dbcode.toUpperCase()),
+					username, password, database, dbhost, port, VisualizationType.valueOf(vtypei.toUpperCase()));
 		} catch (Exception e) {
 			logError(e);
 			HttpResponse res = new HttpResponse(visualizationException.generate(e, "Received invalid JSON"));
@@ -297,8 +298,8 @@ public class QueryVisualizationService extends Service {
 	 * 
 	 * @return success or error message, if possible in the requested encoding/format
 	 */
-	public HttpResponse addDatabase( String databaseKey, Integer databaseTypeCode, String username, String password,
-			String database, String host, Integer port, Integer visualizationTypeIndex) {
+	public HttpResponse addDatabase( String databaseKey, SQLDatabaseType databaseTypeCode, String username, String password,
+			String database, String host, Integer port, VisualizationType visualizationTypeIndex) {
 		try {
 			if(databaseKey == null || databaseKey.length() < 3) {
 				throw new Exception("Databasekey is too short (Use at least 2 characters).");
@@ -306,7 +307,7 @@ public class QueryVisualizationService extends Service {
 			
 			initializeDBConnection();
 
-			SQLDatabaseType sqlDatabaseType = SQLDatabaseType.getSQLDatabaseType(databaseTypeCode);
+			SQLDatabaseType sqlDatabaseType = databaseTypeCode;
 			if(!databaseManager.addDatabase(databaseKey,sqlDatabaseType, username, password, database, host, port)) {
 				throw new Exception("Failed to add a database for the user!");
 			}
@@ -329,7 +330,7 @@ public class QueryVisualizationService extends Service {
 			result.addRow(defaultDatabase);
 
 			HttpResponse res = new HttpResponse(visualizationManager
-					.getVisualization(VisualizationType.fromInt(visualizationTypeIndex))
+					.getVisualization(visualizationTypeIndex)
 					.generate(result, null));
 			res.setStatus(201);
 			return res;
@@ -341,13 +342,12 @@ public class QueryVisualizationService extends Service {
 		}
 	}
 	
-	
 	/**
 	 * Removes a database from the user's list of configured databases (so that the user can not access the database anymore).
 	 * Other user's database settings are not changed.
 	 * 
 	 * @param databaseKey the key of the database
-	 * @param visualizationTypeIndex encoding of the returned message
+	 * @param vtypei Visualization type of the output
 	 * @return success or error message, if possible in the requested encoding/format
 	 */
 	@DELETE
@@ -359,7 +359,7 @@ public class QueryVisualizationService extends Service {
 			  @ApiResponse(code = 400, message = "Database removal failed.")})
 	public HttpResponse removeDatabase(
 			@PathParam("key") String databaseKey,
-			@QueryParam(name="vtypei", defaultValue="1") Integer vtypei) {
+			@QueryParam(defaultValue = "JSON", name = "format") String vtypei) {
 		try {			
 			if(databaseKey.equalsIgnoreCase("MonitoringDefault")) {
 				databaseKey = stDbKey;
@@ -380,7 +380,7 @@ public class QueryVisualizationService extends Service {
 			result.addRow(defaultDatabase);
 
 			HttpResponse res = new HttpResponse(
-					visualizationManager.getVisualization(VisualizationType.fromInt(vtypei)).generate(result, null));
+					visualizationManager.getVisualization(VisualizationType.valueOf(vtypei.toUpperCase())).generate(result, null));
 			res.setStatus(200);
 			return res;
 		}
@@ -407,7 +407,7 @@ public class QueryVisualizationService extends Service {
 			  @ApiResponse(code = 200, message = "Got Database keys."),
 			  @ApiResponse(code = 400, message = "Retrieving keys failed.")})
 	public HttpResponse getDatabaseKeys(
-			@QueryParam(name="vtypei", defaultValue="1") Integer visualizationTypeIndex) {
+			@QueryParam(defaultValue = "JSON", name = "format") String visualizationTypeIndex) {
 		try {
 			initializeDBConnection();
 			List<String> keyList = this.databaseManager.getDatabaseKeyList();
@@ -433,11 +433,10 @@ public class QueryVisualizationService extends Service {
 			}
 
 			HttpResponse res = new HttpResponse(
-					visualizationManager.getVisualization(VisualizationType.fromInt(visualizationTypeIndex)).generate(result, null));
+					visualizationManager.getVisualization(VisualizationType.valueOf(visualizationTypeIndex.toUpperCase())).generate(result, null));
 			res.setStatus(200);
 			return res;
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			logError(e);
 			HttpResponse res = new HttpResponse(visualizationException.generate(e, null));
 			res.setStatus(400);
@@ -459,8 +458,7 @@ public class QueryVisualizationService extends Service {
 	@ApiResponses(value={
 			  @ApiResponse(code = 200, message = "Got filter keys."),
 			  @ApiResponse(code = 400, message = "Retrieving filter keys failed.")})
-	public HttpResponse getFilterKeys(
-			@QueryParam(name="vtypei", defaultValue="1") Integer visualizationTypeIndex) {
+	public HttpResponse getFilterKeys(@QueryParam(defaultValue = "JSON", name = "format") String visualizationTypeIndex) {
 		try {
 			initializeDBConnection();
 			if(this.filterManager == null) {
@@ -473,11 +471,13 @@ public class QueryVisualizationService extends Service {
 			if(keyList == null) {
 				throw new Exception("Failed to get the key list for the users' filters!");
 			}
+			
+			VisualizationType vtypei = VisualizationType.valueOf(visualizationTypeIndex.toUpperCase());
 
 			if(keyList.isEmpty()) {
 				// in order to encounter the cold-start...
 				// add some examples for the default DB
-				this.addFilter("Customers", "SELECT DISTINCT customerNumber FROM `customers`", exKey, visualizationTypeIndex);
+				this.addFilter("Customers", "SELECT DISTINCT customerNumber FROM `customers`", exKey, vtypei);
 
 				keyList = this.filterManager.getFilterKeyList();
 			}
@@ -498,7 +498,7 @@ public class QueryVisualizationService extends Service {
 
 
 			HttpResponse res = new HttpResponse(
-					visualizationManager.getVisualization(VisualizationType.fromInt(visualizationTypeIndex)).generate(result, null));
+					visualizationManager.getVisualization(vtypei).generate(result, null));
 			res.setStatus(200);
 			return res;
 		}
@@ -509,7 +509,6 @@ public class QueryVisualizationService extends Service {
 			return res;
 		}
 	}
-
 
 	/**
 	 * Retrieves the values for a specific filter.
@@ -527,8 +526,9 @@ public class QueryVisualizationService extends Service {
 			  @ApiResponse(code = 400, message = "Retrieving filter keys failed.")})
 	public HttpResponse getFilterValues(
 			@PathParam("key") String filterKey,
-			@QueryParam(name="vtypei", defaultValue="1") Integer visualizationTypeIndex) {
+			@QueryParam(name="format", defaultValue = "JSON") String visualizationTypeIndex) {
 		try {
+			VisualizationType vtypei = VisualizationType.valueOf(visualizationTypeIndex.toUpperCase());
 			initializeDBConnection();
 			if(this.filterManager == null) {
 				// initialize filter manager
@@ -536,7 +536,7 @@ public class QueryVisualizationService extends Service {
 			}
 
 			HttpResponse res = new HttpResponse(
-					this.filterManager.getFilterValues(filterKey, visualizationTypeIndex, this));
+					this.filterManager.getFilterValues(filterKey, vtypei, this));
 			res.setStatus(200);
 			return res;
 		}
@@ -568,13 +568,14 @@ public class QueryVisualizationService extends Service {
 			  @ApiResponse(code = 400, message = "Adding filter failed.")})
 	public HttpResponse addFilter(@PathParam("key") String filterKey,
 			@ContentParam String content,
-			@QueryParam(name="vtypei", defaultValue="1") Integer visualizationTypeIndex) {
+			@QueryParam(defaultValue = "JSON", name = "format") String visualizationTypeIndex) {
 		JSONObject o;
 		try{	
+			VisualizationType vtypei = VisualizationType.valueOf(visualizationTypeIndex.toUpperCase());
 			o = (JSONObject) JSONValue.parseWithException(content);
 			String query = stringfromJSON(o, "query");
 			String dbkey = stringfromJSON(o, "dbkey");
-			return addFilter(filterKey, query, dbkey, visualizationTypeIndex);
+			return addFilter(filterKey, query, dbkey, vtypei);
 		} catch (Exception e) {
 			logError(e);
 			HttpResponse res = new HttpResponse(visualizationException.generate(e, "Received invalid JSON"));
@@ -583,7 +584,7 @@ public class QueryVisualizationService extends Service {
 		}
 	}
 
-	public HttpResponse addFilter(String filterKey, String SQLQuery, String databaseKey, Integer visualizationTypeIndex) {
+	public HttpResponse addFilter(String filterKey, String SQLQuery, String databaseKey, VisualizationType visualizationTypeIndex) {
 		try {
 			initializeDBConnection();
 			//TODO: parameter sanity checks
@@ -615,7 +616,7 @@ public class QueryVisualizationService extends Service {
 			result.addRow(addedFilter);
 
 			HttpResponse res = new HttpResponse(
-					visualizationManager.getVisualization(VisualizationType.fromInt(visualizationTypeIndex)).generate(result, null));
+					visualizationManager.getVisualization(visualizationTypeIndex).generate(result, null));
 			res.setStatus(201);
 			return res;
 		}
@@ -642,7 +643,7 @@ public class QueryVisualizationService extends Service {
 			  @ApiResponse(code = 200, message = "Deleted filter."),
 			  @ApiResponse(code = 400, message = "Deleting filter failed.")})
 	public HttpResponse deleteFilter(@PathParam("key") String filterKey,
-			@QueryParam(name="vtypei", defaultValue="1") Integer visualizationTypeIndex) {
+			@QueryParam(defaultValue = "JSON", name = "format") String visualizationTypeIndex) {
 		try {		
 			initializeDBConnection();
 			if(this.filterManager == null) {
@@ -663,7 +664,7 @@ public class QueryVisualizationService extends Service {
 			result.addRow(deletedDatabase);
 
 			HttpResponse res = new HttpResponse(
-					visualizationManager.getVisualization(VisualizationType.fromInt(visualizationTypeIndex)).generate(result, null));
+					visualizationManager.getVisualization(VisualizationType.valueOf(visualizationTypeIndex.toUpperCase())).generate(result, null));
 			res.setStatus(200);
 			return res;
 		}
@@ -675,7 +676,6 @@ public class QueryVisualizationService extends Service {
 		}
 	}
 
-
 	@POST
 	@Path("query")
 	@ResourceListApi(description = "Manage a users queries")
@@ -686,10 +686,11 @@ public class QueryVisualizationService extends Service {
 			  @ApiResponse(code = 201, message = "Created query."),
 			  @ApiResponse(code = 400, message = "Creating Query failed.")})
 	public HttpResponse createQuery(
-			@QueryParam(name="vtypei", defaultValue="1") Integer vtypei,
+			@QueryParam(defaultValue = "JSON", name = "format") String vtypei,
 			@ContentParam String content) {
 		JSONObject o;
 		try{	
+			VisualizationType v = VisualizationType.valueOf(vtypei.toUpperCase());
 			o = (JSONObject) JSONValue.parseWithException(content);
 			String query = stringfromJSON(o, "query");
 			String dbKey = stringfromJSON(o, "dbkey");
@@ -700,8 +701,8 @@ public class QueryVisualizationService extends Service {
 			String width = stringfromJSON(o, "width");
 			String height = stringfromJSON(o, "height");
 			boolean save = boolfromJSON(o, "save");
-			HttpResponse res = createQuery(query, queryParameters, dbKey, useCache, modificationTypeIndex, vtypei, title, width, height, save);
-			setContentType(res, vtypei);
+			HttpResponse res = createQuery(query, queryParameters, dbKey, useCache, modificationTypeIndex, v, title, width, height, save);
+			setContentType(res, v.ordinal());
 			return res;
 		} catch (Exception e) {
 			logError(e);
@@ -712,7 +713,7 @@ public class QueryVisualizationService extends Service {
 	}
 
 	public HttpResponse createQuery(String query, String[] queryParameters, String databaseKey, boolean useCache,
-			int modificationTypeIndex, int visualizationTypeIndex, String title, String width, String height,
+			int modificationTypeIndex, VisualizationType visualizationTypeIndex, String title, String width, String height,
 			boolean save) {
 		String queryString = createQueryString(query, queryParameters, databaseKey, useCache, modificationTypeIndex, visualizationTypeIndex, new String[]{title, width, height}, save);
 		HttpResponse res = new HttpResponse(queryString);
@@ -743,7 +744,7 @@ public class QueryVisualizationService extends Service {
 	 * @return Result of the query in the requested output format or the id of the saved query
 	 */
 	public String createQueryString(String query, String[] queryParameters, String databaseKey, boolean useCache,
-			int modificationTypeIndex, int visualizationTypeIndex, String[] visualizationParameters, boolean save) {
+			int modificationTypeIndex, VisualizationType visualizationTypeIndex, String[] visualizationParameters, boolean save) {
 		initializeDBConnection();
 
 		MethodResult methodResult = null;
@@ -751,7 +752,7 @@ public class QueryVisualizationService extends Service {
 
 		try {
 			//Check for visualization parameters
-			if(visualizationTypeIndex > 3 && visualizationTypeIndex < 10){
+			if(visualizationTypeIndex.ordinal() > 3 && visualizationTypeIndex.ordinal() < 10){
 				if(visualizationParameters == null || visualizationParameters.length != 3){
 					return visualizationException.generate(new Exception(), "Missing visualization-parameters!");
 				}
@@ -765,7 +766,7 @@ public class QueryVisualizationService extends Service {
 			else{
 				methodResult = executeSQLQuery(query, databaseKey, cacheKey);
 				Modification modification = modificationManager.getModification(ModificationType.fromInt(modificationTypeIndex));
-				Visualization visualization = visualizationManager.getVisualization(VisualizationType.fromInt(visualizationTypeIndex));
+				Visualization visualization = visualizationManager.getVisualization(visualizationTypeIndex);
 
 				if(modification.check(methodResult))
 					methodResult = modification.apply(methodResult);
@@ -781,6 +782,50 @@ public class QueryVisualizationService extends Service {
 		catch(Exception e) {
 			logError(e);
 			return visualizationException.generate(e, "An Error occured while trying to execute the query!");
+		}
+	}
+
+	/**
+	 * Deletes a filter from the user's settings/profile.
+	 * 
+	 * @param queryKey the key of the filter
+	 * @param visualizationTypeIndex encoding of the returned message
+	 * @return success or error message, if possible in the requested encoding/format
+	 */
+	@DELETE
+	@Path("query/{key}")
+	@Summary("Deletes a query with a specified key")
+	@Produces(MediaType.APPLICATION_JSON)
+	@ApiResponses(value={
+			  @ApiResponse(code = 200, message = "Deleted query."),
+			  @ApiResponse(code = 400, message = "Deleting query failed.")})
+	public HttpResponse deleteQuery(
+			@PathParam("key") String queryKey,
+			@QueryParam(defaultValue = "JSON", name = "format") String visualizationTypeIndex) {
+		try {		
+			initializeDBConnection();
+			if(this.queryManager == null) {
+				throw new Exception("Query Manager is null");
+			}
+
+			this.queryManager.removeQ(queryKey);
+
+			MethodResult result = new MethodResult();
+			result.setColumnName("DeletedQuery");
+			result.setColumnDatatype(Types.VARCHAR);
+			Object[] deletedQuery = {queryKey};
+			result.addRow(deletedQuery);
+
+			HttpResponse res = new HttpResponse(
+					visualizationManager.getVisualization(VisualizationType.valueOf(visualizationTypeIndex.toUpperCase())).generate(result, null));
+			res.setStatus(200);
+			return res;
+		}
+		catch (Exception e) {
+			logError(e);
+			HttpResponse res = new HttpResponse(visualizationException.generate(e, null));
+			res.setStatus(400);
+			return res;
 		}
 	}
 
@@ -803,7 +848,6 @@ public class QueryVisualizationService extends Service {
 			  @ApiResponse(code = 400, message = "Creating visualization failed."),
 			  @ApiResponse(code = 404, message = "Didn't find requested visualization.")})
 	public HttpResponse visualizeQuery(@PathParam("key") String key) {
-		
 		initializeDBConnection();
 
 		Query query = null;
@@ -848,7 +892,7 @@ public class QueryVisualizationService extends Service {
 	 * @return The id of the saved query as a String
 	 */
 	private String saveQuery(String queryStatement, String databaseKey,
-			boolean useCache, int modificationTypeIndex, int visualizationTypeIndex, String[] visualizationParamaters) {
+			boolean useCache, int modificationTypeIndex, VisualizationType visualizationTypeIndex, String[] visualizationParamaters) {
 
 		SQLDatabase database = null;
 		Query query = null;
@@ -899,7 +943,7 @@ public class QueryVisualizationService extends Service {
 		}
 
 		Modification modification = modificationManager.getModification(ModificationType.fromInt(query.getModificationTypeIndex()));
-		Visualization visualization = visualizationManager.getVisualization(VisualizationType.fromInt(query.getVisualizationTypeIndex()));
+		Visualization visualization = visualizationManager.getVisualization(query.getVisualizationTypeIndex());
 
 		if(modification.check(methodResult))
 			methodResult = modification.apply(methodResult);

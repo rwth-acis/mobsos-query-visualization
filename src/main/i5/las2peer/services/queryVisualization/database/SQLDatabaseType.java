@@ -3,18 +3,18 @@ package i5.las2peer.services.queryVisualization.database;
 public enum SQLDatabaseType {
 	// A DB2 database. Works with the "db2jcc-0.jar" +  "db2jcc_licence_cu-0.jar" archive.
 	DB2 (1),
-	// mysqlConnectorJava-5.1.16.jar (MySQL 5.1)
-	MySQL (2),
+	// mysqlConnectorJava-5.1.16.jar (MYSQL 5.1)
+	MYSQL (2),
 	// jaybird-2.1.6.jar
-	Firebird (3),
+	FIREBIRD (3),
 	// sqljdbc4.jar
-	MSSQLServer (4),
-	//postgresql-9.0-801.jdbc4.jar (PostgreSQL 9)
-	PostgreSQL (5),
+	MSSQL (4),
+	//postgresql-9.0-801.jdbc4.jar (POSTGRESQL 9)
+	POSTGRESQL (5),
 	// derbyclient.jar
-	JavaDBDerby (6),
-	// ojdbc14.jar (Oracle 10.2)
-	Oracle (7);
+	DERBY (6),
+	// ojdbc14.jar (ORACLE 10.2)
+	ORACLE (7);
 	
 	private final int code;
 	
@@ -32,23 +32,23 @@ public enum SQLDatabaseType {
 				// DB2
 				return SQLDatabaseType.DB2;
 			case 2:
-				// MySQL
-				return SQLDatabaseType.MySQL;
+				// MYSQL
+				return SQLDatabaseType.MYSQL;
 			case 3:
-				// Firebird
-				return SQLDatabaseType.Firebird;
+				// FIREBIRD
+				return SQLDatabaseType.FIREBIRD;
 			case 4:
 				// Microsoft SQL Server
-				return SQLDatabaseType.MSSQLServer;
+				return SQLDatabaseType.MSSQL;
 			case 5:
-				// PostgreSQL
-				return SQLDatabaseType.PostgreSQL;
+				// POSTGRESQL
+				return SQLDatabaseType.POSTGRESQL;
 			case 6:
 				// JavaDB/Derby
-				return SQLDatabaseType.JavaDBDerby;
+				return SQLDatabaseType.DERBY;
 			case 7:
-				// Oracle
-				return SQLDatabaseType.Oracle;
+				// ORACLE
+				return SQLDatabaseType.ORACLE;
 		}
 	
 		// not known...
@@ -61,22 +61,22 @@ public enum SQLDatabaseType {
 				// DB2
 				return "com.ibm.db2.jcc.DB2Driver";
 			case 2:
-				// MySQL
+				// MYSQL
 				return "com.mysql.jdbc.Driver";
 			case 3:
-				// Firebird
+				// FIREBIRD
 				return "org.firebirdsql.jdbc.FBDriver";
 			case 4:
 				// Microsoft SQL Server
 				return "com.microsoft.sqlserver.jdbc.SQLServerDriver";
 			case 5:
-				// PostgreSQL
+				// POSTGRESQL
 				return "org.postgresql.Driver";
 			case 6:
 				// JavaDB/Derby
 				return "org.apache.derby.jdbc.ClientDriver";
 			case 7:
-				// Oracle
+				// ORACLE
 				return "oracle.jdbc.driver.OracleDriver";
 		}
 		// not found...
@@ -93,11 +93,11 @@ public enum SQLDatabaseType {
 				url = "jdbc:db2://" + host + ":" + port + "/" + database;
 				break;
 			case 2:
-				// MySQL
+				// MYSQL
 				url = "jdbc:mysql://" + host + ":" + port + "/" + database;
 				break;
 			case 3:
-				// Firebird
+				// FIREBIRD
 				url = "jdbc:firebirdsql:"+ host + "/" + port + ":" + database;
 				break;
 			case 4:
@@ -106,7 +106,7 @@ public enum SQLDatabaseType {
 				url = "jdbc:sqlserver://"+ host + ":" + port + ";databaseName=" + database+";";
 				break;
 			case 5:
-				// PostgreSQL
+				// POSTGRESQL
 				url = "jdbc:postgresql://"+ host + ":" + port + "/" + database;
 				break;
 			case 6:
@@ -114,7 +114,7 @@ public enum SQLDatabaseType {
 				url = "jdbc:derby://"+ host + ":" + port + "/" + database;
 				break;
 			case 7:
-				// Oracle
+				// ORACLE
 				url = "jdbc:oracle:thin:@"+ host + ":" + port + ":" + database;
 				break;
 			default:

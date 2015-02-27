@@ -109,4 +109,22 @@ public class QueryManager {
 			return null;
 		}
 	}
+
+	/**
+	 * Remove given database from the database
+	 */
+	public void removeQ(String queryKey) {
+		try {
+			storageDatabase.connect();
+			PreparedStatement s = storageDatabase.prepareStatement("DELETE FROM `QUERIES` WHERE ((`KEY` = ? AND `USER` = ?))");
+			s.setString(1, queryKey);
+			s.setLong(2, getL2pThread().getContext().getMainAgent().getId());
+			s.executeUpdate();
+			storageDatabase.disconnect();
+		} catch (Exception e) {
+			logMessage("Error removing the Query! " + e);
+			System.out.println ( "QV critical:");
+			e.printStackTrace();
+		}
+	}
 }

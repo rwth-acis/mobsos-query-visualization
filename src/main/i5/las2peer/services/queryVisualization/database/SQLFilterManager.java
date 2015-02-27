@@ -6,6 +6,7 @@ import i5.las2peer.p2p.Node;
 import i5.las2peer.security.Agent;
 import i5.las2peer.services.queryVisualization.QueryVisualizationService;
 import i5.las2peer.services.queryVisualization.encoding.ModificationType;
+import i5.las2peer.services.queryVisualization.encoding.VisualizationType;
 import i5.las2peer.services.queryVisualization.database.SQLFilterSettings;
 
 import java.sql.PreparedStatement;
@@ -228,7 +229,7 @@ public class SQLFilterManager {
 	}
 	
 	
-	public String getFilterValues(String filterKey, Integer visualizationTypeIndex, QueryVisualizationService agent) throws Exception {
+	public String getFilterValues(String filterKey, VisualizationType visualizationTypeIndex, QueryVisualizationService agent) throws Exception {
 		try {
 			String filterValues = loadedFilterValues.get(filterKey + ":" + visualizationTypeIndex);
 			

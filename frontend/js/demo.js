@@ -4,69 +4,69 @@
  */
 
     //Forms and Sections
-var loginFormNode              = document.getElementById("qv_loginform"),
-    queryFormNode              = document.getElementById("qv_queryform"),
-    previewSectionNode         = document.getElementById("qv_chart"),
-    addDatabaseFormNode        = document.getElementById("qv_add_database_form"),
-    removeDatabaseFormNode     = document.getElementById("qv_remove_database_form"),
-    addFilterFormNode          = document.getElementById("qv_add_filter_form"),
-    removeFilterFormNode       = document.getElementById("qv_remove_filter_form"),
+var loginFormNode              = document.getElementById("qv_loginform");
+var queryFormNode              = document.getElementById("qv_queryform");
+var previewSectionNode         = document.getElementById("qv_chart");
+var addDatabaseFormNode        = document.getElementById("qv_add_database_form");
+var removeDatabaseFormNode     = document.getElementById("qv_remove_database_form");
+var addFilterFormNode          = document.getElementById("qv_add_filter_form");
+var removeFilterFormNode       = document.getElementById("qv_remove_filter_form");
 
     //Login Form Nodes
-    usernameNode               = document.getElementById("qv_username"),
-    passwordNode               = document.getElementById("qv_password"),
+var usernameNode               = document.getElementById("qv_username");
+var passwordNode               = document.getElementById("qv_password");
 
     //Query Form Nodes
-    databaseNode               = document.getElementById("qv_database"),
-    queryNode                  = document.getElementById("qv_query"),
-    filterNode                 = document.getElementById("qv_filter"),
-    visualizationTypeNode      = document.getElementById("qv_visualization_type"),
-    modificationTypeNode       = document.getElementById("qv_modification_type"),
-    chartTitleNode             = document.getElementById("qv_chart_title"),
-    widthNode                  = document.getElementById("qv_width"),
-    heightNode                 = document.getElementById("qv_height"),
-    cacheNode                  = document.getElementById("qv_cache"),
+var databaseNode               = document.getElementById("qv_database");
+var queryNode                  = document.getElementById("qv_query");
+var filterNode                 = document.getElementById("qv_filter");
+var visualizationTypeNode      = document.getElementById("qv_visualization_type");
+var modificationTypeNode       = document.getElementById("qv_modification_type");
+var chartTitleNode             = document.getElementById("qv_chart_title");
+var widthNode                  = document.getElementById("qv_width");
+var heightNode                 = document.getElementById("qv_height");
+var cacheNode                  = document.getElementById("qv_cache");
 
     //Preview Section Nodes
-    previewNode                = document.getElementById("qv_preview"),
-    generatedHtmlNode          = document.getElementById("qv_generated_html"),
-    generatedHtmlWrapperNode   = document.getElementById("qv_generated_html_wrapper"),
-    generatedWidgetNode        = document.getElementById("qv_generated_widget"),
-    generatedWidgetWrapperNode = document.getElementById("qv_generated_widget_wrapper"),
-    exportHTMLNode             = document.getElementById("qv_export_html"),
-    exportHTMLWrapperNode      = document.getElementById("qv_export_html_wrapper"),
-    exportCSVNode              = document.getElementById("qv_export_csv"),
-    exportCSVWrapperNode       = document.getElementById("qv_export_csv_wrapper"),
-    exportXMLNode              = document.getElementById("qv_export_xml"),
-    exportXMLWrapperNode       = document.getElementById("qv_export_xml_wrapper"),
-    exportJSONNode             = document.getElementById("qv_export_json"),
-    exportJSONWrapperNode      = document.getElementById("qv_export_json_wrapper"),
-    saveHtmlLinkNode           = document.getElementById("qv_save_html_link"),
-    saveWidgetLinkNode         = document.getElementById("qv_save_widget_link"),
-    saveExportHTMLLinkNode     = document.getElementById("qv_save_export_html_link"),
-    saveExportCSVLinkNode      = document.getElementById("qv_save_export_csv_link"),
-    saveExportXMLLinkNode      = document.getElementById("qv_save_export_xml_link"),
-    saveExportJSONLinkNode     = document.getElementById("qv_save_export_json_link"),
+var previewNode                = document.getElementById("qv_preview");
+var generatedHtmlNode          = document.getElementById("qv_generated_html");
+var generatedHtmlWrapperNode   = document.getElementById("qv_generated_html_wrapper");
+var generatedWidgetNode        = document.getElementById("qv_generated_widget");
+var generatedWidgetWrapperNode = document.getElementById("qv_generated_widget_wrapper");
+var exportHTMLNode             = document.getElementById("qv_export_html");
+var exportHTMLWrapperNode      = document.getElementById("qv_export_html_wrapper");
+var exportCSVNode              = document.getElementById("qv_export_csv");
+var exportCSVWrapperNode       = document.getElementById("qv_export_csv_wrapper");
+var exportXMLNode              = document.getElementById("qv_export_xml");
+var exportXMLWrapperNode       = document.getElementById("qv_export_xml_wrapper");
+var exportJSONNode             = document.getElementById("qv_export_json");
+var exportJSONWrapperNode      = document.getElementById("qv_export_json_wrapper");
+var saveHtmlLinkNode           = document.getElementById("qv_save_html_link");
+var saveWidgetLinkNode         = document.getElementById("qv_save_widget_link");
+var saveExportHTMLLinkNode     = document.getElementById("qv_save_export_html_link");
+var saveExportCSVLinkNode      = document.getElementById("qv_save_export_csv_link");
+var saveExportXMLLinkNode      = document.getElementById("qv_save_export_xml_link");
+var saveExportJSONLinkNode     = document.getElementById("qv_save_export_json_link");
 
     //Add Database Form Nodes
-    addDatabaseDatabaseKeyNode = document.getElementById("qv_add_database_database_key"),
-    addDatabaseTypeCodeNode    = document.getElementById("qv_add_database_type_code"),
-    addDatabaseUsernameNode    = document.getElementById("qv_add_database_username"),
-    addDatabasePasswordNode    = document.getElementById("qv_add_database_password"),
-    addDatabaseDatabaseNode    = document.getElementById("qv_add_database"),
-    addDatabaseHostNode        = document.getElementById("qv_add_database_host"),
-    addDatabasePortNode        = document.getElementById("qv_add_database_port"),
+var addDatabaseDatabaseKeyNode = document.getElementById("qv_add_database_database_key");
+var addDatabaseTypeCodeNode    = document.getElementById("qv_add_database_type_code");
+var addDatabaseUsernameNode    = document.getElementById("qv_add_database_username");
+var addDatabasePasswordNode    = document.getElementById("qv_add_database_password");
+var addDatabaseDatabaseNode    = document.getElementById("qv_add_database");
+var addDatabaseHostNode        = document.getElementById("qv_add_database_host");
+var addDatabasePortNode        = document.getElementById("qv_add_database_port");
 
     //Remove Database Form Nodes
-    removeDatabaseDatabaseNode = document.getElementById("qv_remove_database");
+var removeDatabaseDatabaseNode = document.getElementById("qv_remove_database");
 
     //Add Filter Form Nodes
-    addFilterFilterKeyNode     = document.getElementById("qv_add_filter_filter_key"),
-    addFilterDatabaseNode      = document.getElementById("qv_add_filter_database"),
-    addFilterQueryNode         = document.getElementById("qv_add_filter_query"),
+var addFilterFilterKeyNode     = document.getElementById("qv_add_filter_filter_key");
+var addFilterDatabaseNode      = document.getElementById("qv_add_filter_database");
+var addFilterQueryNode         = document.getElementById("qv_add_filter_query");
 
     //Remove Filter Form Nodes
-    removeFilterFilterNode     = document.getElementById("qv_remove_filter");
+var removeFilterFilterNode     = document.getElementById("qv_remove_filter");
 
 var demo = new QV.Visualizer();
 
@@ -155,7 +155,7 @@ var load_filter_values = function(keys){
 
     $(filterNode).empty();
 
-    if(numOfKeys == 0){
+    if(numOfKeys === 0){
         $(filterNode).append("<p>No filters configured!</p>");
     }
 
@@ -354,34 +354,34 @@ var visualization_form_submit = function(){
         toggle_tabs(1,1);
         toggle_tabs(2,1);
 
-        form_data['query'] = queryNode.value;
-        form_data['filters'] = [];
+        form_data.query = queryNode.value;
+        form_data.filters = [];
         for(i = 0; i<numOfKeys; i++){
-            form_data['filters'][filterKeys[i].key] = $("#qv_filter_" + filterKeys[i].key.toLowerCase()).val();
+            form_data.filters[filterKeys[i].key] = $("#qv_filter_" + filterKeys[i].key.toLowerCase()).val();
         }
-        form_data['databaseKey'] = databaseNode.options[databaseNode.selectedIndex].value;
-        form_data['modificationTypeIndex'] = parseInt(modificationTypeNode.options[modificationTypeNode.selectedIndex].value);
-        form_data['visualizationTypeIndex'] = parseInt(visualizationTypeNode.options[visualizationTypeNode.selectedIndex].value);
-        form_data['title'] = chartTitleNode.value;
-        form_data['width'] = widthNode.value;
-        form_data['height'] = heightNode.value;
-        form_data['cache'] = cacheNode.checked;
+        form_data.databaseKey = databaseNode.options[databaseNode.selectedIndex].value;
+        form_data.modificationTypeIndex = parseInt(modificationTypeNode.options[modificationTypeNode.selectedIndex].value);
+        form_data.visualizationTypeIndex = parseInt(visualizationTypeNode.options[visualizationTypeNode.selectedIndex].value);
+        form_data.title = chartTitleNode.value;
+        form_data.width = widthNode.value;
+        form_data.height = heightNode.value;
+        form_data.cache = cacheNode.checked;
 
-        form_data['visualizationOptions'] = [];
-        form_data['visualizationOptions'][0] = chartTitleNode.value;
-        form_data['visualizationOptions'][1] = widthNode.value;
-        form_data['visualizationOptions'][2] = heightNode.value;
+        form_data.visualizationOptions = [];
+        form_data.visualizationOptions[0] = chartTitleNode.value;
+        form_data.visualizationOptions[1] = widthNode.value;
+        form_data.visualizationOptions[2] = heightNode.value;
 
-        form_data['queryParams'] = [];
+        form_data.queryParams = [];
 
-        form_data['query'].replace(/\$([^\$]+)\$/g,function($0,$1){
+        form_data.query.replace(/\$([^\$]+)\$/g,function($0,$1){
             found = false;
             for(i=0; i<numOfKeys; i++){
                 if(filterKeys[i].key == $1){
                     found = true;
                 }
             }
-            if (found) form_data['queryParams'].push(form_data['filters'][$1]);
+            if (found) form_data.queryParams.push(form_data.filters[$1]);
             return $0;
         });
 
@@ -399,14 +399,14 @@ var visualization_form_submit = function(){
 var load_preview = function(){
     toggle_tabs(1,1);
     toggle_tabs(2,1);
-    if(ready['preview'] == undefined){
+    if(ready.preview === undefined){
         $(previewNode).empty();
         $(previewNode).addClass("loading");
-        demo.retrieve(form_data['query'],form_data['queryParams'],form_data['databaseKey'],form_data['modificationTypeIndex'],form_data['visualizationTypeIndex'],form_data['visualizationOptions'],previewNode,function(result){
+        demo.retrieve(form_data.query,form_data.queryParams,form_data.databaseKey,form_data.modificationTypeIndex,form_data.visualizationTypeIndex,form_data.visualizationOptions,previewNode,function(result){
             if(!/^The Query has lead to an error./.test(result)){
                 unlock_preview();
             }
-            ready['preview'] = true;
+            ready.preview = true;
             $(previewNode).removeClass("loading");
         });
     }
@@ -416,15 +416,15 @@ var load_preview = function(){
  * Retrieves the chart key from backend, generates the embed codes (HTML and Widget XML) and shows them in the corresponding nodes
  */
 var load_embed_code = function(){
-    if(ready['html'] == undefined){
+    if(ready.html === undefined){
         $(generatedHtmlWrapperNode).children().hide();
         $(generatedHtmlWrapperNode).addClass("loading");
         $(generatedWidgetWrapperNode).children().hide();
         $(generatedWidgetWrapperNode).addClass("loading");
-        demo.retrieveChartKey(form_data['query'],form_data['queryParams'],form_data['databaseKey'],form_data['modificationTypeIndex'],form_data['visualizationTypeIndex'],form_data['visualizationOptions'],form_data['cache'],function(data){
+        demo.retrieveChartKey(form_data.query,form_data.queryParams,form_data.databaseKey,form_data.modificationTypeIndex,form_data.visualizationTypeIndex,form_data.visualizationOptions,form_data.cache,function(data){
             var generatedCode;
             generatedCode = getGeneratedCode(data);
-            ready['html'] = true;
+            ready.html = true;
             generatedHtmlNode.value = generatedCode.html;
             saveHtmlLinkNode.href='data:text/plain;base64,' + btoa(generatedCode.html);
             generatedWidgetNode.value = generatedCode.widget;
@@ -466,11 +466,11 @@ var load_export_html = function(){
     if(!locked){
         toggle_tabs(1,2);
         toggle_tabs(3,1);
-        if(ready['export_html'] == undefined){
+        if(ready.export_html === undefined){
             $(exportHTMLWrapperNode).children().hide();
             $(exportHTMLWrapperNode).addClass("loading");
-            demo.retrieve(form_data['query'],form_data['queryParams'],form_data['databaseKey'],form_data['modificationTypeIndex'],QV.VISUALIZATIONTYPE.HTMLTABLE,form_data['visualizationOptions'],null,function(data){
-                ready['export_html'] = true;
+            demo.retrieve(form_data.query,form_data.queryParams,form_data.databaseKey,form_data.modificationTypeIndex,QV.VISUALIZATIONTYPE.HTMLTABLE.STRING,form_data.visualizationOptions,null,function(data){
+                ready.export_html = true;
                 exportHTMLNode.value = data.replace(/(\r\n|\r|\n)/g, '\r\n').replace(/\r\n$/,"");
                 saveExportHTMLLinkNode.href='data:text/plain;base64,' + btoa(data);
                 $(exportHTMLWrapperNode).children().show();
@@ -487,11 +487,11 @@ var load_export_csv = function(){
     if(!locked){
         toggle_tabs(1,2);
         toggle_tabs(3,2);
-        if(ready['export_csv'] == undefined){
+        if(ready.export_csv === undefined){
             $(exportCSVWrapperNode).children().hide();
             $(exportCSVWrapperNode).addClass("loading");
-            demo.retrieve(form_data['query'],form_data['queryParams'],form_data['databaseKey'],form_data['modificationTypeIndex'],QV.VISUALIZATIONTYPE.CSV,form_data['visualizationOptions'],null,function(data){
-                ready['export_csv'] = true;
+            demo.retrieve(form_data.query,form_data.queryParams,form_data.databaseKey,form_data.modificationTypeIndex,QV.VISUALIZATIONTYPE.CSV.STRING,form_data.visualizationOptions,null,function(data){
+                ready.export_csv = true;
                 exportCSVNode.value = data.replace(/(\r\n|\r|\n)/g, '\r\n').replace(/\r\n$/,"");
                 saveExportCSVLinkNode.href='data:text/plain;base64,' + btoa(data);
                 $(exportCSVWrapperNode).children().show();
@@ -508,11 +508,11 @@ var load_export_xml = function(){
     if(!locked){
         toggle_tabs(1,2);
         toggle_tabs(3,3);
-        if(ready['export_xml'] == undefined){
+        if(ready.export_xml === undefined){
             $(exportXMLWrapperNode).children().hide();
             $(exportXMLWrapperNode).addClass("loading");
-            demo.retrieve(form_data['query'],form_data['queryParams'],form_data['databaseKey'],form_data['modificationTypeIndex'],QV.VISUALIZATIONTYPE.XML,form_data['visualizationOptions'],null,function(data){
-                ready['export_xml'] = true;
+            demo.retrieve(form_data.query,form_data.queryParams,form_data.databaseKey,form_data.modificationTypeIndex,QV.VISUALIZATIONTYPE.XML.STRING,form_data.visualizationOptions,null,function(data){
+                ready.export_xml = true;
                 var serialized = new XMLSerializer().serializeToString(data)
                 exportXMLNode.value = serialized.replace(/(\r\n|\r|\n)/g, '\r\n').replace(/\r\n$/,"");
                 saveExportXMLLinkNode.href='data:text/plain;base64,' + btoa(serialized);
@@ -530,11 +530,11 @@ var load_export_json = function(){
     if(!locked){
         toggle_tabs(1,2);
         toggle_tabs(3,4);
-        if(ready['export_json'] == undefined){
+        if(ready.export_json === undefined){
             $(exportJSONWrapperNode).children().hide();
             $(exportJSONWrapperNode).addClass("loading");
-            demo.retrieve(form_data['query'],form_data['queryParams'],form_data['databaseKey'],form_data['modificationTypeIndex'],QV.VISUALIZATIONTYPE.JSON,form_data['visualizationOptions'],null,function(data){
-                ready['export_json'] = true;
+            demo.retrieve(form_data.query,form_data.queryParams,form_data.databaseKey,form_data.modificationTypeIndex,QV.VISUALIZATIONTYPE.JSON.STRING,form_data.visualizationOptions,null,function(data){
+                ready.export_json = true;
                 var serialized = JSON.stringify(data);
                 exportJSONNode.value = serialized.replace(/(\r\n|\r|\n)/g, '\r\n').replace(/\r\n$/,"");
                 saveExportJSONLinkNode.href='data:text/plain;base64,' + btoa(serialized);

@@ -110,22 +110,22 @@ var QV = (function(QV){
      * @type {Object}
      */
     QV.VISUALIZATIONTYPE = {
-        CSV: 0,
-        JSON: 1,
-        HTMLTABLE: 2,
-        XML: 3,
-        GOOGLEPIECHART: 4,
-        GOOGLEBARCHART: 5,
-        GOOGLELINECHART: 6,
-        GOOGLETIMELINECHART: 7,
-        GOOGLERADARCHART: 8,
-        GOOGLETABLE: 9,
+        CSV:                    {ID: 0, STRING: "csv"},
+        JSON:                   {ID: 1, STRING: "JSON"},
+        HTMLTABLE:              {ID: 2, STRING: "htmltable"},
+        XML:                    {ID: 3, STRING: "xml"},
+        GOOGLEPIECHART:         {ID: 4, STRING: "googlepiechart"},
+        GOOGLEBARCHART:         {ID: 5, STRING: "googlebarchart"},
+        GOOGLELINECHART:        {ID: 6, STRING: "googlelinechart"},
+        GOOGLETIMELINECHART:    {ID: 7, STRING: "googletimelinechart"},
+        GOOGLERADARCHART:       {ID: 8, STRING: "googleradarchart"},
+        GOOGLETABLE:            {ID: 9, STRING: "googletable"},
 
         fromInt: function(i){
             for(var key in this){
                 if(this.hasOwnProperty(key)){
-                    if(typeof this[key] == "number" && this[key] == i){
-                        return key;
+                    if(typeof this[key] == "object" && typeof this[key].ID == 'number' && this[key].ID == i){
+                        return this[key];
                     }
                 }
             }
@@ -138,13 +138,13 @@ var QV = (function(QV){
      * @type {Object}
      */
     QV.DATABASETYPE = {
-        DB2:        {ID: 1, DEFAULTPORT: 50000},
-        MYSQL:      {ID: 2, DEFAULTPORT: 3306},
-        FIREBIRD:   {ID: 3, DEFAULTPORT: 3050},
-        MSSQL:      {ID: 4, DEFAULTPORT: 1433},
-        POSTGRESQL: {ID: 5, DEFAULTPORT: 5432},
-        DERBY:      {ID: 6, DEFAULTPORT: 1527},
-        ORACLE:     {ID: 7, DEFAULTPORT: 1521},
+        DB2:        {ID: 1, DEFAULTPORT: 50000, STRING: "db2"},
+        MYSQL:      {ID: 2, DEFAULTPORT: 3306, STRING: "mysql"},
+        FIREBIRD:   {ID: 3, DEFAULTPORT: 3050, STRING: "firebird"},
+        MSSQL:      {ID: 4, DEFAULTPORT: 1433, STRING: "mssql"},
+        POSTGRESQL: {ID: 5, DEFAULTPORT: 5432, STRING: "postgresql"},
+        DERBY:      {ID: 6, DEFAULTPORT: 1527, STRING: "derby"},
+        ORACLE:     {ID: 7, DEFAULTPORT: 1521, STRING: "oracle"},
 
         fromInt: function(i){
             for(var key in this){
@@ -247,7 +247,7 @@ var QV = (function(QV){
             };
 
             var qParams = {
-                vtypei: visualizationTypeIndex
+                format: visualizationTypeIndex
             };
 
             restClient.post("query", content, qParams, success, error);
@@ -315,7 +315,7 @@ var QV = (function(QV){
                     port: port,
                 };
                 var queryParams = {
-                    vtypei: QV.VISUALIZATIONTYPE.JSON
+                    format: QV.VISUALIZATIONTYPE.JSON.STRING
                 };
 
                 var success = function(result, type, status) {
@@ -352,7 +352,7 @@ var QV = (function(QV){
                 if(!restClient.loggedIn()) return;
 
                 var queryParams = {
-                    vtypei: QV.VISUALIZATIONTYPE.JSON
+                    format: QV.VISUALIZATIONTYPE.JSON.STRING
                 };
 
                 var success = function(result, type, status) {
@@ -394,7 +394,7 @@ var QV = (function(QV){
                 };
 
                 var queryParams = {
-                    vtypei: QV.VISUALIZATIONTYPE.JSON
+                    format: QV.VISUALIZATIONTYPE.JSON.STRING
                 };
 
                 var success = function(result, type, status) {
@@ -431,7 +431,7 @@ var QV = (function(QV){
                 if(!restClient.loggedIn()) return;
 
                 var queryParams = {
-                    vtypei: QV.VISUALIZATIONTYPE.JSON
+                    format: QV.VISUALIZATIONTYPE.JSON.STRING
                 };
 
                 var success = function(result, type, status) {
@@ -467,7 +467,7 @@ var QV = (function(QV){
                 if(!restClient.loggedIn()) return;
 
                 var queryParams = {
-                    vtypei: QV.VISUALIZATIONTYPE.JSON
+                    format: QV.VISUALIZATIONTYPE.JSON.STRING
                 };
 
                 var success = function(result, type, status) {
@@ -498,7 +498,7 @@ var QV = (function(QV){
                 if(!restClient.loggedIn()) return;
 
                 var queryParams = {
-                    vtypei: QV.VISUALIZATIONTYPE.JSON
+                    format: QV.VISUALIZATIONTYPE.JSON.STRING
                 };
 
                 var success = function(result, type, status) {
@@ -544,7 +544,7 @@ var QV = (function(QV){
                 };
 
                 var queryParams = {
-                    vtypei: QV.VISUALIZATIONTYPE.JSON
+                    format: QV.VISUALIZATIONTYPE.JSON.STRING
                 };
 
                 restClient.get("filter/" + filterKey, null, queryParams, success, error);

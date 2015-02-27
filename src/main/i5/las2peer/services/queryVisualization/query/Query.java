@@ -4,6 +4,7 @@ import i5.las2peer.persistency.MalformedXMLException;
 import i5.las2peer.persistency.XmlAble;
 import i5.las2peer.security.Context;
 import i5.las2peer.services.queryVisualization.database.SQLDatabaseType;
+import i5.las2peer.services.queryVisualization.encoding.VisualizationType;
 import i5.simpleXML.Element;
 
 import java.io.Serializable;
@@ -35,12 +36,12 @@ public class Query implements XmlAble, Serializable {
 	private boolean useCache = false;
 	private String queryStatement = null;
 	private int modificationTypeIndex = -1;
-	private int visualizationTypeIndex = -1;
+	private VisualizationType visualizationTypeIndex = VisualizationType.JSON;
 	private String[] visualizationParameters = null;
 	
 	
 	public Query(long user, SQLDatabaseType jdbcInfo, String username, String password, String database, String host, int port,
-			String queryStatement, boolean useCache, int modificationTypeIndex, int visualizationTypeIndex, String[] visualizationParameters, String key) {
+			String queryStatement, boolean useCache, int modificationTypeIndex, VisualizationType visualizationTypeIndex, String[] visualizationParameters, String key) {
 				
 		this.user = user;
 		this.jdbcInfo = jdbcInfo;
@@ -88,7 +89,7 @@ public class Query implements XmlAble, Serializable {
 	public int getModificationTypeIndex() {
 		return modificationTypeIndex;
 	}
-	public int getVisualizationTypeIndex() {
+	public VisualizationType getVisualizationTypeIndex() {
 		return visualizationTypeIndex;
 	}
 	public String getKey() {
@@ -119,14 +120,14 @@ public class Query implements XmlAble, Serializable {
 			this.host = elm.getChild(1).getAttribute("host");
 			this.port = Integer.parseInt(elm.getChild(1).getAttribute("port"));
 			
-			this.visualizationTypeIndex = Integer.parseInt(elm.getChild(2).getAttribute("visualizationTypeIndex"));
+			this.visualizationTypeIndex = VisualizationType.valueOf(elm.getChild(2).getAttribute("visualizationTypeIndex"));
 			this.modificationTypeIndex = Integer.parseInt(elm.getChild(2).getAttribute("modificationTypeIndex"));
 			this.useCache = Boolean.parseBoolean(elm.getChild(2).getAttribute("useCache"));
 			
 			this.queryStatement = elm.getChild(3).getAttribute("statement");
 			
 			//Google Visualizations -> Hardcoded TODO
-			if(this.visualizationTypeIndex > 3){
+			if(this.visualizationTypeIndex.ordinal() > 3){
 				this.visualizationParameters = new String[3];
 				this.visualizationParameters[0] = elm.getChild(4).getAttribute("title");
 				this.visualizationParameters[1] = elm.getChild(4).getAttribute("width");
@@ -149,7 +150,7 @@ public class Query implements XmlAble, Serializable {
 		xmlString += "\t<VisualizationAndModification visualizationTypeIndex=\""+this.getVisualizationTypeIndex()+"\" modificationTypeIndex=\""+this.getModificationTypeIndex()+"\" useCache=\""+this.usesCache()+"\"></VisualizationAndModification>\n";
 		xmlString += "\t<QueryStatement statement=\""+this.getQueryStatement()+"\" ></QueryStatement>\n";
 		//Google Visualizations -> Hardcoded TODO
-		if(this.visualizationTypeIndex > 3){
+		if(this.visualizationTypeIndex.ordinal() > 3){
 			xmlString += "\t<VisualizationParameters title=\""+this.visualizationParameters[0]+"\" height=\""+this.visualizationParameters[1]+"\" width=\""+this.visualizationParameters[2]+"\"></VisualizationParameters>\n";
 		}
 		
@@ -170,7 +171,7 @@ public class Query implements XmlAble, Serializable {
 		s.setInt(9, useCache ? 1 : 0);
 		s.setString(10, queryStatement);
 		s.setInt(11, modificationTypeIndex);
-		s.setInt(12, visualizationTypeIndex);
+		s.setString(12, visualizationTypeIndex.toString());
 		String title = visualizationParameters[0];
 		int height = Integer.parseInt(visualizationParameters[1]);
 		int width = Integer.parseInt(visualizationParameters[2]);
@@ -203,7 +204,7 @@ public class Query implements XmlAble, Serializable {
 				boolean useCache = set.getInt("USE_CACHE") == 1;
 				String queryStatement = set.getString("QUERY_STATEMENT");
 				int modificationTypeIndex = set.getInt("MODIFICATION_TYPE");
-				int visualizationTypeIndex = set.getInt("VISUALIZATION_TYPE");
+				VisualizationType visualizationTypeIndex = VisualizationType.valueOf(set.getString("VISUALIZATION_TYPE"));
 				String visualizationTitle = set.getString("VISUALIZATION_TITLE");
 				int visualizationHeight = set.getInt("VISUALIZATION_HEIGHT");
 				int visualizationWidth = set.getInt("VISUALIZATION_WIDTH");
