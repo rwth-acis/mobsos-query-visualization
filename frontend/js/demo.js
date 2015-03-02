@@ -11,6 +11,7 @@ var addDatabaseFormNode        = document.getElementById("qv_add_database_form")
 var removeDatabaseFormNode     = document.getElementById("qv_remove_database_form");
 var addFilterFormNode          = document.getElementById("qv_add_filter_form");
 var removeFilterFormNode       = document.getElementById("qv_remove_filter_form");
+var removeQueryFormNode        = document.getElementById("qv_remove_query_form");
 
     //Login Form Nodes
 var usernameNode               = document.getElementById("qv_username");
@@ -67,6 +68,7 @@ var addFilterQueryNode         = document.getElementById("qv_add_filter_query");
 
     //Remove Filter Form Nodes
 var removeFilterFilterNode     = document.getElementById("qv_remove_filter");
+var removeQueryQueryNode     = document.getElementById("qv_remove_query");
 
 var demo = new QV.Visualizer();
 
@@ -173,6 +175,54 @@ var load_filter_values = function(keys){
 };
 
 /**
+ * Retrieves the query keys from backend and fills the corresponding select form fields in Remove Query Form with the data
+ */
+var load_query_keys = function(){
+    demo.retrieveQueryKeys(function(keys){
+        var i,
+            numOfKeys = keys.length,
+            data;
+        queryKeys = [];
+        $(removeQueryQueryNode).empty();
+        for(i=0; i<numOfKeys; i++){
+            data = {key: keys[i][0], name: keys[i][0]+" ["+keys[i][1]+"]"};
+            queryKeys.push(data);
+            $(removeQueryQueryNode).append(ich.qv_query_key_option_template(data));
+        }
+        // load_query_values(queryKeys);
+    });
+};
+
+/**
+ * Retrieves the query values from backend and fills the corresponding select form fields in Query Form with the data
+ */
+var load_query_values = function(keys){
+    var i,
+        j,
+        numOfKeys = keys.length,
+        numOfQueryKeys,
+        data;
+
+    $(queryNode).empty();
+
+    if(numOfKeys === 0){
+        $(queryNode).append("<p>No queries configured!</p>");
+    }
+
+    for(i=0; i<numOfKeys;i++){
+        data = {key: keys[i].key, key_lc: keys[i].key.toLowerCase(), name: keys[i].name, values: []};
+        demo.retrieveQueryValues(keys[i].key,(function(data){
+            return function(queryKeys){
+                    for(j=0, numOfQueryKeys = queryKeys.length; j<numOfQueryKeys; j++){
+                        data.values.push(queryKeys[j][0]);
+                    }
+                    $(queryNode).append(ich.qv_query_template(data));
+            };
+        })(data));
+    }
+};
+
+/**
  * Callback for the logging in with openid
  */
 var signinCallback = function(result){
@@ -186,6 +236,7 @@ var signinCallback = function(result){
         show_query_form();
         load_database_keys();
         load_filter_keys();
+        load_query_keys();
     } else {
         // anonymous
     }
@@ -253,11 +304,20 @@ var remove_filter_form_submit = function(){
 };
 
 /**
+ * Callback for the submission of the Remove Query Form.
+ */
+var remove_query_form_submit = function(){
+    demo.removeQuery(removeQueryQueryNode.options[removeQueryQueryNode.selectedIndex].value,function(){
+        load_query_keys();
+    });
+};
+
+/**
  * Suggests an default port for the selected database type in the Add Database Form and writes it into the corresponding form field of this form
  */
 var suggest_default_port = function(){
-    var typeCode = parseInt(addDatabaseTypeCodeNode.options[addDatabaseTypeCodeNode.selectedIndex].value);
-    addDatabasePortNode.value = QV.DATABASETYPE.fromInt(typeCode).DEFAULTPORT;
+    var typeCode = addDatabaseTypeCodeNode.options[addDatabaseTypeCodeNode.selectedIndex].value;
+    addDatabasePortNode.value = QV.DATABASETYPE.fromCode(typeCode).DEFAULTPORT;
 };
 
 /**
@@ -275,6 +335,21 @@ var show_database_management = function(){
     $(loginFormNode).hide();
     $(addDatabaseFormNode).show();
     $(removeDatabaseFormNode).show();
+    $(removeQueryFormNode).hide();
+    $(addFilterFormNode).hide();
+    $(removeFilterFormNode).hide();
+    $(queryFormNode).hide();
+    $(previewSectionNode).hide();
+};
+
+/**
+ * Shows the Add Query and Remove Query Form and hides the other sections
+ */
+var show_query_management = function(){
+    $(loginFormNode).hide();
+    $(addDatabaseFormNode).hide();
+    $(removeDatabaseFormNode).hide();
+    $(removeQueryFormNode).show();
     $(addFilterFormNode).hide();
     $(removeFilterFormNode).hide();
     $(queryFormNode).hide();
@@ -286,6 +361,7 @@ var show_database_management = function(){
  */
 var show_filter_management = function(){
     $(loginFormNode).hide();
+    $(removeQueryFormNode).hide();
     $(addDatabaseFormNode).hide();
     $(removeDatabaseFormNode).hide();
     $(addFilterFormNode).show();
@@ -302,6 +378,7 @@ var show_query_form = function(){
     $(addDatabaseFormNode).hide();
     $(removeDatabaseFormNode).hide();
     $(addFilterFormNode).hide();
+    $(removeQueryFormNode).hide();
     $(removeFilterFormNode).hide();
     $(queryFormNode).show();
     $(previewSectionNode).show();
@@ -316,6 +393,7 @@ var show_login_form = function(){
     $(removeDatabaseFormNode).hide();
     $(addFilterFormNode).hide();
     $(removeFilterFormNode).hide();
+    $(removeQueryFormNode).hide();
     $(queryFormNode).hide();
     $(previewSectionNode).hide();
 };
@@ -350,7 +428,7 @@ var unlock_preview = function(){
  */
 var visualization_form_submit = function(){
     var i, numOfKeys = filterKeys.length, found;
-    if(queryNode.value.trim() != ""){
+    if(queryNode.value.trim() !== ""){
         toggle_tabs(1,1);
         toggle_tabs(2,1);
 
@@ -361,7 +439,7 @@ var visualization_form_submit = function(){
         }
         form_data.databaseKey = databaseNode.options[databaseNode.selectedIndex].value;
         form_data.modificationTypeIndex = parseInt(modificationTypeNode.options[modificationTypeNode.selectedIndex].value);
-        form_data.visualizationTypeIndex = parseInt(visualizationTypeNode.options[visualizationTypeNode.selectedIndex].value);
+        form_data.visualizationTypeIndex = visualizationTypeNode.options[visualizationTypeNode.selectedIndex].value;
         form_data.title = chartTitleNode.value;
         form_data.width = widthNode.value;
         form_data.height = heightNode.value;
@@ -513,7 +591,7 @@ var load_export_xml = function(){
             $(exportXMLWrapperNode).addClass("loading");
             demo.retrieve(form_data.query,form_data.queryParams,form_data.databaseKey,form_data.modificationTypeIndex,QV.VISUALIZATIONTYPE.XML.STRING,form_data.visualizationOptions,null,function(data){
                 ready.export_xml = true;
-                var serialized = new XMLSerializer().serializeToString(data)
+                var serialized = new XMLSerializer().serializeToString(data);
                 exportXMLNode.value = serialized.replace(/(\r\n|\r|\n)/g, '\r\n').replace(/\r\n$/,"");
                 saveExportXMLLinkNode.href='data:text/plain;base64,' + btoa(serialized);
                 $(exportXMLWrapperNode).children().show();
@@ -562,14 +640,14 @@ var toggle_tabs = function(tabsetId,tabId){
  */
 var toggle_metadata = function(){
     $('#qv_metadata').toggle();
-}
+};
 
 /**
  * Show / Hide the filter input fields
  */
 var toggle_filter = function(){
     $('#qv_filter').toggle();
-}
+};
 
 //Show Login Form by default
 show_login_form();

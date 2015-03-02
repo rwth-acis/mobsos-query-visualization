@@ -786,6 +786,58 @@ public class QueryVisualizationService extends Service {
 	}
 
 	/**
+	 * Returns a list/table of the keys of all available/configured databases of the user.
+	 * 
+	 * @param visualizationTypeIndex encoding of the returned message
+	 * @return success or error message, if possible in the requested encoding/format
+	 */
+	@GET
+	@Path("query")
+	@ResourceListApi(description = "Manage a users queries")
+	@Summary("Gets all queries for your user")
+	@Produces(MediaType.APPLICATION_JSON)
+	@ApiResponses(value={
+			  @ApiResponse(code = 200, message = "Got Database queries."),
+			  @ApiResponse(code = 400, message = "Retrieving queries failed.")})
+	public HttpResponse getQueryKeys(
+			@QueryParam(defaultValue = "JSON", name = "format") String visualizationTypeIndex) {
+		try {
+			initializeDBConnection();
+			List<Query> keyList = this.queryManager.getQueries();
+
+			if(keyList == null) {
+				throw new Exception("Failed to get the key list for the users' queries!");
+			}
+
+			MethodResult result = new MethodResult();
+			Integer[] datatypes = {Types.VARCHAR,Types.VARCHAR};
+			result.setColumnDatatypes(datatypes);
+			String[] names = {"QueryKeys","DatabaseKeys"};
+			result.setColumnNames(names);
+			Iterator<Query> iterator = keyList.iterator();
+
+			while(iterator.hasNext()) {
+				Query q = iterator.next();
+				String queryKey = q.getKey();
+				String databaseKey = q.getDatabase();
+				Object[] currentRow = {queryKey,databaseKey};
+
+				result.addRow(currentRow);
+			}
+
+			HttpResponse res = new HttpResponse(
+					visualizationManager.getVisualization(VisualizationType.valueOf(visualizationTypeIndex.toUpperCase())).generate(result, null));
+			res.setStatus(200);
+			return res;
+		} catch (Exception e) {
+			logError(e);
+			HttpResponse res = new HttpResponse(visualizationException.generate(e, null));
+			res.setStatus(400);
+			return res;
+		}
+	}
+
+	/**
 	 * Deletes a filter from the user's settings/profile.
 	 * 
 	 * @param queryKey the key of the filter

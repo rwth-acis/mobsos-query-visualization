@@ -37,9 +37,20 @@
     <script id="qv_filter_key_option_template" type="text/html">
         {{! <!--}}<option value="{{key}}">{{name}}</option>{{! -->}}
     </script>
+    <script id="qv_query_key_option_template" type="text/html">
+        {{! <!--}}<option value="{{key}}">{{name}}</option>{{! -->}}
+    </script>
     <script id="qv_filter_template" type="text/html">
         {{! <!--}}<h3><label for="qv_filter_{{key_lc}}">{{name}}:</label></h3>
         <select id="qv_filter_{{key_lc}}">
+        {{#values}}
+            <option value="{{.}}">{{.}}</option>
+        {{/values}}
+        </select>{{! -->}}
+    </script>
+    <script id="qv_query_template" type="text/html">
+        {{! <!--}}<h3><label for="qv_query_{{key_lc}}">{{name}}:</label></h3>
+        <select id="qv_query_{{key_lc}}">
         {{#values}}
             <option value="{{.}}">{{.}}</option>
         {{/values}}
@@ -73,13 +84,13 @@
         <label>Database Key: <input id="qv_add_database_database_key" type="text" /></label>
         <label>Type Code:
             <select id="qv_add_database_type_code" onchange="suggest_default_port()">
-                <option value="1" selected>DB2</option>
-                <option value="2">MySQL</option>
-                <option value="3">Firebird</option>
-                <option value="4">MsSQL</option>
-                <option value="5">PostgreSQL</option>
-                <option value="6">Derby</option>
-                <option value="7">Oracle</option>
+                <option value="db2">DB2</option>
+                <option value="mysql" selected>MySQL</option>
+                <option value="firebird">Firebird</option>
+                <option value="mssql">MsSQL</option>
+                <option value="postgresql">PostgreSQL</option>
+                <option value="derby">Derby</option>
+                <option value="oracle">Oracle</option>
             </select>
         </label>
         <label>Username: <input id="qv_add_database_username" type="text" /></label>
@@ -92,6 +103,13 @@
     <form id="qv_remove_database_form" action="javascript:remove_database_form_submit()">
         <h2><label for="qv_remove_database">Remove Database:</label></h2>
         <select id="qv_remove_database">
+        </select>
+        <input type="submit" value="Remove Database" />
+    </form>
+    <form id="qv_remove_query_form" action="javascript:remove_query_form_submit()">
+        <a style="float: right; color: black; font-size: 1.2em;" href="javascript:show_query_form()">back</a>
+        <h2><label for="qv_remove_query">Remove Queries:</label></h2>
+        <select id="qv_remove_query">
         </select>
         <input type="submit" value="Remove Database" />
     </form>
@@ -118,6 +136,7 @@
         <!-- <a style="float: right; color: black; margin&#45;left: 5px;" href="javascript:logout()">Logout</a> -->
         <a style="float: right; color: black; margin-left: 5px;" href="javascript:show_database_management()">Manage Databases</a>
         <a style="float: right; color: black; margin-left: 5px;" href="javascript:show_filter_management()">Manage Filters</a>
+        <a style="float: right; color: black; margin-left: 5px;" href="javascript:show_query_management()">Manage Queries</a>
         <a style="float: right; color: black; margin-left: 5px;" href="javascript:show_help()">Help</a>
         <h2><label for="qv_database">Database:</label></h2>
         <select id="qv_database">
@@ -135,12 +154,12 @@
         </select>
         <h2><label for="qv_visualization_type">Output Format:</label></h2>
         <select id="qv_visualization_type">
-            <option value="9" selected>Google Table</option>
-            <option value="4">Google Pie Chart</option>
-            <option value="5">Google Bar Chart</option>
-            <option value="6">Google Line Chart</option>
-            <option value="7">Google Timeline Chart</option>
-            <option value="8">Google Radar Chart</option>
+            <option value="googletable" selected>Google Table</option>
+            <option value="googlepiechart">Google Pie Chart</option>
+            <option value="googlebarchart">Google Bar Chart</option>
+            <option value="googlelinechart">Google Line Chart</option>
+            <option value="googletimelinechart">Google Timeline Chart</option>
+            <option value="googleradarchart">Google Radar Chart</option>
         </select>
         <h2><a href="javascript:toggle_metadata()">+ Metadata</a></h2>
         <div id="qv_metadata">
@@ -150,6 +169,7 @@
             <label><strong>Use Cache:</strong> <input id="qv_cache" type="checkbox"/></label>
         </div>
         <input style="margin: 5% auto; font-size: 1.5em;" type="submit" value="Visualize!"/>
+        <input style="margin: 5% auto; font-size: 1.5em;" type="submit" value="Save"/>
     </form>
     <div id="qv_chart">
         <ul class="tabs" id="tabset1">

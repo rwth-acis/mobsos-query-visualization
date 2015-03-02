@@ -155,6 +155,17 @@ var QV = (function(QV){
                 }
             }
             return "NO_SUCH_TYPE";
+        },
+
+        fromCode: function(i){
+            for(var key in this){
+                if(this.hasOwnProperty(key)){
+                    if(typeof this[key] == "object" && typeof this[key].STRING == 'string' && this[key].STRING == i){
+                        return this[key];
+                    }
+                }
+            }
+            return "NO_SUCH_TYPE";
         }
     };
 
@@ -312,7 +323,7 @@ var QV = (function(QV){
                     password: password,
                     database: database,
                     dbhost: host,
-                    port: port,
+                    port: parseInt(port),
                 };
                 var queryParams = {
                     format: QV.VISUALIZATIONTYPE.JSON.STRING
@@ -460,6 +471,43 @@ var QV = (function(QV){
                 restClient.delete("filter/" + filterKey, null, queryParams, success, error);
             },
             /**
+             * Removes a query of the set of the configured query of the user currently logged in
+             * @param queryKey The key of the query to delete
+             * @param callback Callback, called when the query has been removed successfully. Has one paramter consisting of the query key of the removed query
+             */
+            removeQuery: function(queryKey,callback){
+                if(!restClient.loggedIn()) return;
+
+                var queryParams = {
+                    format: QV.VISUALIZATIONTYPE.JSON.STRING
+                };
+
+                var success = function(result, type, status) {
+                    if (typeof result !== "object") {
+                        try{
+                            result = JSON.parse(result);
+                        } catch (e){
+                            alert("Error! Failed to parse JSON");
+                            return;
+                        }
+                    }
+                    if(result[2] == queryKey){
+                        alert("Query removed!");
+                        if(typeof callback == 'function'){
+                            if (result === null) {
+                                restClient.delete("query/" + queryKey, null, queryParams, success, error);
+                            } else {
+                                callback(result.slice(2));
+                            }
+                        }
+                    } else {
+                        alert("Query removal failed");
+                    }
+                };
+
+                restClient.delete("query/" + queryKey, null, queryParams, success, error);
+            },
+            /**
              * Retrieves the keys of the databases configured for the user currently logged in
              * @param callback Callback, called when the keys have been retrieved. Has one paramter consisting of an array of the database keys
              */
@@ -548,6 +596,65 @@ var QV = (function(QV){
                 };
 
                 restClient.get("filter/" + filterKey, null, queryParams, success, error);
+            },
+            /**
+             * Retrieves the keys of the queries saved for the user currently logged in
+             * @param callback Callback, called when the keys have been retrieved. Has one paramter consisting of an array of the query keys
+             */
+            retrieveQueryKeys: function(callback){
+                if(!restClient.loggedIn()) return;
+
+                var queryParams = {
+                    format: QV.VISUALIZATIONTYPE.JSON.STRING
+                };
+
+                var success = function(result, type, status) {
+                    if (typeof result !== "object") {
+                        try{
+                            result = JSON.parse(result);
+                        } catch (e){
+                            log("Error! Failed to parse JSON");
+                            return;
+                        }
+                    }
+                    if(typeof callback == 'function'){
+                        if (result === null) {
+                            restClient.get("query", null, queryParams, success, error);
+                        } else {
+                            callback(result.slice(2));
+                        }
+                    }
+                };
+
+                restClient.get("query", null, queryParams, success, error);
+            },
+            /**
+             * Retrieves the values for a specific query specified by its key
+             * @param query
+             * @param callback Callback, called when the values have been retrieved. Has one paramter consisting of an array of the query values
+             */
+            retrieveQueryValues: function(queryKey,callback){
+                if(!restClient.loggedIn()) return;
+
+                var success = function(result, type, status) {
+                    if (typeof result !== "object") {
+                        try{
+                            result = JSON.parse(result);
+                        } catch (e){
+                            log("Error! Failed to parse JSON");
+                            return;
+                        }
+                    }
+                    if(typeof callback == 'function'){
+                        callback(result.slice(2));
+                    }
+                };
+
+                var queryParams = {
+                    format: QV.VISUALIZATIONTYPE.JSON.STRING
+                };
+
+                restClient.get("query/" + queryKey, null, queryParams, success, error);
             },
             /**
              * Retrieves the visualization for a query and a set of database and modification options

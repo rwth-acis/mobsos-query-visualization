@@ -2,6 +2,11 @@ package i5.las2peer.services.queryVisualization.query;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 
 import i5.las2peer.execution.L2pThread;
 import i5.las2peer.logging.NodeObserver.Event;
@@ -9,6 +14,8 @@ import i5.las2peer.p2p.Node;
 import i5.las2peer.security.Agent;
 import i5.las2peer.services.queryVisualization.QueryVisualizationService;
 import i5.las2peer.services.queryVisualization.database.SQLDatabase;
+import i5.las2peer.services.queryVisualization.database.SQLDatabaseType;
+import i5.las2peer.services.queryVisualization.encoding.VisualizationType;
 
 /**
  * 
@@ -19,6 +26,7 @@ import i5.las2peer.services.queryVisualization.database.SQLDatabase;
  */
 public class QueryManager {
 	
+	private HashMap<String, Query> userDatabaseMap = new HashMap<String, Query>();
 	private SQLDatabase storageDatabase = null;
 	
 	
@@ -126,5 +134,41 @@ public class QueryManager {
 			System.out.println ( "QV critical:");
 			e.printStackTrace();
 		}
+	}
+
+	// get a list of the names of all databases of the user
+	public List<Query> getQueries() {
+		ResultSet queries;
+		long user = getL2pThread().getContext().getMainAgent().getId();
+		try {
+			storageDatabase.connect();
+			PreparedStatement p = storageDatabase.prepareStatement(
+					"SELECT * FROM `QUERIES` WHERE USER = ?;");
+			p.setLong(1, user);
+			queries = p.executeQuery();
+			LinkedList<Query> settings = new LinkedList<Query>();
+			try {
+				while (queries.next()) {
+					String title = queries.getString("VISUALIZATION_TITLE");
+					String height = queries.getString("VISUALIZATION_HEIGHT");
+					String width = queries.getString("VISUALIZATION_WIDTH");
+					Query setting = new Query(user,  SQLDatabaseType.getSQLDatabaseType(queries.getInt("JDBCINFO")),
+							queries.getString("USERNAME"), queries.getString("PASSWORD"), queries.getString("DATABASE_NAME"),
+							queries.getString("HOST"), queries.getInt("PORT"), queries.getString("QUERY_STATEMENT"),
+							queries.getBoolean("USE_CACHE"), queries.getInt("MODIFICATION_TYPE"),
+							VisualizationType.valueOf(queries.getString("VISUALIZATION_TYPE")), new String[] {title, width, height},
+							queries.getString("KEY"));
+					settings.add(setting);
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			return settings;
+		} catch ( Exception e ) {
+			logMessage("Failed to get the users' SQL settings. " + e.getMessage());
+		} finally {
+			storageDatabase.disconnect();
+		}
+		return null;
 	}
 }
