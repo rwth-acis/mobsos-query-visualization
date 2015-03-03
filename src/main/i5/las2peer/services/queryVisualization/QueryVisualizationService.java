@@ -358,9 +358,7 @@ public class QueryVisualizationService extends Service {
 	@ApiResponses(value={
 			  @ApiResponse(code = 200, message = "Database removed successfully."),
 			  @ApiResponse(code = 400, message = "Database removal failed.")})
-	public HttpResponse removeDatabase(
-			@PathParam("key") String databaseKey,
-			@QueryParam(defaultValue = "JSON", name = "format") String vtypei) {
+	public HttpResponse removeDatabase(@PathParam("key") String databaseKey) {
 		try {			
 			if(databaseKey.equalsIgnoreCase("MonitoringDefault")) {
 				databaseKey = stDbKey;
@@ -381,7 +379,7 @@ public class QueryVisualizationService extends Service {
 			result.addRow(defaultDatabase);
 
 			HttpResponse res = new HttpResponse(
-					visualizationManager.getVisualization(VisualizationType.valueOf(vtypei.toUpperCase())).generate(result, null));
+					visualizationManager.getVisualization(VisualizationType.JSON).generate(result, null));
 			res.setStatus(200);
 			return res;
 		}
@@ -647,8 +645,7 @@ public class QueryVisualizationService extends Service {
 	@ApiResponses(value={
 			  @ApiResponse(code = 200, message = "Deleted filter."),
 			  @ApiResponse(code = 400, message = "Deleting filter failed.")})
-	public HttpResponse deleteFilter(@PathParam("key") String filterKey,
-			@QueryParam(defaultValue = "JSON", name = "format") String visualizationTypeIndex) {
+	public HttpResponse deleteFilter(@PathParam("key") String filterKey) {
 		try {		
 			initializeDBConnection();
 			if(this.filterManager == null) {
@@ -669,7 +666,7 @@ public class QueryVisualizationService extends Service {
 			result.addRow(deletedDatabase);
 
 			HttpResponse res = new HttpResponse(
-					visualizationManager.getVisualization(VisualizationType.valueOf(visualizationTypeIndex.toUpperCase())).generate(result, null));
+					visualizationManager.getVisualization(VisualizationType.JSON).generate(result, null));
 			res.setStatus(200);
 			return res;
 		}
@@ -856,9 +853,7 @@ public class QueryVisualizationService extends Service {
 	@ApiResponses(value={
 			  @ApiResponse(code = 200, message = "Deleted query."),
 			  @ApiResponse(code = 400, message = "Deleting query failed.")})
-	public HttpResponse deleteQuery(
-			@PathParam("key") String queryKey,
-			@QueryParam(defaultValue = "JSON", name = "format") String visualizationTypeIndex) {
+	public HttpResponse deleteQuery( @PathParam("key") String queryKey) {
 		try {		
 			initializeDBConnection();
 			if(this.queryManager == null) {
@@ -874,7 +869,7 @@ public class QueryVisualizationService extends Service {
 			result.addRow(deletedQuery);
 
 			HttpResponse res = new HttpResponse(
-					visualizationManager.getVisualization(VisualizationType.valueOf(visualizationTypeIndex.toUpperCase())).generate(result, null));
+					visualizationManager.getVisualization(VisualizationType.JSON).generate(result, null));
 			res.setStatus(200);
 			return res;
 		}
