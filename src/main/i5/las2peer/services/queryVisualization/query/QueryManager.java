@@ -137,6 +137,13 @@ public class QueryManager {
 		Query[] queryArray = new Query[1];
 		queryArray[0] = query;
 		try {
+			String title = query.getTitle();
+			for (Query q : userQueryMap.values()) {
+				if (q.getTitle().equals(title)) {
+					query.setKey(q.getKey());
+					break;
+				}
+			}
 			storageDatabase.connect();
 			PreparedStatement p = storageDatabase.prepareStatement(Query.getReplace());
 			query.prepareStatement(p);
@@ -194,6 +201,7 @@ public class QueryManager {
 			s.setLong(2, getL2pThread().getContext().getMainAgent().getId());
 			s.executeUpdate();
 			storageDatabase.disconnect();
+			userQueryMap.remove(queryKey);
 		} catch (Exception e) {
 			logMessage("Error removing the Query! " + e);
 			System.out.println ( "QV critical:");

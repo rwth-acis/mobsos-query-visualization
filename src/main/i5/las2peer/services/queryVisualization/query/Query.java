@@ -102,6 +102,9 @@ public class Query implements XmlAble, Serializable {
 	public String getKey() {
 		return key;
 	}
+	public void setKey(String key) {
+		this.key = key;
+	}
 	public String[] getVisualizationParameters() {
 		return new String[]{title, ""+height,""+width};
 	}
