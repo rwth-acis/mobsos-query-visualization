@@ -94,11 +94,19 @@ public class VisualizationGoogleTable extends Visualization {
 					switch(columnTypes[i]) {
 						case Types.DATE:
 							//TODO: this is wrong, it starts counting the month at 0...								
-							resultHTML += " new Date(" + ((Date) currentRow[i]).getTime() + ")";
+							try {
+								resultHTML += " new Date(" + ((Date) currentRow[i]).getTime() + ")";
+							} catch (Exception e) {
+								resultHTML += " null";
+							}
 							break;
 						case Types.TIME:
 						case Types.TIMESTAMP:
-							resultHTML += " new Date(" + ((Time) currentRow[i]).getTime() + ")";
+							try {
+								resultHTML += " new Date(" + ((Time) currentRow[i]).getTime() + ")";
+							} catch (Exception e) {
+								resultHTML += " null";
+							}
 							break;
 						case Types.BOOLEAN:
 						case Types.BIGINT:
@@ -121,9 +129,11 @@ public class VisualizationGoogleTable extends Visualization {
 					resultHTML += "],\n";
 				}
 				else{
-					resultHTML += "]\n]);\n"; //Last entry
+					resultHTML += "]\n"; //Last entry
 				}
 			}
+
+			resultHTML += "]);\n"; //Last entry
 			
 	        resultHTML += "var chart = new google.visualization.Table(document.getElementById('" + randomNodeId + "'));\n";
 	        resultHTML += "chart.draw(data, null);\n";

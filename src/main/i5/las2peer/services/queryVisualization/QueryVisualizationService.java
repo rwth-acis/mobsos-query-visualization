@@ -26,6 +26,7 @@ import i5.las2peer.restMapper.tools.XMLCheck;
 import i5.las2peer.security.L2pSecurityException;
 import i5.las2peer.security.UserAgent;
 import i5.las2peer.services.queryVisualization.caching.MethodResultCache;
+import i5.las2peer.services.queryVisualization.database.DoesNotExistException;
 import i5.las2peer.services.queryVisualization.database.SQLDatabase;
 import i5.las2peer.services.queryVisualization.database.SQLDatabaseManager;
 import i5.las2peer.services.queryVisualization.database.SQLDatabaseSettings;
@@ -119,7 +120,7 @@ public class QueryVisualizationService extends Service {
 	
 	private SQLDatabaseSettings databaseSettings = null;
 	private SQLDatabase storageDatabase = null;
-	private SQLDatabaseManager databaseManager = null;
+	public SQLDatabaseManager databaseManager = null;
 	private SQLFilterManager filterManager = null;
 	private QueryManager queryManager = null;
 	private MethodResultCache resultCache = null;
@@ -153,7 +154,7 @@ public class QueryVisualizationService extends Service {
 			return (boolean) obj.get(key);
 		} catch (Exception e) {
 			String b = (String) obj.get(key);
-			if (b == "1") {
+			if (b.equals("1")) {
 				return true;
 			}
 			return (boolean)Boolean.parseBoolean(b);
@@ -523,7 +524,8 @@ public class QueryVisualizationService extends Service {
 	@Produces(MediaType.APPLICATION_JSON)
 	@ApiResponses(value={
 			  @ApiResponse(code = 200, message = "Got filter values."),
-			  @ApiResponse(code = 400, message = "Retrieving filter keys failed.")})
+			  @ApiResponse(code = 400, message = "Retrieving filter keys failed."),
+			  @ApiResponse(code = 204, message = "Filter does not exist.")})
 	public HttpResponse getFilterValues(
 			@PathParam("key") String filterKey,
 			@QueryParam(name="format", defaultValue = "JSON") String visualizationTypeIndex) {
@@ -539,8 +541,11 @@ public class QueryVisualizationService extends Service {
 					this.filterManager.getFilterValues(filterKey, vtypei, this));
 			res.setStatus(200);
 			return res;
-		}
-		catch (Exception e) {
+		} catch (DoesNotExistException e) {
+			HttpResponse res = new HttpResponse("Filter " + filterKey + " does not exist.");
+			res.setStatus(404);
+			return res;
+		} catch (Exception e) {
 			logError(e);
 			HttpResponse res = new HttpResponse(visualizationException.generate(e, null));
 			res.setStatus(400);
@@ -678,7 +683,6 @@ public class QueryVisualizationService extends Service {
 
 	@POST
 	@Path("query")
-	@ResourceListApi(description = "Manage a users queries")
 	@Summary("Creates a new query")
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
@@ -715,7 +719,7 @@ public class QueryVisualizationService extends Service {
 	public HttpResponse createQuery(String query, String[] queryParameters, String databaseKey, boolean useCache,
 			int modificationTypeIndex, VisualizationType visualizationTypeIndex, String title, String width, String height,
 			boolean save) {
-		String queryString = createQueryString(query, queryParameters, databaseKey, useCache, modificationTypeIndex, visualizationTypeIndex, new String[]{title, width, height}, save);
+		String queryString = createQueryString(query, queryParameters, databaseKey, useCache, modificationTypeIndex, visualizationTypeIndex, new String[]{title, height, width}, save);
 		HttpResponse res = new HttpResponse(queryString);
 		if (queryString.startsWith("The Query has lead to an error.")) {
 			res.setStatus(400);
@@ -803,16 +807,16 @@ public class QueryVisualizationService extends Service {
 			@QueryParam(defaultValue = "JSON", name = "format") String visualizationTypeIndex) {
 		try {
 			initializeDBConnection();
-			List<Query> keyList = this.queryManager.getQueries();
+			List<Query> keyList = this.queryManager.getQueryList();
 
 			if(keyList == null) {
 				throw new Exception("Failed to get the key list for the users' queries!");
 			}
 
 			MethodResult result = new MethodResult();
-			Integer[] datatypes = {Types.VARCHAR,Types.VARCHAR};
+			Integer[] datatypes = {Types.VARCHAR,Types.VARCHAR,Types.VARCHAR};
 			result.setColumnDatatypes(datatypes);
-			String[] names = {"QueryKeys","DatabaseKeys"};
+			String[] names = {"QueryKeys","DatabaseKeys","Title"};
 			result.setColumnNames(names);
 			Iterator<Query> iterator = keyList.iterator();
 
@@ -820,7 +824,8 @@ public class QueryVisualizationService extends Service {
 				Query q = iterator.next();
 				String queryKey = q.getKey();
 				String databaseKey = q.getDatabase();
-				Object[] currentRow = {queryKey,databaseKey};
+				String title = q.getTitle();
+				Object[] currentRow = {queryKey,databaseKey,title};
 
 				result.addRow(currentRow);
 			}
@@ -881,7 +886,6 @@ public class QueryVisualizationService extends Service {
 		}
 	}
 
-
 	/**
 	 * Executes a stored query on the specified database.
 	 * <br>
@@ -898,21 +902,76 @@ public class QueryVisualizationService extends Service {
 	@ApiResponses(value={
 			  @ApiResponse(code = 200, message = "Visualization created."),
 			  @ApiResponse(code = 400, message = "Creating visualization failed."),
-			  @ApiResponse(code = 404, message = "Didn't find requested visualization.")})
-	public HttpResponse visualizeQuery(@PathParam("key") String key) {
+			  @ApiResponse(code = 404, message = "Didn't find requested query.")})
+	public HttpResponse getQueryValues(@PathParam("key") String key,
+			@QueryParam(name="format", defaultValue = "JSON") String format) {
+		initializeDBConnection();
+
+		try {
+//			VisualizationType vtypei = VisualizationType.valueOf(format.toUpperCase());
+			initializeDBConnection();
+			if(this.queryManager == null) {
+				// initialize query manager
+				this.queryManager = new QueryManager(this, storageDatabase);
+			}
+			Query q = queryManager.getQuery(key);
+			if (q == null) {
+				throw new DoesNotExistException("Query does not exist.");
+			}
+			JSONObject o = queryManager.toJSON(q);
+			HttpResponse res = new HttpResponse(o.toJSONString());
+
+			res.setStatus(200);
+			return res;
+		} catch (DoesNotExistException e) {
+			logError(e);
+			HttpResponse res = new HttpResponse("Query " + key + " does not exist.");
+			res.setStatus(400);
+			return res;
+		} catch (Exception e) {
+			logError(e);
+			HttpResponse res = new HttpResponse(visualizationException.generate(e, null));
+			res.setStatus(400);
+			return res;
+		}
+	}
+
+	/**
+	 * Executes a stored query on the specified database.
+	 * <br>
+	 * This is the main services entry point that should be used to visualize saved queries.
+	 * 
+	 * @param key a String that contains the id of the query
+	 * 
+	 * @return Result of the query in the given output format
+	 */
+	@GET
+	@Path("query/{key}/visualize")
+	@Summary("Visualizes a query with a given key")
+	@ApiResponses(value={
+			  @ApiResponse(code = 200, message = "Visualization created."),
+			  @ApiResponse(code = 400, message = "Creating visualization failed."),
+			  @ApiResponse(code = 404, message = "Didn't find requested query.")})
+	public HttpResponse visualizeQuery(@PathParam("key") String key,
+			@QueryParam(name="format", defaultValue = "") String format) {
 		initializeDBConnection();
 
 		Query query = null;
 		try {
 			query = queryManager.getQuery(key);
 			if(query == null) {
-				throw new Exception("Query does not exist!"); 
+				throw new DoesNotExistException("Query does not exist!"); 
 			}
-		}
-		catch(Exception e) {
+		} catch(DoesNotExistException e) {
+			logError(e.getMessage());
+			HttpResponse res = new HttpResponse(
+					"Query " + key + " does not exist");
+			res.setStatus(404);
+			return res;
+		} catch(Exception e) {
 			HttpResponse res = new HttpResponse(
 					visualizationException.generate(e, "Encountered a problem while trying to fetch stored query " + key));
-			res.setStatus(404);
+			res.setStatus(400);
 			return res;
 		}
 
@@ -920,8 +979,7 @@ public class QueryVisualizationService extends Service {
 			HttpResponse res = new HttpResponse(visualizeQuery(query));
 			res.setStatus(200);
 			return res;
-		}
-		catch(Exception e) {
+		} catch(Exception e) {
 			logError(e.getMessage());
 			HttpResponse res = new HttpResponse(
 					visualizationException.generate(e, "Encountered a Problem while trying to visualize Query!"));
@@ -1145,7 +1203,11 @@ public class QueryVisualizationService extends Service {
 							break;
 						default:
 							logMessage("Unknown SQL Datatype: " + columnTypes[i-1].toString());
-							currentRow[i-1] = resultSet.getObject(i).toString();
+							try {
+								currentRow[i-1] = resultSet.getObject(i).toString();
+							} catch (Exception e) {
+								currentRow[i-1] = null;
+							}
 							break;
 						};
 

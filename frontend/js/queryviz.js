@@ -277,14 +277,14 @@ var QV = (function(QV){
                 outputnode.innerHTML = QV.HELPER.stripAndExecuteScript(" " + result);
                 if(typeof callback == 'function'){
                     if (result === null) {
-                        restClient.get("query/" + key, null, success, error);
+                        restClient.get("query/" + key + "/visualize", null, success, error);
                     } else {
                         callback(result);
                     }
                 }
             };
 
-            restClient.get("query/" + key, null, success, error);
+            restClient.get("query/" + key + "/visualize", null, success, error);
         };
 
         /* * *              *
@@ -646,7 +646,7 @@ var QV = (function(QV){
                         }
                     }
                     if(typeof callback == 'function'){
-                        callback(result.slice(2));
+                        callback(result);
                     }
                 };
 
@@ -667,8 +667,8 @@ var QV = (function(QV){
              * @param outputNode The DOM node to embed the visualization into
              * @param callback Callback function, called when the result has been retrieved. Has one paramter consisting of the retrieved data (visualization's HTML code)
              */
-            retrieve: function(query,queryParams,databaseKey,modficationTypeIndex,visualizationTypeIndex,visualizationOptions,outputNode,callback){
-                retrieve(query,queryParams,databaseKey,modficationTypeIndex,visualizationTypeIndex,visualizationOptions,false,outputNode,false,callback);
+            retrieve: function(query,queryParams,databaseKey,modficationTypeIndex,visualizationTypeIndex,visualizationOptions,outputNode,callback,save){
+                retrieve(query,queryParams,databaseKey,modficationTypeIndex,visualizationTypeIndex,visualizationOptions,false,outputNode,save?true:false,callback);
             },
             /**
              * Directly retrieves the visualization for a query and a set of database and modification options and some LAS credentials

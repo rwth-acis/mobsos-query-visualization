@@ -96,11 +96,19 @@ public class VisualizationJSON extends Visualization {
 					switch(columnTypes[i]) {
 						case Types.DATE:
 							//TODO: this is wrong, it starts counting the month at 0...								
-							jsonString += "\"" + ((Date) currentRow[i]).getTime() + "\"";
+							try {
+								jsonString += "\"" + ((Date) currentRow[i]).getTime() + "\"";
+							} catch (Exception e) {
+								jsonString += "null";
+							}
 							break;
 						case Types.TIME:
 						case Types.TIMESTAMP:
-							jsonString += "\"" + ((Time) currentRow[i]).getTime() + "\"";
+							try {
+								jsonString += "\"" + ((Time) currentRow[i]).getTime() + "\"";
+							} catch (Exception e) {
+								jsonString += "null";
+							}
 							break;
 						case Types.BOOLEAN:
 						case Types.BIGINT:

@@ -11,7 +11,10 @@ import java.io.Serializable;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.LinkedList;
+
+import net.minidev.json.JSONObject;
 
 
 /**
@@ -37,7 +40,9 @@ public class Query implements XmlAble, Serializable {
 	private String queryStatement = null;
 	private int modificationTypeIndex = -1;
 	private VisualizationType visualizationTypeIndex = VisualizationType.JSON;
-	private String[] visualizationParameters = null;
+	private String title = null;
+	private int width = 0;
+	private int height = 0;
 	
 	
 	public Query(long user, SQLDatabaseType jdbcInfo, String username, String password, String database, String host, int port,
@@ -54,7 +59,9 @@ public class Query implements XmlAble, Serializable {
 		this.useCache = useCache;
 		this.visualizationTypeIndex = visualizationTypeIndex;
 		this.modificationTypeIndex = modificationTypeIndex;
-		this.visualizationParameters = visualizationParameters;
+		this.title = visualizationParameters[0];
+		this.height = Integer.parseInt(visualizationParameters[1]);
+		this.width = Integer.parseInt(visualizationParameters[2]);
 		this.key = key;
 		if(this.key.equals("")){
 			this.key = this.hashCode()+"";
@@ -96,7 +103,16 @@ public class Query implements XmlAble, Serializable {
 		return key;
 	}
 	public String[] getVisualizationParameters() {
-		return visualizationParameters;
+		return new String[]{title, ""+height,""+width};
+	}
+	public String getTitle() {
+		return title;
+	}
+	public int getWidth() {
+		return width;
+	}
+	public int getHeight() {
+		return height;
 	}
 	
 
@@ -128,10 +144,9 @@ public class Query implements XmlAble, Serializable {
 			
 			//Google Visualizations -> Hardcoded TODO
 			if(this.visualizationTypeIndex.ordinal() > 3){
-				this.visualizationParameters = new String[3];
-				this.visualizationParameters[0] = elm.getChild(4).getAttribute("title");
-				this.visualizationParameters[1] = elm.getChild(4).getAttribute("width");
-				this.visualizationParameters[2] = elm.getChild(4).getAttribute("height");
+				this.title = elm.getChild(4).getAttribute("title");
+				this.height = Integer.parseInt(elm.getChild(4).getAttribute("height"));
+				this.width = Integer.parseInt(elm.getChild(4).getAttribute("width"));
 			}
 		
 		}
@@ -151,7 +166,7 @@ public class Query implements XmlAble, Serializable {
 		xmlString += "\t<QueryStatement statement=\""+this.getQueryStatement()+"\" ></QueryStatement>\n";
 		//Google Visualizations -> Hardcoded TODO
 		if(this.visualizationTypeIndex.ordinal() > 3){
-			xmlString += "\t<VisualizationParameters title=\""+this.visualizationParameters[0]+"\" height=\""+this.visualizationParameters[1]+"\" width=\""+this.visualizationParameters[2]+"\"></VisualizationParameters>\n";
+			xmlString += "\t<VisualizationParameters title=\""+this.title+"\" height=\""+this.height+"\" width=\""+this.width+"\"></VisualizationParameters>\n";
 		}
 		
 		xmlString += "</Query>";
@@ -172,9 +187,6 @@ public class Query implements XmlAble, Serializable {
 		s.setString(10, queryStatement);
 		s.setInt(11, modificationTypeIndex);
 		s.setString(12, visualizationTypeIndex.toString());
-		String title = visualizationParameters[0];
-		int height = Integer.parseInt(visualizationParameters[1]);
-		int width = Integer.parseInt(visualizationParameters[2]);
 		s.setString(13, title);
 		s.setInt(14, height);
 		s.setInt(15, width);
@@ -219,4 +231,5 @@ public class Query implements XmlAble, Serializable {
 			return null;
 		}
 	}
+
 }

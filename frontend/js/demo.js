@@ -18,6 +18,7 @@ var usernameNode               = document.getElementById("qv_username");
 var passwordNode               = document.getElementById("qv_password");
 
     //Query Form Nodes
+var selectQuery                = document.getElementById("qv_select_query");
 var databaseNode               = document.getElementById("qv_database");
 var queryNode                  = document.getElementById("qv_query");
 var filterNode                 = document.getElementById("qv_filter");
@@ -27,6 +28,7 @@ var chartTitleNode             = document.getElementById("qv_chart_title");
 var widthNode                  = document.getElementById("qv_width");
 var heightNode                 = document.getElementById("qv_height");
 var cacheNode                  = document.getElementById("qv_cache");
+var saveQuery                  = document.getElementById("qv_save");
 
     //Preview Section Nodes
 var previewNode                = document.getElementById("qv_preview");
@@ -184,14 +186,25 @@ var load_query_keys = function(){
             data;
         queryKeys = [];
         $(removeQueryQueryNode).empty();
+        queries_locked = true;
+        $(selectQuery).empty();
         for(i=0; i<numOfKeys; i++){
-            data = {key: keys[i][0], name: keys[i][0]+" ["+keys[i][1]+"]"};
+            data = {key: keys[i][0]};
+            if (keys[i][2] !== "") {
+                data.name = keys[i][2]+" ["+keys[i][1]+"]";
+            } else {
+                data.name = keys[i][0]+" ["+keys[i][1]+"]";
+            }
             queryKeys.push(data);
             $(removeQueryQueryNode).append(ich.qv_query_key_option_template(data));
+            $(selectQuery).append(ich.qv_query_key_option_template(data));
         }
-        // load_query_values(queryKeys);
+        load_query_values(queryKeys);
+        queries_locked = false;
     });
 };
+
+var query_cache = {};
 
 /**
  * Retrieves the query values from backend and fills the corresponding select form fields in Query Form with the data
@@ -203,23 +216,45 @@ var load_query_values = function(keys){
         numOfQueryKeys,
         data;
 
-    $(queryNode).empty();
-
-    if(numOfKeys === 0){
-        $(queryNode).append("<p>No queries configured!</p>");
-    }
-
     for(i=0; i<numOfKeys;i++){
+        if (query_cache[keys[i].key]) {
+            continue;
+        }
         data = {key: keys[i].key, key_lc: keys[i].key.toLowerCase(), name: keys[i].name, values: []};
         demo.retrieveQueryValues(keys[i].key,(function(data){
-            return function(queryKeys){
-                    for(j=0, numOfQueryKeys = queryKeys.length; j<numOfQueryKeys; j++){
-                        data.values.push(queryKeys[j][0]);
-                    }
-                    $(queryNode).append(ich.qv_query_template(data));
+            return function(query){
+                query_cache[query.key] = query;
             };
         })(data));
     }
+};
+
+var fill_query_values = function(query) {
+    for (var i = 0, len = databaseNode.options.length; i < len; i++) {
+        if (databaseNode.options[i].text === query.db) {
+            databaseNode.selectedIndex = i;
+            break;
+        }
+    }
+    chartTitleNode.value = query.title;
+    widthNode.value = query.width;
+    heightNode.value = query.height;
+    // cacheNode = query.cache;
+    queryNode.value = query.query;
+    for (i = 0, len = visualizationTypeNode.options.length; i < len; i++) {
+        if (visualizationTypeNode.options[i].value.toLowerCase() === query.format.toLowerCase()) {
+            visualizationTypeNode.selectedIndex = i;
+            break;
+        }
+    }
+    for (i = 0, len = modificationTypeNode.options.length; i < len; i++) {
+        if (modificationTypeNode.options[i].value.toLowerCase() === (""+query.modtypei).toLowerCase()) {
+            modificationTypeNode.selectedIndex = i;
+            break;
+        }
+    }
+    saveQuery.checked = false;
+    // query.key
 };
 
 /**
@@ -486,7 +521,7 @@ var load_preview = function(){
             }
             ready.preview = true;
             $(previewNode).removeClass("loading");
-        });
+        },saveQuery.checked);
     }
 };
 
@@ -665,3 +700,13 @@ toggle_metadata();
 
 //Hide filter fields
 toggle_filter();
+
+var queries_locked = false;
+
+$(selectQuery).change(function(){
+    if (!queries_locked) {
+        var selected_key = $(selectQuery).find("option:selected").val();
+        var query = query_cache[selected_key];
+        fill_query_values(query);
+    }
+});

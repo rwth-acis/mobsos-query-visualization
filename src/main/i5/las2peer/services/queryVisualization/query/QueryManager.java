@@ -8,13 +8,17 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import net.minidev.json.JSONObject;
+import i5.las2peer.api.Service;
 import i5.las2peer.execution.L2pThread;
 import i5.las2peer.logging.NodeObserver.Event;
 import i5.las2peer.p2p.Node;
 import i5.las2peer.security.Agent;
 import i5.las2peer.services.queryVisualization.QueryVisualizationService;
 import i5.las2peer.services.queryVisualization.database.SQLDatabase;
+import i5.las2peer.services.queryVisualization.database.SQLDatabaseSettings;
 import i5.las2peer.services.queryVisualization.database.SQLDatabaseType;
+import i5.las2peer.services.queryVisualization.encoding.ModificationType;
 import i5.las2peer.services.queryVisualization.encoding.VisualizationType;
 
 /**
@@ -26,12 +30,38 @@ import i5.las2peer.services.queryVisualization.encoding.VisualizationType;
  */
 public class QueryManager {
 	
-	private HashMap<String, Query> userDatabaseMap = new HashMap<String, Query>();
+	private HashMap<String, Query> userQueryMap = new HashMap<String, Query>();
+	private HashMap<String, String> loadedQueryValues = new HashMap<String, String>();
 	private SQLDatabase storageDatabase = null;
+	private QueryVisualizationService service = null;
+	
+	private boolean connected = false;
+	private long user;
 	
 	
 	/*************** "service" helper methods *************************/
 	
+	private boolean connect() {
+		try {
+			storageDatabase.connect();
+			connected = true;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+		return true;
+	}
+	
+	private void disconnect(boolean wasConnected) {
+		if (!wasConnected && connected) {
+			storageDatabase.disconnect();
+			connected = false;
+		}
+	}
+
+	private void disconnect() {
+		disconnect(false);
+	}
 	/**
 	 * get the current l2p thread
 	 * @return the L2pThread we're currently running in
@@ -77,6 +107,29 @@ public class QueryManager {
 	
 	public QueryManager(QueryVisualizationService service, SQLDatabase dbm) {
 		storageDatabase = dbm;
+		this.service = service;
+		this.storageDatabase = storageDatabase;
+		// get the user's security object which contains the database information
+		
+		this.user = getL2pThread().getContext().getMainAgent().getId();
+		
+		Query[] settings = null;
+		
+		try {
+			connect();
+			PreparedStatement p = storageDatabase.prepareStatement(
+					"SELECT * FROM QVS.QUERIES WHERE USER = ?;");
+			p.setLong(1, user);
+			ResultSet databases = p.executeQuery();
+			settings = Query.fromResultSet(databases);
+		} catch ( Exception e ) {
+			logMessage("Failed to get the users' SQL settings. " + e.getMessage());
+		} finally {
+			disconnect();
+		}
+		
+		for ( Query setting: settings )
+			userQueryMap.put ( setting.getKey(), setting);
 	}
 	
 	// add a query to the p2p storage
@@ -89,6 +142,7 @@ public class QueryManager {
 			query.prepareStatement(p);
 			p.executeUpdate();
 			storageDatabase.disconnect();
+			userQueryMap.put(query.getKey(), query);
 			logMessage("stored query: " + query.getKey());	
 			return true;
 		} catch (Exception e) {
@@ -100,21 +154,32 @@ public class QueryManager {
 	}
 	
 	// get a query from the p2p storage
-	public Query getQuery(String queryKey) {
+	public Query getQuery(String queryKey) throws Exception {
 		try {
-			storageDatabase.connect();
-			PreparedStatement s = storageDatabase.prepareStatement("SELECT * FROM `QUERIES` WHERE `USER` = ? AND `KEY` = ?");
-			s.setLong(1, getL2pThread().getContext().getMainAgent().getId());
-			s.setString(2, queryKey);
-			ResultSet r = s.executeQuery();
-			Query[] queryArray = Query.fromResultSet(r);
-			storageDatabase.disconnect();
+			Query query = userQueryMap.get(queryKey);
 
-			return queryArray[0];
-		} catch ( Exception e ) {
-			logMessage("Failed to load query with key! " + queryKey + " Exception: " +e);
+			if(query != null) {
+				//TODO: check that the database is still open/valid
+			} else {
+				query = userQueryMap.get(queryKey);
+
+				if(query == null) {
+					// the requested query is not known
+					String keyListString = "";
+					Iterator<String> iterator = getQueryKeyList().iterator();
+					while(iterator.hasNext()) {
+						keyListString += " " + iterator.next();
+					}
+
+					throw new Exception("The requested Query is not known! (Requested:" + queryKey + ", Available: "+keyListString + ")");
+				}
+			}
+			return query;
+		}
+		catch(Exception e) {
 			e.printStackTrace();
-			return null;
+			logMessage(e.getMessage());
+			throw e;
 		}
 	}
 
@@ -136,39 +201,95 @@ public class QueryManager {
 		}
 	}
 
-	// get a list of the names of all databases of the user
-	public List<Query> getQueries() {
-		ResultSet queries;
-		long user = getL2pThread().getContext().getMainAgent().getId();
+	// get a list of the names of all queries of the user
+	public List<String> getQueryKeyList() {
 		try {
-			storageDatabase.connect();
-			PreparedStatement p = storageDatabase.prepareStatement(
-					"SELECT * FROM `QUERIES` WHERE USER = ?;");
-			p.setLong(1, user);
-			queries = p.executeQuery();
-			LinkedList<Query> settings = new LinkedList<Query>();
-			try {
-				while (queries.next()) {
-					String title = queries.getString("VISUALIZATION_TITLE");
-					String height = queries.getString("VISUALIZATION_HEIGHT");
-					String width = queries.getString("VISUALIZATION_WIDTH");
-					Query setting = new Query(user,  SQLDatabaseType.getSQLDatabaseType(queries.getInt("JDBCINFO")),
-							queries.getString("USERNAME"), queries.getString("PASSWORD"), queries.getString("DATABASE_NAME"),
-							queries.getString("HOST"), queries.getInt("PORT"), queries.getString("QUERY_STATEMENT"),
-							queries.getBoolean("USE_CACHE"), queries.getInt("MODIFICATION_TYPE"),
-							VisualizationType.valueOf(queries.getString("VISUALIZATION_TYPE")), new String[] {title, width, height},
-							queries.getString("KEY"));
-					settings.add(setting);
-				}
-			} catch (SQLException e) {
-				e.printStackTrace();
+			LinkedList<String> keyList = new LinkedList<String>();
+			Iterator<String> iterator = this.userQueryMap.keySet().iterator();
+			while(iterator.hasNext()) {
+				keyList.add(iterator.next());
 			}
-			return settings;
-		} catch ( Exception e ) {
-			logMessage("Failed to get the users' SQL settings. " + e.getMessage());
-		} finally {
-			storageDatabase.disconnect();
+			
+			return keyList;
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			logMessage(e.getMessage());
 		}
 		return null;
+	}
+	
+	// returns a list of all database settings elements
+	public List<Query> getQueryList() {
+		try {
+			LinkedList<Query> settingsList = new LinkedList<Query>();
+			Iterator<Query> iterator = this.userQueryMap.values().iterator();
+			while(iterator.hasNext()) {
+				settingsList.add(iterator.next());
+			}
+			
+			return settingsList;
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			logMessage(e.getMessage());
+		}
+		return null;
+	}
+
+	public String getQueryValues(String queryKey, QueryVisualizationService agent) throws Exception {
+		try {
+			String queryValues = loadedQueryValues.get(queryKey);
+			
+			if(queryValues == null) {
+				// load them
+				Query querySettings = userQueryMap.get(queryKey);
+				
+				if(querySettings == null) {
+					// the requested filter is not known/defined
+					throw new Exception("The requested filter is not known/configured! sRequested:" + queryKey);
+				}
+				
+				// get the filter values from the database...
+				String query = querySettings.getQueryStatement();
+				String databaseName = querySettings.getDatabase();
+				String databaseKey = getDBSettings(querySettings).getKey();
+				String[] vparams = querySettings.getVisualizationParameters();
+				VisualizationType vtypei = querySettings.getVisualizationTypeIndex();
+				queryValues = agent.createQueryString(query, null, databaseKey, true, ModificationType.IDENTITIY.ordinal(), vtypei, vparams,false);
+
+				// store/cache the filter values
+				loadedQueryValues.put(queryKey, queryValues);
+			}
+			
+			return queryValues;
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			logMessage(e.getMessage());
+			throw e;
+		}
+	}
+	public SQLDatabaseSettings getDBSettings(Query q) {
+		String databaseName = q.getDatabase();
+		for (SQLDatabaseSettings db : service.databaseManager.getDatabaseSettingsList()) {
+			if (databaseName.equals(db.getDatabase())) {
+				return db;
+			}
+		}
+		return null;
+	}
+
+	public JSONObject toJSON(Query query) {
+		JSONObject o = new JSONObject();
+		o.put("key", query.getKey());
+		o.put("db", getDBSettings(query).getKey());
+		o.put("query", query.getQueryStatement());
+		o.put("modtypei", query.getModificationTypeIndex());
+		o.put("format", query.getVisualizationTypeIndex().toString());
+		o.put("title", query.getTitle());
+		o.put("width", query.getWidth());
+		o.put("height", query.getHeight());
+		return o;
 	}
 }

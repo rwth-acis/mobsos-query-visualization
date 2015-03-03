@@ -239,7 +239,7 @@ public class SQLFilterManager {
 				
 				if(filterSettings == null) {
 					// the requested filter is not known/defined
-					throw new Exception("The requested filter is not known/configured! sRequested:" + filterKey);
+					throw new DoesNotExistException("The requested filter is not known/configured! sRequested:" + filterKey);
 				}
 				
 				// get the filter values from the database...
