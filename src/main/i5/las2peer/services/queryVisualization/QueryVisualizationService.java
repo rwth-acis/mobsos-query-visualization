@@ -264,7 +264,6 @@ public class QueryVisualizationService extends Service {
 			  @ApiResponse(code = 400, message = "Database data invalid.")})
 	public HttpResponse addDatabase(
 			@PathParam("key") String databaseKey,
-			@QueryParam(name="format", defaultValue="JSON") String vtypei,
 			@ContentParam String content) {
 		JSONObject o;
 		try{	
@@ -276,7 +275,7 @@ public class QueryVisualizationService extends Service {
 			String dbhost = stringfromJSON(o, "dbhost");
 			Integer port = intfromJSON(o, "port");
 			return addDatabase(databaseKey, SQLDatabaseType.valueOf(dbcode.toUpperCase()),
-					username, password, database, dbhost, port, VisualizationType.valueOf(vtypei.toUpperCase()));
+					username, password, database, dbhost, port, VisualizationType.JSON);
 		} catch (Exception e) {
 			logError(e);
 			HttpResponse res = new HttpResponse(visualizationException.generate(e, "Received invalid JSON"));
@@ -570,11 +569,10 @@ public class QueryVisualizationService extends Service {
 			  @ApiResponse(code = 201, message = "Added filter."),
 			  @ApiResponse(code = 400, message = "Adding filter failed.")})
 	public HttpResponse addFilter(@PathParam("key") String filterKey,
-			@ContentParam String content,
-			@QueryParam(defaultValue = "JSON", name = "format") String visualizationTypeIndex) {
+			@ContentParam String content) {
 		JSONObject o;
 		try{	
-			VisualizationType vtypei = VisualizationType.valueOf(visualizationTypeIndex.toUpperCase());
+			VisualizationType vtypei = VisualizationType.JSON;
 			o = (JSONObject) JSONValue.parseWithException(content);
 			String query = stringfromJSON(o, "query");
 			String dbkey = stringfromJSON(o, "dbkey");
