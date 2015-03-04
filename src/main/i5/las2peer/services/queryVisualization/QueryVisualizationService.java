@@ -760,23 +760,21 @@ public class QueryVisualizationService extends Service {
 			query = insertParameters(query, queryParameters);
 
 			if(save){
-				return saveQuery(query, databaseKey, useCache, modificationTypeIndex, visualizationTypeIndex, visualizationParameters);
+				saveQuery(query, databaseKey, useCache, modificationTypeIndex, visualizationTypeIndex, visualizationParameters);
 			}
-			else{
-				methodResult = executeSQLQuery(query, databaseKey, cacheKey);
-				Modification modification = modificationManager.getModification(ModificationType.fromInt(modificationTypeIndex));
-				Visualization visualization = visualizationManager.getVisualization(visualizationTypeIndex);
+			methodResult = executeSQLQuery(query, databaseKey, cacheKey);
+			Modification modification = modificationManager.getModification(ModificationType.fromInt(modificationTypeIndex));
+			Visualization visualization = visualizationManager.getVisualization(visualizationTypeIndex);
 
-				if(modification.check(methodResult))
-					methodResult = modification.apply(methodResult);
-				else
-					return visualizationException.generate(new Exception(), "Can not modify result with " + modification.getType().name() + ".");
+			if(modification.check(methodResult))
+				methodResult = modification.apply(methodResult);
+			else
+				return visualizationException.generate(new Exception(), "Can not modify result with " + modification.getType().name() + ".");
 
-				if(visualization.check(methodResult, visualizationParameters))
-					return visualization.generate(methodResult, visualizationParameters);
-				else
-					return visualizationException.generate(new Exception(), "Can not convert result into " + visualization.getType().name() + "-format.");
-			}
+			if(visualization.check(methodResult, visualizationParameters))
+				return visualization.generate(methodResult, visualizationParameters);
+			else
+				return visualizationException.generate(new Exception(), "Can not convert result into " + visualization.getType().name() + "-format.");
 		}
 		catch(Exception e) {
 			logError(e);

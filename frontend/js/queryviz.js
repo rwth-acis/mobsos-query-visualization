@@ -228,7 +228,7 @@ var QV = (function(QV){
 
             var success = function(result, type, status) {
                 var output;
-                if(!save && outputNode){
+                if(outputNode){
                     output = result;
                     if(/^The Query has lead to an error./.test(output)){
                         output = "<p>The Query has lead to an error. See console for more info.</p>";
