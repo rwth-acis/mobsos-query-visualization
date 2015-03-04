@@ -29,7 +29,6 @@ public class SQLDatabaseManager {
 		
 	private SQLDatabase storageDatabase = null;
 	private boolean connected = false;
-	private long user = 0;
 	private Service service = null;
 	
 	private boolean connect() {
@@ -59,11 +58,11 @@ public class SQLDatabaseManager {
 		if (connected || connect()) {
 			try {
 				PreparedStatement p = storageDatabase.prepareStatement("SELECT DISTINCT ID FROM QVS.USERS WHERE ID = ?");
-				p.setLong(1, user);
+				p.setLong(1, getActiveAgent().getId());
 				ResultSet s = p.executeQuery();
 				if (!s.next()) {
 					p = storageDatabase.prepareStatement("REPLACE INTO USERS (ID) VALUES (?)");
-					p.setLong(1, user);
+					p.setLong(1, getActiveAgent().getId());
 					p.executeUpdate();
 				}
 			} catch (Exception e) {
@@ -130,8 +129,6 @@ public class SQLDatabaseManager {
 		this.service = service;
 		this.storageDatabase = storageDatabase;
 		// get the user's security object which contains the database information
-		Agent agent = getActiveAgent();
-		this.user = agent.getId();
 
 		initializeUser();
 		
@@ -141,7 +138,7 @@ public class SQLDatabaseManager {
 			connect();
 			PreparedStatement p = storageDatabase.prepareStatement(
 					"SELECT * FROM QVS.DATABASE_CONNECTIONS WHERE USER = ?;");
-			p.setLong(1, user);
+			p.setLong(1, getActiveAgent().getId());
 			ResultSet databases = p.executeQuery();
 			settings = SQLDatabaseSettings.fromResultSet(databases);
 		} catch ( Exception e ) {
@@ -176,7 +173,7 @@ public class SQLDatabaseManager {
 			p.setString(5, databaseSettings.getDatabase());
 			p.setString(6, databaseSettings.getHost());
 			p.setInt(7, databaseSettings.getPort());
-			p.setLong(8, user);
+			p.setLong(8, getActiveAgent().getId());
 			p.executeUpdate();
 			disconnect();
 			userDatabaseMap.put(databaseSettings.getKey(), databaseSettings);
@@ -348,7 +345,7 @@ public class SQLDatabaseManager {
 			connect();
 			PreparedStatement s = storageDatabase.prepareStatement("DELETE FROM `DATABASE_CONNECTIONS` WHERE `KEY` = ? AND `USER` = ?");
 			s.setString(1, databaseKey);
-			s.setLong(2, user);
+			s.setLong(2, getActiveAgent().getId());
 			s.executeUpdate();
 			disconnect();
 		} catch (Exception e) {

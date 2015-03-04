@@ -36,8 +36,7 @@ public class QueryManager {
 	private QueryVisualizationService service = null;
 	
 	private boolean connected = false;
-	private long user;
-	
+
 	
 	/*************** "service" helper methods *************************/
 	
@@ -111,7 +110,7 @@ public class QueryManager {
 		this.storageDatabase = storageDatabase;
 		// get the user's security object which contains the database information
 		
-		this.user = getL2pThread().getContext().getMainAgent().getId();
+		long user = getL2pThread().getContext().getMainAgent().getId();
 		
 		Query[] settings = null;
 		

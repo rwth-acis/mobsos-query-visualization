@@ -92,17 +92,6 @@ public class SQLFilterManager {
 	
 	/************************** end of service helper methods ************************************/
 	
-	
-	/**
-	 * get an id String for the envelope stored for an user
-	 * 
-	 * @param user
-	 */
-	public static String getEnvelopeId ( Agent user ) {
-		return "userFilters-" + user.getId();
-	}
-	
-	
 	public SQLFilterManager(SQLDatabase storageDatabase) {
 		this.storageDatabase = storageDatabase;
 		// get the user's security object which contains the database information
