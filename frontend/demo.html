@@ -12,10 +12,16 @@
     <script type="text/javascript" src="js/jquery-1.8.0.min.js"></script>
     <script type="text/javascript" src="js/ICanHaz.min.js"></script>
     <script id="qv_code_template" type="text/html">
-{{! <!--}}<script type="text/javascript" src="http://role-is.dbis.rwth-aachen.de:9080/gadgets/queryvisualizer/js/qv.js"></script>
+    {{! <!--}}<script src="https://api.learning-layers.eu/mobsos-qv/js/jquery-1.11.0.min.js"></script>
+<script src="https://api.learning-layers.eu/mobsos-qv/js/client.js"></script>
+<script src="https://api.learning-layers.eu/mobsos-qv/js/queryviz.js"></script>
+<script>QV.fromKey("{{key}}");</script>{{! -->}}
+    </script>
+    <script id="qv_code_template2" type="text/html">
+    {{! <!--}}<html><script type="text/javascript" src="http://api.learning-layers.eu/mobsos-qv/js/queryviz.js"></script>
 <script type="text/javascript">
     QV.fromKey("{{key}}");
-</script>{{! -->}}
+    </script></html>{{! -->}}
     </script>
     <!-- Test widget: http://www.gmodules.com/gadgets/ifr?nocache=1&view=default&url=<path-to-widget.xml> -->
     <script id="qv_widget_template" type="text/html">
@@ -173,9 +179,11 @@
             <label><strong>Height:</strong><input id="qv_height" type="number" value="320"/></label>
             <label><strong>Use Cache:</strong> <input id="qv_cache" type="checkbox"/></label>
         </div>
-        <label><strong>Save Query:</strong> <input id="qv_save" type="checkbox"/></label>
-        (Viewing HTML or Widget XML will save automatically)
-        <input style="margin: 5% auto; font-size: 1.5em;" type="submit" value="Visualize!"/>
+        <!-- <label><strong>Save Query:</strong> <input id="qv_save" type="checkbox"/></label> -->
+        <!-- (Viewing HTML or Widget XML will save automatically) -->
+        <!-- <input style="margin: 5% auto; font&#45;size: 1.5em;" type="submit" value="Visualize!"/> -->
+        <button style="margin: 5% auto; font-size: 1.5em;" type="submit">Visualize!</button>
+        <button style="margin: 5% auto; font-size: 1.5em;" id="qv_save_button" type="button" disabled>Save Query</button>
     </form>
     <div id="qv_chart">
         <ul class="tabs" id="tabset1">

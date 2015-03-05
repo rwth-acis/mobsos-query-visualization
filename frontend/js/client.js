@@ -94,7 +94,7 @@ TemplateServiceClient.prototype.delete = function(path, content, queryParams, su
 */
 TemplateServiceClient.prototype.sendRequest = function(method, relativePath, content, queryParams, mime, customHeaders, successCallback, errorCallback) {
 	var mtype = "text/plain; charset=UTF-8";
-	if(mime !== undefined) {
+	if(typeof mime !== "undefined") {
 		mtype = mime;
 	}
 
@@ -145,7 +145,7 @@ TemplateServiceClient.prototype.sendRequest = function(method, relativePath, con
         ajaxObj.data = JSON.stringify(content);
     }
 
-	if (customHeaders !== undefined && customHeaders !== null) {
+	if (typeof customHeaders !== "undefined" && customHeaders !== null) {
 		$.extend(ajaxObj.headers, customHeaders);
 	}
 
@@ -163,7 +163,7 @@ TemplateServiceClient.prototype.isAnonymous = function(){
 * determines if user is authenticated via OpenID Connect or not in a more obvious way.
 */
 TemplateServiceClient.prototype.loggedIn = function(){
-	if (oidc_userinfo !== undefined){
+	if (typeof oidc_userinfo !== "undefined"){
 		return true;
 	} else {
 		return false;

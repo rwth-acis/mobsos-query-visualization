@@ -185,7 +185,6 @@ var QV = (function(QV){
         var LASUSERNAME = "anonymous";
         var LASPASSWORD = "anonymous";
 
-        var loginCallback = function(){};
         // create new instance of TemplateServiceClient, given its endpoint URL
         var restClient = new TemplateServiceClient(LASHOST + QVSPATH);
 
@@ -211,7 +210,7 @@ var QV = (function(QV){
         };
 
         /**
-         * Retrieves the visualization resp. the visualization Key for a query and a set of database and modification options
+         * Retrieves the visualization  Key for a query and a set of database and modification options
          * @param query The query string
          * @param queryParams Query Parameters
          * @param databaseKey The identifier of the database to query
@@ -220,10 +219,9 @@ var QV = (function(QV){
          * @param visualizationOptions An array of
          * @param useCache Use cache for query
          * @param outputNode The DOM node to embed the visualization into
-         * @param save Sets if the query should be visualized (save = false) or a key should be generated for it (save = true)
          * @param callback Callback function, called when the result has been retrieved. Has one paramter consisting of the retrieved data (visualization's HTML code or key)
          */
-        var retrieve = function(query,queryParams,databaseKey,modficationTypeIndex,visualizationTypeIndex,visualizationOptions,useCache,outputNode,save,callback){
+        var save = function(query,queryParams,databaseKey,modficationTypeIndex,visualizationTypeIndex,visualizationOptions,useCache,outputNode,callback){
             if(!restClient.loggedIn()) return;
 
             var success = function(result, type, status) {
@@ -254,7 +252,6 @@ var QV = (function(QV){
                 title: visualizationOptions[0],
                 width: visualizationOptions[1],
                 height: visualizationOptions[2],
-                save: save
             };
 
             var qParams = {
@@ -265,26 +262,79 @@ var QV = (function(QV){
         };
 
         /**
-         * Retrieves the visualization for a query key
-         * @param key The query key
-         * @param outputnode The DOM node to embed the visualization into
-         * @param callback Callback function, called when the result has been retrieved. Has one paramter consisting of the retrieved data (visualization's HTML code)
+         * Retrieves the visualization resp. the visualization Key for a query and a set of database and modification options
+         * @param query The query string
+         * @param queryParams Query Parameters
+         * @param databaseKey The identifier of the database to query
+         * @param modficationTypeIndex The index of the modification function to apply
+         * @param visualizationTypeIndex The index of the visualization type the result should be visualized with
+         * @param visualizationOptions An array of
+         * @param useCache Use cache for query
+         * @param outputNode The DOM node to embed the visualization into
+         * @param callback Callback function, called when the result has been retrieved. Has one paramter consisting of the retrieved data (visualization's HTML code or key)
          */
-        var retrieveFromKey = function(key,outputnode,callback){
+        var retrieve = function(query,queryParams,databaseKey,modficationTypeIndex,visualizationTypeIndex,visualizationOptions,useCache,outputNode,callback){
             if(!restClient.loggedIn()) return;
 
             var success = function(result, type, status) {
-                outputnode.innerHTML = QV.HELPER.stripAndExecuteScript(" " + result);
+                var output;
+                if(outputNode){
+                    output = result;
+                    if(/^The Query has lead to an error./.test(output)){
+                        output = "<p>The Query has lead to an error. See console for more info.</p>";
+                        console.log(result);
+                    }
+                    outputNode.innerHTML = QV.HELPER.stripAndExecuteScript(" " + output);
+                }
                 if(typeof callback == 'function'){
                     if (result === null) {
-                        restClient.get("query/" + key + "/visualize", null, success, error);
+                        restClient.post("query", content, qParams, success, error);
                     } else {
                         callback(result);
                     }
                 }
             };
 
-            restClient.get("query/" + key + "/visualize", null, success, error);
+            var content = {
+                query: query,
+                queryparams: queryParams,
+                dbkey: databaseKey,
+                cache: useCache,
+                modtypei: modficationTypeIndex,
+                title: visualizationOptions[0],
+                width: visualizationOptions[1],
+                height: visualizationOptions[2],
+            };
+
+            var qParams = {
+                format: visualizationTypeIndex
+            };
+
+            restClient.post("query/visualize", content, qParams, success, error);
+        };
+
+        /**
+         * Retrieves the visualization for a query key
+         * @param key The query key
+         * @param outputnode The DOM node to embed the visualization into
+         * @param callback Callback function, called when the result has been retrieved. Has one paramter consisting of the retrieved data (visualization's HTML code)
+         */
+        var retrieveFromKey = function(key,outputnode,callback){
+            // if(!restClient.loggedIn()) return;
+            var queryURL = "query/" + key + "/visualize";
+
+            var success = function(result, type, status) {
+                outputnode.innerHTML = QV.HELPER.stripAndExecuteScript(" " + result);
+                if(typeof callback == 'function'){
+                    if (result === null) {
+                        restClient.get(queryURL, null, null, success, error);
+                    } else {
+                        callback(result);
+                    }
+                }
+            };
+
+            restClient.get(queryURL, null, null, success, error);
         };
 
         /* * *              *
@@ -292,17 +342,6 @@ var QV = (function(QV){
          *              * * */
 
         return {
-            /**
-             * Logs the passed LAS user in
-             * @param username LAS username
-             * @param password LAS password
-             * @param callback Callback, called when user has been logged in successfully
-             */
-            login: function(username, password, callback){
-                if(typeof callback == "function"){
-                    loginCallback = callback;
-                }
-            },
             /**
              * Adds a new database to the set of the configured databases of the user currently logged in
              * @param databaseKey
@@ -667,8 +706,22 @@ var QV = (function(QV){
              * @param outputNode The DOM node to embed the visualization into
              * @param callback Callback function, called when the result has been retrieved. Has one paramter consisting of the retrieved data (visualization's HTML code)
              */
-            retrieve: function(query,queryParams,databaseKey,modficationTypeIndex,visualizationTypeIndex,visualizationOptions,outputNode,callback,save){
-                retrieve(query,queryParams,databaseKey,modficationTypeIndex,visualizationTypeIndex,visualizationOptions,false,outputNode,save?true:false,callback);
+            save: function(query,queryParams,databaseKey,modficationTypeIndex,visualizationTypeIndex,visualizationOptions,outputNode,callback){
+                save(query,queryParams,databaseKey,modficationTypeIndex,visualizationTypeIndex,visualizationOptions,false,outputNode,callback);
+            },
+            /**
+             * Retrieves the visualization for a query and a set of database and modification options
+             * @param query The query string
+             * @param queryParams Query Parameters
+             * @param databaseKey The identifier of the database to query
+             * @param modficationTypeIndex The index of the modification function to apply
+             * @param visualizationTypeIndex The index of the visualization type the result should be visualized with
+             * @param visualizationOptions An array of options
+             * @param outputNode The DOM node to embed the visualization into
+             * @param callback Callback function, called when the result has been retrieved. Has one paramter consisting of the retrieved data (visualization's HTML code)
+             */
+            retrieve: function(query,queryParams,databaseKey,modficationTypeIndex,visualizationTypeIndex,visualizationOptions,outputNode,callback){
+                retrieve(query,queryParams,databaseKey,modficationTypeIndex,visualizationTypeIndex,visualizationOptions,false,outputNode,callback);
             },
             /**
              * Directly retrieves the visualization for a query and a set of database and modification options and some LAS credentials
@@ -683,14 +736,7 @@ var QV = (function(QV){
              * @param outputNode The DOM node to embed the visualization into
              */
             quickRetrieve: function(username,password,query,queryParams,databaseKey,modficationTypeIndex,visualizationTypeIndex,visualizationOptions,outputNode){
-                var that = this;
-                this.login(username,password,function(){
-                    that.retrieve(query,queryParams,databaseKey,modficationTypeIndex,visualizationTypeIndex,visualizationOptions,outputNode,function(){
-                        //wait some time until the automatic ping of the LASAjaxClient triggered on every invocation was successful, then logout
-                        setTimeout(function(){
-                            that.logout();
-                        },2000);
-                    });
+                this.retrieve(query,queryParams,databaseKey,modficationTypeIndex,visualizationTypeIndex,visualizationOptions,outputNode,function(){
                 });
             },
             /**
@@ -705,7 +751,7 @@ var QV = (function(QV){
              * @param callback Callback function, called when the result has been retrieved. Has one paramter consisting of the retrieved data (visualization key)
              */
             retrieveChartKey: function(query,queryParams,databaseKey,modficationTypeIndex,visualizationTypeIndex,visualizationOptions,useCache,callback){
-                retrieve(query,queryParams,databaseKey,modficationTypeIndex,visualizationTypeIndex,visualizationOptions,useCache,null,true,callback);
+                save(query,queryParams,databaseKey,modficationTypeIndex,visualizationTypeIndex,visualizationOptions,useCache,null,callback);
             },
             /**
              * Retrieves the visualization for a visualization key
@@ -724,14 +770,7 @@ var QV = (function(QV){
              * @param outputNode The DOM node to embed the visualization into
              */
             quickRetrieveFromKey: function(username,password,key,outputNode){
-                var that = this;
-                this.login(username,password,function(){
-                    that.retrieveFromKey(key,outputNode,function(){
-                        //wait some time until the automatic ping of the LASAjaxClient triggered on every invocation was successful, then logout
-                        setTimeout(function(){
-                            that.logout();
-                        },2000);
-                    });
+                this.retrieveFromKey(key,outputNode,function(){
                 });
             },
             /**
@@ -742,11 +781,6 @@ var QV = (function(QV){
             fromKey: function(key,outputNode){
                 this.quickRetrieveFromKey(LASUSERNAME,LASPASSWORD,key,outputNode);
             },
-            /**
-             * Logs out the user currently logged in
-             */
-            logout: function(){
-            }
         };
 
     };

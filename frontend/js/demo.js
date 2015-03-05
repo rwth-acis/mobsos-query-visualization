@@ -28,7 +28,7 @@ var chartTitleNode             = document.getElementById("qv_chart_title");
 var widthNode                  = document.getElementById("qv_width");
 var heightNode                 = document.getElementById("qv_height");
 var cacheNode                  = document.getElementById("qv_cache");
-var saveQuery                  = document.getElementById("qv_save");
+var saveButton                 = document.getElementById("qv_save_button");
 
     //Preview Section Nodes
 var previewNode                = document.getElementById("qv_preview");
@@ -253,8 +253,6 @@ var fill_query_values = function(query) {
             break;
         }
     }
-    saveQuery.checked = false;
-    // query.key
 };
 
 /**
@@ -272,6 +270,7 @@ var signinCallback = function(result){
         load_database_keys();
         load_filter_keys();
         load_query_keys();
+        save_disable();
     } else {
         // anonymous
     }
@@ -517,11 +516,9 @@ var load_preview = function(){
         $(previewNode).empty();
         $(previewNode).addClass("loading");
         demo.retrieve(form_data.query,form_data.queryParams,form_data.databaseKey,form_data.modificationTypeIndex,form_data.visualizationTypeIndex,form_data.visualizationOptions,previewNode,function(result){
-            if (saveQuery.checked) {
-                for (var prop in query_cache) {
-                    if (query_cache[prop].title == form_data.title) {
-                        delete query_cache[prop];
-                    }
+            for (var prop in query_cache) {
+                if (query_cache[prop].title == form_data.title) {
+                    delete query_cache[prop];
                 }
             }
             if(!/^The Query has lead to an error./.test(result)){
@@ -529,8 +526,20 @@ var load_preview = function(){
             }
             ready.preview = true;
             $(previewNode).removeClass("loading");
-        },saveQuery.checked);
+            save_enable();
+        });
     }
+};
+
+/**
+ * Saves the current query
+ */
+var save_query = function(){
+    demo.save(form_data.query,form_data.queryParams,form_data.databaseKey,form_data.modificationTypeIndex,form_data.visualizationTypeIndex,form_data.visualizationOptions,null,function(result){
+        alert("Query saved");
+        load_query_keys();
+        save_disable();
+    });
 };
 
 /**
@@ -724,3 +733,16 @@ $(selectQuery).change(function(){
         fill_query_values(query);
     }
 });
+
+var save_disable = function() {
+    var sb = $(saveButton);
+    sb.prop("disabled", true);
+};
+
+var save_enable = function() {
+    var sb = $(saveButton);
+    sb.removeProp("disabled");
+};
+
+$(queryFormNode).find("textarea,input,select").change(save_disable);
+$(saveButton).click(save_query);

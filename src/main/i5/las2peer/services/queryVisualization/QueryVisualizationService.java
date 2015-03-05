@@ -677,8 +677,42 @@ public class QueryVisualizationService extends Service {
 	}
 
 	@POST
+	@Path("query/visualize")
+	@Summary("Visualizes a query without saving it")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+	@ApiResponses(value={
+			  @ApiResponse(code = 200, message = "Created query."),
+			  @ApiResponse(code = 400, message = "Creating Query failed.")})
+	public HttpResponse visualizeQuery(
+			@QueryParam(defaultValue = "JSON", name = "format") String vtypei,
+			@ContentParam String content) {
+		JSONObject o;
+		try{	
+			VisualizationType v = VisualizationType.valueOf(vtypei.toUpperCase());
+			o = (JSONObject) JSONValue.parseWithException(content);
+			String query = stringfromJSON(o, "query");
+			String dbKey = stringfromJSON(o, "dbkey");
+			String[] queryParameters = stringArrayfromJSON(o, "queryparams");
+			boolean useCache = boolfromJSON(o, "cache");
+			Integer modificationTypeIndex = intfromJSON(o, "modtypei");
+			String title = stringfromJSON(o, "title");
+			String width = stringfromJSON(o, "width");
+			String height = stringfromJSON(o, "height");
+			HttpResponse res = createQuery(query, queryParameters, dbKey, useCache, modificationTypeIndex, v, title, width, height, false);
+			setContentType(res, v.ordinal());
+			return res;
+		} catch (Exception e) {
+			logError(e);
+			HttpResponse res = new HttpResponse(visualizationException.generate(e, "Received invalid JSON"));
+			res.setStatus(400);
+			return res;
+		}
+	}
+
+	@POST
 	@Path("query")
-	@Summary("Creates a new query")
+	@Summary("Saves a query and returns the ID")
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
 	@ApiResponses(value={
@@ -699,8 +733,7 @@ public class QueryVisualizationService extends Service {
 			String title = stringfromJSON(o, "title");
 			String width = stringfromJSON(o, "width");
 			String height = stringfromJSON(o, "height");
-			boolean save = boolfromJSON(o, "save");
-			HttpResponse res = createQuery(query, queryParameters, dbKey, useCache, modificationTypeIndex, v, title, width, height, save);
+			HttpResponse res = createQuery(query, queryParameters, dbKey, useCache, modificationTypeIndex, v, title, width, height, true);
 			setContentType(res, v.ordinal());
 			return res;
 		} catch (Exception e) {
@@ -760,7 +793,7 @@ public class QueryVisualizationService extends Service {
 			query = insertParameters(query, queryParameters);
 
 			if(save){
-				saveQuery(query, databaseKey, useCache, modificationTypeIndex, visualizationTypeIndex, visualizationParameters);
+				return saveQuery(query, databaseKey, useCache, modificationTypeIndex, visualizationTypeIndex, visualizationParameters);
 			}
 			methodResult = executeSQLQuery(query, databaseKey, cacheKey);
 			Modification modification = modificationManager.getModification(ModificationType.fromInt(modificationTypeIndex));
@@ -943,7 +976,7 @@ public class QueryVisualizationService extends Service {
 			  @ApiResponse(code = 200, message = "Visualization created."),
 			  @ApiResponse(code = 400, message = "Creating visualization failed."),
 			  @ApiResponse(code = 404, message = "Didn't find requested query.")})
-	public HttpResponse visualizeQuery(@PathParam("key") String key,
+	public HttpResponse visualizeQueryByKey(@PathParam("key") String key,
 			@QueryParam(name="format", defaultValue = "") String format) {
 		initializeDBConnection();
 
@@ -1310,7 +1343,8 @@ public class QueryVisualizationService extends Service {
 	@Path("validate")
 	public HttpResponse validateLogin() {
 		String returnString = "";
-		returnString += "You are " + ((UserAgent) getActiveAgent()).getLoginName() + " and your login is valid!";
+		returnString += "You are " + ((UserAgent) getActiveAgent()).getUserData() + " and your login is valid!";
+		UserAgent u = (UserAgent) getActiveAgent();
 
 		HttpResponse res = new HttpResponse(returnString);
 		res.setStatus(200);
