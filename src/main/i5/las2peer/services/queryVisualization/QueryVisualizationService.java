@@ -1115,14 +1115,9 @@ public class QueryVisualizationService extends Service {
 
 			// go through the query, replace placeholders by the values from the query parameters
 			int parameterCount = queryParameters.length;
-			Pattern placeholderPattern = Pattern.compile("\\?");
+			Pattern placeholderPattern = Pattern.compile("\\$.*?\\$");
 			for(int i=0; i<parameterCount; i++) {
-				try {
-					Integer.parseInt(queryParameters[i]);
-					query = placeholderPattern.matcher(query).replaceFirst(queryParameters[i]);
-				} catch (NumberFormatException e) {
-					query = placeholderPattern.matcher(query).replaceFirst('"' + queryParameters[i] + '"');
-				}
+				query = placeholderPattern.matcher(query).replaceFirst(queryParameters[i]);
 			}
 			return query;
 		}
