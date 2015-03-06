@@ -366,16 +366,16 @@ public class QueryVisualizationService extends Service {
 			
 			initializeDBConnection();
 
+			try {
+                queryManager.databaseDeleted(databaseKey);
+                filterManager.databaseDeleted(databaseKey);
+			} catch (Exception e) {
+			}
+
 			if (!databaseManager.removeDatabase(databaseKey)) {
 				HttpResponse res = new HttpResponse("Database " + databaseKey + " does not exist!");
 				res.setStatus(404);
 				return res;
-			}
-			
-			try {
-                filterManager.databaseDeleted(databaseKey);
-                queryManager.databaseDeleted(databaseKey);
-			} catch (Exception e) {
 			}
 
 			MethodResult result = new MethodResult();
