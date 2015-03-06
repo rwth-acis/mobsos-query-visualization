@@ -151,6 +151,17 @@ public class SQLFilterManager {
 		}
 	}
 	
+	public void databaseDeleted(String dbKey) {
+		for (SQLFilterSettings f : userFilterMap.values()) {
+			if (f.getDatabaseKey().equals(dbKey)) {
+				try {
+					deleteFilter(f.getKey());
+				} catch (Exception e) {
+				}
+			}
+		}
+	}
+	
 	public boolean deleteFilter(String filterKey) throws Exception {
 		try {
 			if(!filterExists(filterKey)) {

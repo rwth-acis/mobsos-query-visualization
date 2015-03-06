@@ -191,6 +191,23 @@ public class QueryManager {
 		}
 	}
 
+	public void databaseDeleted(String dbKey) {
+		String db;
+		try {
+			db = service.databaseManager.getDatabaseInstance(dbKey).getDatabase();
+		} catch (Exception e1) {
+			return;
+		}
+		for (Query q : userQueryMap.values()) {
+			if (q.getDatabase().equals(db)) {
+				try {
+					removeQ(q.getKey());
+				} catch (Exception e) {
+				}
+			}
+		}
+	}
+
 	/**
 	 * Remove given database from the database
 	 */
@@ -202,11 +219,12 @@ public class QueryManager {
 			s.setLong(2, getL2pThread().getContext().getMainAgent().getId());
 			s.executeUpdate();
 			storageDatabase.disconnect();
-			userQueryMap.remove(queryKey);
 		} catch (Exception e) {
 			logMessage("Error removing the Query! " + e);
 			System.out.println ( "QV critical:");
 			e.printStackTrace();
+		} finally {
+			userQueryMap.remove(queryKey);
 		}
 	}
 

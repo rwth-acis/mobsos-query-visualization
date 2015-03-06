@@ -371,6 +371,12 @@ public class QueryVisualizationService extends Service {
 				res.setStatus(404);
 				return res;
 			}
+			
+			try {
+                filterManager.databaseDeleted(databaseKey);
+                queryManager.databaseDeleted(databaseKey);
+			} catch (Exception e) {
+			}
 
 			MethodResult result = new MethodResult();
 			result.setColumnName("RemovedDatabase");
