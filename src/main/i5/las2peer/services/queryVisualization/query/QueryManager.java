@@ -15,6 +15,8 @@ import i5.las2peer.logging.NodeObserver.Event;
 import i5.las2peer.p2p.Node;
 import i5.las2peer.security.Agent;
 import i5.las2peer.services.queryVisualization.QueryVisualizationService;
+import i5.las2peer.services.queryVisualization.database.DBDoesNotExistException;
+import i5.las2peer.services.queryVisualization.database.DoesNotExistException;
 import i5.las2peer.services.queryVisualization.database.SQLDatabase;
 import i5.las2peer.services.queryVisualization.database.SQLDatabaseSettings;
 import i5.las2peer.services.queryVisualization.database.SQLDatabaseType;
@@ -287,10 +289,14 @@ public class QueryManager {
 		return null;
 	}
 
-	public JSONObject toJSON(Query query) {
+	public JSONObject toJSON(Query query) throws DBDoesNotExistException {
 		JSONObject o = new JSONObject();
 		o.put("key", query.getKey());
-		o.put("db", getDBSettings(query).getKey());
+		try {
+		    o.put("db", getDBSettings(query).getKey());
+		} catch (Exception e) {
+			throw new DBDoesNotExistException("Database " + query.getDatabase() + " does not exist.");
+		}
 		o.put("query", query.getQueryStatement());
 		o.put("modtypei", query.getModificationTypeIndex());
 		o.put("format", query.getVisualizationTypeIndex().toString());

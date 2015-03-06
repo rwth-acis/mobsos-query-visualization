@@ -26,6 +26,7 @@ import i5.las2peer.restMapper.tools.XMLCheck;
 import i5.las2peer.security.L2pSecurityException;
 import i5.las2peer.security.UserAgent;
 import i5.las2peer.services.queryVisualization.caching.MethodResultCache;
+import i5.las2peer.services.queryVisualization.database.DBDoesNotExistException;
 import i5.las2peer.services.queryVisualization.database.DoesNotExistException;
 import i5.las2peer.services.queryVisualization.database.SQLDatabase;
 import i5.las2peer.services.queryVisualization.database.SQLDatabaseManager;
@@ -950,6 +951,12 @@ public class QueryVisualizationService extends Service {
 		} catch (DoesNotExistException e) {
 			logError(e);
 			HttpResponse res = new HttpResponse("Query " + key + " does not exist.");
+			res.setStatus(400);
+			return res;
+		} catch (DBDoesNotExistException e) {
+			logError(e);
+			this.queryManager.removeQ(key);
+			HttpResponse res = new HttpResponse(visualizationException.generate(e, null));
 			res.setStatus(400);
 			return res;
 		} catch (Exception e) {
