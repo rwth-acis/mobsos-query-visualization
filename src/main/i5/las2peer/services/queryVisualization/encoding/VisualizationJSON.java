@@ -33,22 +33,22 @@ public class VisualizationJSON extends Visualization {
 			int columnCount = columnTypes.length;
 			
 			// column names
-			String jsonString = "[ \n[";
+			StringBuilder jsonString = new StringBuilder("[ \n[");
 			for (int i = 0; i < columnCount; i++) {
 				if(i>0) {
-					jsonString += ", ";
+					jsonString.append(", ");
 				}
 				
-				jsonString += "\"" + columnNames[i]+ "\"";
+				jsonString.append("\"" + columnNames[i]+ "\"");
 			}
-			jsonString += " ]";
+			jsonString.append(" ]");
 			
 			// column types as one row
-			jsonString += ", \n[ ";
+			jsonString.append(", \n[ ");
 			for (int i = 0; i < columnCount; i++) {
 				
 				if(i>0) {
-					jsonString += ", ";
+					jsonString.append(", ");
 				}
 				
 				String columnTypeString = "string";
@@ -78,36 +78,36 @@ public class VisualizationJSON extends Visualization {
 						break;
 				};
 				
-				jsonString += "\"" + columnTypeString+ "\"";
+				jsonString.append("\"" + columnTypeString+ "\"");
 			}
 			
-			jsonString += " ] ";
+			jsonString.append(" ] ");
 			
 	
 			// add the individual rows
 			while(iterator.hasNext()) {
-				jsonString += ", \n";
+				jsonString.append(", \n");
 				
-				jsonString += "[ ";
+				jsonString.append("[ ");
 				
 				Object[] currentRow = iterator.next();
 				for(int i = 0; i < columnCount; i++) {
-					if(i>0) jsonString += ", ";
+					if(i>0) jsonString.append(", ");
 					switch(columnTypes[i]) {
 						case Types.DATE:
 							//TODO: this is wrong, it starts counting the month at 0...								
 							try {
-								jsonString += "\"" + ((Date) currentRow[i]).getTime() + "\"";
+								jsonString.append("\"" + ((Date) currentRow[i]).getTime() + "\"");
 							} catch (Exception e) {
-								jsonString += "null";
+								jsonString.append("null");
 							}
 							break;
 						case Types.TIME:
 						case Types.TIMESTAMP:
 							try {
-								jsonString += "\"" + ((Time) currentRow[i]).getTime() + "\"";
+								jsonString.append("\"" + ((Time) currentRow[i]).getTime() + "\"");
 							} catch (Exception e) {
-								jsonString += "null";
+								jsonString.append("null");
 							}
 							break;
 						case Types.BOOLEAN:
@@ -119,7 +119,7 @@ public class VisualizationJSON extends Visualization {
 						case Types.FLOAT:
 						case Types.INTEGER:
 						case Types.SMALLINT:
-							jsonString += currentRow[i];
+							jsonString.append(currentRow[i]);
 							break;
 						default:
 							// filter the values, so that the client side does not get in trouble...
@@ -128,15 +128,15 @@ public class VisualizationJSON extends Visualization {
 							value = value.replace('\r', ' ');
 							value = value.replace("\\", "\\\\");
 							value = value.replace("\"", "\\\"");
-							jsonString += "\"" + value + "\"";
+							jsonString.append("\"" + value + "\"");
 							break;
 					};
 				}
-				jsonString += "]";
+				jsonString.append("]");
 			}
-			jsonString += " \n]";
+			jsonString.append(" \n]");
 			
-			return jsonString;
+			return jsonString.toString();
 		} 
 		catch (Exception e) {
 			Context.logMessage(this, e.getMessage());

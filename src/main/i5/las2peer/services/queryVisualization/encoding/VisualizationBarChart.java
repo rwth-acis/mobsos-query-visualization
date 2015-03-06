@@ -27,7 +27,7 @@ public class VisualizationBarChart extends Visualization {
 	}
 	
 	public String generate(MethodResult methodResult, String[] visualizationParameters){
-		String resultHTML = null;
+		StringBuilder resultHTML = new StringBuilder();
 		
 		try {
 			if(methodResult == null) {
@@ -43,29 +43,29 @@ public class VisualizationBarChart extends Visualization {
 			String randomNodeId = getRandomId(10,  true);
 
 			// The Basic HTML-Code needed for every visualization
-			resultHTML = "<div id='" + randomNodeId + "' style='height: "+visualizationParameters[1]+"; width: "+visualizationParameters[2]+";'></div>\n";
-			resultHTML += "<script>\n";			
-			resultHTML += "var qv_script = document.createElement('script');\n";
-			resultHTML += "qv_script.src = 'https://www.google.com/jsapi?callback=qv_loadChart';\n";
-			resultHTML += "qv_script.type = 'text/javascript';\n";
-			resultHTML += "document.getElementsByTagName('head')[0].appendChild(qv_script);\n";
-			resultHTML += "function qv_loadChart(){\n";
-			resultHTML += "google.load('visualization', '1', {packages: ['corechart'], callback: qv_drawChart});\n";
-			resultHTML += "}\n";
-			resultHTML += "function qv_drawChart() {\n";
+			resultHTML.append("<div id='" + randomNodeId + "' style='height: "+visualizationParameters[1]+"; width: "+visualizationParameters[2]+";'></div>\n");
+			resultHTML.append("<script>\n");			
+			resultHTML.append("var qv_script = document.createElement('script');\n");
+			resultHTML.append("qv_script.src = 'https://www.google.com/jsapi?callback=qv_loadChart';\n");
+			resultHTML.append("qv_script.type = 'text/javascript';\n");
+			resultHTML.append("document.getElementsByTagName('head')[0].appendChild(qv_script);\n");
+			resultHTML.append("function qv_loadChart(){\n");
+			resultHTML.append("google.load('visualization', '1', {packages: ['corechart'], callback: qv_drawChart});\n");
+			resultHTML.append("}\n");
+			resultHTML.append("function qv_drawChart() {\n");
 			
 			//Bar Chart
 			if(columnCount < 2)
 				throw new Exception("Cannot draw bar-chart with only one column!");
-			resultHTML += "var data = google.visualization.arrayToDataTable([\n";
+			resultHTML.append("var data = google.visualization.arrayToDataTable([\n");
 			
 			//Column Names
-			resultHTML += "[";
+			resultHTML.append("[");
 			for(int i = 0; i < columnCount-1; i++){
-				resultHTML += "'" + columnNames[i] + "', ";
+				resultHTML.append("'").append(columnNames[i]).append("', ");
 			}
 			
-			resultHTML += "'" + columnNames[columnCount-1] + "'],\n";
+			resultHTML.append("'" + columnNames[columnCount-1] + "'],\n");
 			
 			String[] currentRowEntries = new String[columnCount];
 			while(iterator.hasNext()){
@@ -75,31 +75,31 @@ public class VisualizationBarChart extends Visualization {
 				}
 				
 				//Treat first entry as a string
-				resultHTML += "['" + currentRowEntries[0] + "', ";
+				resultHTML.append("['").append(currentRowEntries[0]).append("', ");
 				
 				for(int j = 1; j < columnCount-1; j++){
-					resultHTML += currentRowEntries[j] + ", ";
+					resultHTML.append(currentRowEntries[j]).append(", ");
 				}
 				if(iterator.hasNext())
-					resultHTML += currentRowEntries[columnCount-1] + "],\n";
+					resultHTML.append(currentRowEntries[columnCount-1]).append("],\n");
 				else
 					//Last Entry
-					resultHTML += currentRowEntries[columnCount-1] + "]\n";
+					resultHTML.append(currentRowEntries[columnCount-1]).append("]\n");
 			}
-			resultHTML += "]);\n";
+			resultHTML.append("]);\n");
 			
 			
 	        
-	        resultHTML += "var options = {\n";
-	        resultHTML += "'title':'"+visualizationParameters[0]+"',\n";
-	        resultHTML += "};\n";
+	        resultHTML.append("var options = {\n");
+	        resultHTML.append("'title':'"+visualizationParameters[0]+"',\n");
+	        resultHTML.append("};\n");
 	        
-	        resultHTML += "var chart = new google.visualization.BarChart(document.getElementById('" + randomNodeId + "'));\n";
-	        resultHTML += "chart.draw(data, options);\n";
+	        resultHTML.append("var chart = new google.visualization.BarChart(document.getElementById('" + randomNodeId + "'));\n");
+	        resultHTML.append("chart.draw(data, options);\n");
 		        	
-			resultHTML += "}\n</script>";
+			resultHTML.append("}\n</script>");
 			
-			return resultHTML;
+			return resultHTML.toString();
 		}
 		catch (Exception e) {
 			Context.logMessage(this, e.getMessage());

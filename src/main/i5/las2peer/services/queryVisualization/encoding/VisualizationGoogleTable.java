@@ -22,7 +22,7 @@ public class VisualizationGoogleTable extends Visualization {
 	
 	public String generate(MethodResult methodResult, String[] visualizationParameters){
 		
-		String resultHTML = null;
+		StringBuilder resultHTML = new StringBuilder();
 		
 		try {
 			if(methodResult == null) {
@@ -38,18 +38,18 @@ public class VisualizationGoogleTable extends Visualization {
 			String randomNodeId = getRandomId(10,  true);
 			
 			// The Basic HTML-Code needed for every visualization
-			resultHTML = "<div id='" + randomNodeId + "' style='height: "+visualizationParameters[1]+"; width: "+visualizationParameters[2]+";'></div>\n";
-			resultHTML += "<script>\n";			
-			resultHTML += "var qv_script = document.createElement('script');\n";
-			resultHTML += "qv_script.src = 'https://www.google.com/jsapi?callback=qv_loadChart';\n";
-			resultHTML += "qv_script.type = 'text/javascript';\n";
-			resultHTML += "document.getElementsByTagName('head')[0].appendChild(qv_script);\n";
-			resultHTML += "function qv_loadChart(){\n";
-			resultHTML += "google.load('visualization', '1', {packages: ['table'], callback: qv_drawChart});\n";
-			resultHTML += "}\n";
-			resultHTML += "function qv_drawChart() {\n";
+			resultHTML.append("<div id='" + randomNodeId + "' style='height: "+visualizationParameters[1]+"; width: "+visualizationParameters[2]+";'></div>\n");
+			resultHTML.append("<script>\n");			
+			resultHTML.append("var qv_script = document.createElement('script');\n");
+			resultHTML.append("qv_script.src = 'https://www.google.com/jsapi?callback=qv_loadChart';\n");
+			resultHTML.append("qv_script.type = 'text/javascript';\n");
+			resultHTML.append("document.getElementsByTagName('head')[0].appendChild(qv_script);\n");
+			resultHTML.append("function qv_loadChart(){\n");
+			resultHTML.append("google.load('visualization', '1', {packages: ['table'], callback: qv_drawChart});\n");
+			resultHTML.append("}\n");
+			resultHTML.append("function qv_drawChart() {\n");
 			
-			resultHTML += "var data = new google.visualization.DataTable();\n";
+			resultHTML.append("var data = new google.visualization.DataTable();\n");
 			
 			//Column names and types
 			for(int i = 0; i < columnCount; i++){
@@ -79,33 +79,33 @@ public class VisualizationGoogleTable extends Visualization {
 					// do nothing, just treat it as string
 					break;
 				};
-				resultHTML += "data.addColumn('" + columnTypeString + "', '" + columnNames[i] + "');\n";
+				resultHTML.append("data.addColumn('" + columnTypeString + "', '" + columnNames[i] + "');\n");
 			}
-			resultHTML += "data.addRows([\n";
+			resultHTML.append("data.addRows([\n");
 			
 			
 			// add the individual rows
 			while(iterator.hasNext()) {
-				resultHTML += "[";
+				resultHTML.append("[");
 				
 				Object[] currentRow = iterator.next();
 				for(int i = 0; i < columnCount; i++) {
-					if(i>0) resultHTML += ", ";
+					if(i>0) resultHTML.append(", ");
 					switch(columnTypes[i]) {
 						case Types.DATE:
 							//TODO: this is wrong, it starts counting the month at 0...								
 							try {
-								resultHTML += " new Date(" + ((Date) currentRow[i]).getTime() + ")";
+								resultHTML.append(" new Date(").append(((Date) currentRow[i]).getTime()).append(")");
 							} catch (Exception e) {
-								resultHTML += " null";
+								resultHTML.append(" null");
 							}
 							break;
 						case Types.TIME:
 						case Types.TIMESTAMP:
 							try {
-								resultHTML += " new Date(" + ((Time) currentRow[i]).getTime() + ")";
+								resultHTML.append(" new Date(").append(((Time) currentRow[i]).getTime()).append(")");
 							} catch (Exception e) {
-								resultHTML += " null";
+								resultHTML.append(" null");
 							}
 							break;
 						case Types.BOOLEAN:
@@ -117,30 +117,30 @@ public class VisualizationGoogleTable extends Visualization {
 						case Types.FLOAT:
 						case Types.INTEGER:
 						case Types.SMALLINT:
-							resultHTML += currentRow[i];
+							resultHTML.append(currentRow[i]);
 							break;
 						default:
 							String value = (String) currentRow[i];
-							resultHTML += "\"" + value + "\"";
+							resultHTML.append("\"").append(value).append("\"");
 							break;
 					};
 				}
 				if(iterator.hasNext()){
-					resultHTML += "],\n";
+					resultHTML.append("],\n");
 				}
 				else{
-					resultHTML += "]\n"; //Last entry
+					resultHTML.append("]\n"); //Last entry
 				}
 			}
 
-			resultHTML += "]);\n"; //Last entry
+			resultHTML.append("]);\n"); //Last entry
 			
-	        resultHTML += "var chart = new google.visualization.Table(document.getElementById('" + randomNodeId + "'));\n";
-	        resultHTML += "chart.draw(data, null);\n";
+	        resultHTML.append("var chart = new google.visualization.Table(document.getElementById('" + randomNodeId + "'));\n");
+	        resultHTML.append("chart.draw(data, null);\n");
 		        	
-			resultHTML += "}\n</script>";
+			resultHTML.append("}\n</script>");
 			
-			return resultHTML;
+			return resultHTML.toString();
 		}
 		catch (Exception e) {
 			Context.logMessage(this, e.getMessage());

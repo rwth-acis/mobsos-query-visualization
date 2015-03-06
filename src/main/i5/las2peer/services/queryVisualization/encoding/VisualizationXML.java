@@ -41,73 +41,72 @@ public class VisualizationXML extends Visualization {
 			String xmlStart = "<?xml version=\"1.0\"?>\n<rows>\n";
 			String xmlEnd = "\n</rows>";
 			
-			String xmlResult = "";
+			StringBuilder xmlResult = new StringBuilder();
 			
 			// add the column names
-			xmlResult += xmlRowStart;
+			xmlResult.append(xmlRowStart);
 			for(int i=0; i<columnCount; i++) {
-				xmlResult += "\t\t<element><![CDATA["+columnNames[i]+"]]></element>\n";
+				xmlResult.append("\t\t<element><![CDATA["+columnNames[i]+"]]></element>\n");
 			}
-			xmlResult += xmlRowEnd;
+			xmlResult.append(xmlRowEnd);
 			
 			// add the column data types
-			xmlResult += xmlRowStart;
+			xmlResult.append(xmlRowStart);
 			for(int i=0; i<columnCount; i++) {
-				xmlResult += "\t\t<element><![CDATA[";
+				xmlResult.append("\t\t<element><![CDATA[");
 				
 				switch(columnTypes[i]) {
 					case Types.BOOLEAN:
-						xmlResult += "Boolean";
+						xmlResult.append("Boolean");
 						break;
 					case Types.DATE:
 					case Types.TIME:
 					case Types.TIMESTAMP:
-						xmlResult += "Date"; // better idea?
+						xmlResult.append("Date"); // better idea?
 						break;
 					case Types.BIGINT:
 					case Types.DECIMAL:
 					case Types.NUMERIC:
-						xmlResult += "Long"; // better idea?
+						xmlResult.append("Long"); // better idea?
 						break;
 					case Types.DOUBLE:
-						xmlResult += "Double";
+						xmlResult.append("Double");
 						break;
 					case Types.REAL:
 					case Types.FLOAT:
-						xmlResult += "Float";
+						xmlResult.append("Float");
 						break;
 					case Types.INTEGER:
 					case Types.SMALLINT:
-						xmlResult += "Integer";
+						xmlResult.append("Integer");
 						break;
 					default:
-						xmlResult += "String";
+						xmlResult.append("String");
 						break;
 				};
-				xmlResult += "]]></element>\n";
+				xmlResult.append("]]></element>\n");
 			}
-			xmlResult += xmlRowEnd;
+			xmlResult.append(xmlRowEnd);
 			
 
 			
 			while(iterator.hasNext()) {
 				Object[] currentRow = iterator.next();
 				// add the row...
-				xmlResult += xmlRowStart;
+				xmlResult.append(xmlRowStart);
 				for(int i=0; i<columnCount; i++) {
 					if (currentRow[i] instanceof String) {
 						String s = (String)currentRow[i];
 						s = s.replace("]]>", "]]]]><![CDATA[>"); //Otherwise problems with xml transportation
-						xmlResult += "\t\t<element><![CDATA["+s+"]]></element>\n";
+						xmlResult.append("\t\t<element><![CDATA["+s+"]]></element>\n");
 					} else {
-						xmlResult += "\t\t<element><![CDATA["+currentRow[i]+"]]></element>\n";
+						xmlResult.append("\t\t<element><![CDATA["+currentRow[i]+"]]></element>\n");
 					}
 				}
-				xmlResult += xmlRowEnd;
+				xmlResult.append(xmlRowEnd);
 			}
 						
-			xmlResult = xmlStart +  xmlResult.trim() + xmlEnd;
-			return xmlResult;
+			return xmlStart + xmlResult.toString().trim() + xmlEnd;
 		
 		}
 		catch (Exception e) {

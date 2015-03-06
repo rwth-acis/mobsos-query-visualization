@@ -19,7 +19,7 @@ public class VisualizationPieChart extends Visualization {
 	}
 	
 	public String generate(MethodResult methodResult, String[] visualizationParameters){
-		String resultHTML = null;
+		StringBuilder resultHTML = new StringBuilder();
 		
 		try {
 			if(methodResult == null) {
@@ -34,25 +34,25 @@ public class VisualizationPieChart extends Visualization {
 			String randomNodeId = getRandomId(10,  true);
 			
 			// The Basic HTML-Code needed for every visualization
-			resultHTML = "<div id='" + randomNodeId + "' style='height: "+visualizationParameters[1]+"; width: "+visualizationParameters[2]+";'></div>\n";
-			resultHTML += "<script>\n";			
-			resultHTML += "var qv_script = document.createElement('script');\n";
-			resultHTML += "qv_script.src = 'https://www.google.com/jsapi?callback=qv_loadChart';\n";
-			resultHTML += "qv_script.type = 'text/javascript';\n";
-			resultHTML += "document.getElementsByTagName('head')[0].appendChild(qv_script);\n";
-			resultHTML += "function qv_loadChart(){\n";
-			resultHTML += "google.load('visualization', '1', {packages: ['corechart'], callback: qv_drawChart});\n";
-			resultHTML += "}\n";
-			resultHTML += "function qv_drawChart() {\n";
+			resultHTML.append("<div id='" + randomNodeId + "' style='height: "+visualizationParameters[1]+"; width: "+visualizationParameters[2]+";'></div>\n");
+			resultHTML.append("<script>\n");			
+			resultHTML.append("var qv_script = document.createElement('script');\n");
+			resultHTML.append("qv_script.src = 'https://www.google.com/jsapi?callback=qv_loadChart';\n");
+			resultHTML.append("qv_script.type = 'text/javascript';\n");
+			resultHTML.append("document.getElementsByTagName('head')[0].appendChild(qv_script);\n");
+			resultHTML.append("function qv_loadChart(){\n");
+			resultHTML.append("google.load('visualization', '1', {packages: ['corechart'], callback: qv_drawChart});\n");
+			resultHTML.append("}\n");
+			resultHTML.append("function qv_drawChart() {\n");
 			
 			//Pie Chart
-			resultHTML += "var data = new google.visualization.DataTable();\n";
+			resultHTML.append("var data = new google.visualization.DataTable();\n");
 			if(columnCount != 2)
 				throw new Exception("Cannot draw pie-chart with more than two columns as input!");
 			
-			resultHTML += "data.addColumn('string', '" + columnNames[0] + "');\n";
-			resultHTML += "data.addColumn('number', '" + columnNames[1] + "');\n";
-			resultHTML += "data.addRows([\n";
+			resultHTML.append("data.addColumn('string', '").append(columnNames[0]).append("');\n");
+			resultHTML.append("data.addColumn('number', '").append(columnNames[1]).append("');\n");
+			resultHTML.append("data.addRows([\n");
 			
 			
 			while(iterator.hasNext()){
@@ -62,24 +62,24 @@ public class VisualizationPieChart extends Visualization {
 				if(firstCell == null || firstCell.equals("null"))
 					firstCell = "";
 				if(iterator.hasNext()){
-					resultHTML += "['" + firstCell + "'," + secondCell + "],\n";
+					resultHTML.append("['").append(firstCell).append("',").append(secondCell).append("],\n");
 				}
 				else{ //Last Entry, close Array
-					resultHTML += "['" + firstCell + "'," + secondCell + "]\n]";
+					resultHTML.append("['").append(firstCell).append("',").append(secondCell).append("]\n]");
 				}
 			}
-			resultHTML += ");\n";
+			resultHTML.append(");\n");
 	        
-	        resultHTML += "var options = {\n";
-	        resultHTML += "'title':'"+visualizationParameters[0]+"',\n";
-	        resultHTML += "};\n";
+	        resultHTML.append("var options = {\n");
+	        resultHTML.append("'title':'"+visualizationParameters[0]+"',\n");
+	        resultHTML.append("};\n");
 	        
-	        resultHTML += "var chart = new google.visualization.PieChart(document.getElementById('" + randomNodeId + "'));\n";
-	        resultHTML += "chart.draw(data, options);\n";
+	        resultHTML.append("var chart = new google.visualization.PieChart(document.getElementById('" + randomNodeId).append("'));\n");
+	        resultHTML.append("chart.draw(data, options);\n");
 		        	
-			resultHTML += "}\n</script>";
+			resultHTML.append("}\n</script>");
 			
-			return resultHTML;
+			return resultHTML.toString();
 		}
 		catch (Exception e) {
 			Context.logMessage(this, e.getMessage());

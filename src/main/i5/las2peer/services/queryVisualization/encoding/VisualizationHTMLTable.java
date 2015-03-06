@@ -25,7 +25,7 @@ public class VisualizationHTMLTable extends Visualization {
 	
 	public String generate(MethodResult methodResult, String[] visualizationParameters){
 		
-		String resultHTML = null;
+		StringBuilder resultHTML = null;
 		
 		try {
 			if(methodResult == null) {
@@ -39,7 +39,7 @@ public class VisualizationHTMLTable extends Visualization {
 	
 			if(columnCount < 2) {
 				// Create a HTML list
-				resultHTML = "<ul>\n";
+				resultHTML = new StringBuilder("<ul>\n");
 				
 				// add the elements
 				while(iterator.hasNext()) {
@@ -48,24 +48,24 @@ public class VisualizationHTMLTable extends Visualization {
 						String cellValue = currentRow[i].toString();
 						if(cellValue == null || cellValue.equals("null"))
 							cellValue = "";
-						resultHTML += "\t<li>" + cellValue + "</li>\n";
+						resultHTML.append("\t<li>").append(cellValue).append("</li>\n");
 					}
 				}
-				resultHTML += "</ul>\n";
+				resultHTML.append("</ul>\n");
 			}
 			else {				
 				// Create a HTML Table
-				resultHTML = "<table border=\"1\">\n\t<tr>\n";
+				resultHTML = new StringBuilder("<table border=\"1\">\n\t<tr>\n");
 				
 				// add the heading/column names
 				for(int i = 0; i < columnCount; i++) {
-					resultHTML += "\t\t<th>" + columnNames[i] + "</th>\n";
+					resultHTML.append("\t\t<th>").append(columnNames[i]).append("</th>\n");
 				}
-				resultHTML += "\t</tr>\n";
+				resultHTML.append("\t</tr>\n");
 				
 				// the the row values
 				while(iterator.hasNext()) {
-					resultHTML += "\t<tr>\n";
+					resultHTML.append("\t<tr>\n");
 					Object[] currentRow = iterator.next();
 					for(int i = 0; i < columnCount; i++) {
 						String cellValue = currentRow[i].toString();
@@ -73,15 +73,14 @@ public class VisualizationHTMLTable extends Visualization {
 						if(cellValue == null || cellValue.equals("null"))
 							cellValue = "";
 						
-						resultHTML += "\t\t<td>" + cellValue + "</td>\n";
+						resultHTML.append("\t\t<td>").append(cellValue).append("</td>\n");
 					}
-					resultHTML += "\t</tr>\n";
+					resultHTML.append("\t</tr>\n");
 				}
-				
-				resultHTML += "</table>\n";
+				resultHTML.append("</table>\n");
 			}
 			
-			return resultHTML;
+			return resultHTML.toString();
 		} 
 		catch (Exception e) {
 			Context.logMessage(this, e.getMessage());

@@ -20,7 +20,7 @@ public class VisualizationRadarChart extends Visualization {
 	}
 	
 	public String generate(MethodResult methodResult, String[] visualizationParameters){
-		String resultHTML = null;
+		StringBuilder resultHTML = new StringBuilder();
 		
 		try {
 			if(methodResult == null) {
@@ -36,29 +36,29 @@ public class VisualizationRadarChart extends Visualization {
 			String randomNodeId = getRandomId(10,  true);
 			
 			// The Basic HTML-Code needed for every visualization
-			resultHTML = "<div id=\"" + randomNodeId + "\"></div>\n";
-			resultHTML += "<script>\n";			
-			resultHTML += "var qv_script = document.createElement('script');\n";
-			resultHTML += "qv_script.src = 'https://www.google.com/jsapi?callback=qv_loadChart';\n";
-			resultHTML += "qv_script.type = 'text/javascript';\n";
-			resultHTML += "document.getElementsByTagName('head')[0].appendChild(qv_script);\n";
-			resultHTML += "function qv_loadChart(){\n";
-			resultHTML += "google.load('visualization', '1', {packages: ['imagechart'], callback: qv_drawChart});\n";
-			resultHTML += "}\n";
-			resultHTML += "function qv_drawChart() {\n";
+			resultHTML.append("<div id=\"" + randomNodeId + "\"></div>\n");
+			resultHTML.append("<script>\n");			
+			resultHTML.append("var qv_script = document.createElement('script');\n");
+			resultHTML.append("qv_script.src = 'https://www.google.com/jsapi?callback=qv_loadChart';\n");
+			resultHTML.append("qv_script.type = 'text/javascript';\n");
+			resultHTML.append("document.getElementsByTagName('head')[0].appendChild(qv_script);\n");
+			resultHTML.append("function qv_loadChart(){\n");
+			resultHTML.append("google.load('visualization', '1', {packages: ['imagechart'], callback: qv_drawChart});\n");
+			resultHTML.append("}\n");
+			resultHTML.append("function qv_drawChart() {\n");
 			
 			//Radar Chart
 			if(columnCount < 1)
 				throw new Exception("Cannot draw radar-chart with only one column!");
-			resultHTML += "var data = google.visualization.arrayToDataTable([\n";
+			resultHTML.append("var data = google.visualization.arrayToDataTable([\n");
 			
 			//Column Names
-			resultHTML += "[";
+			resultHTML.append("[");
 			for(int i = 0; i < columnCount-1; i++){
-				resultHTML += "'" + columnNames[i] + "', ";
+				resultHTML.append("'" + columnNames[i]).append("', ");
 			}
 			
-			resultHTML += "'" + columnNames[columnCount-1] + "'],\n";
+			resultHTML.append("'" + columnNames[columnCount-1]).append("'],\n");
 			
 			String[] currentRowEntries = new String[columnCount];
 			while(iterator.hasNext()){
@@ -67,71 +67,71 @@ public class VisualizationRadarChart extends Visualization {
 					currentRowEntries[i] = currentRow[i].toString();
 				}
 				//First entry has to be a String
-				resultHTML += "['" + currentRowEntries[0] + "', ";
+				resultHTML.append("['" + currentRowEntries[0]).append("', ");
 				for(int j = 1; j < columnCount-1; j++){
-					resultHTML += currentRowEntries[j] + ", ";
+					resultHTML.append(currentRowEntries[j]).append(", ");
 				}
 				if(iterator.hasNext())
-					resultHTML += currentRowEntries[columnCount-1] + "],\n";
+					resultHTML.append(currentRowEntries[columnCount-1]).append("],\n");
 				else
 					//Last Entry
-					resultHTML += currentRowEntries[columnCount-1] + "]\n";
+					resultHTML.append(currentRowEntries[columnCount-1]).append("]\n");
 			}
-			resultHTML += "]);\n";
+			resultHTML.append("]);\n");
 			
             //calculation of overall max value -> optionsScaleMax
-			resultHTML += "var optionsScaleMax = 0;\n";
-			resultHTML += "for(var i = 1, numOfCols=data.getNumberOfColumns(); i<numOfCols; i++){\n";
-		    resultHTML += "  optionsScaleMax = optionsScaleMax < data.getColumnRange(i).max ? data.getColumnRange(i).max : optionsScaleMax;\n";
-		    resultHTML += "}\n";
-		    resultHTML += "optionsScaleMax = Math.ceil(optionsScaleMax);\n";
+			resultHTML.append("var optionsScaleMax = 0;\n");
+			resultHTML.append("for(var i = 1, numOfCols=data.getNumberOfColumns(); i<numOfCols; i++){\n");
+		    resultHTML.append("  optionsScaleMax = optionsScaleMax < data.getColumnRange(i).max ? data.getColumnRange(i).max : optionsScaleMax;\n");
+		    resultHTML.append("}\n");
+		    resultHTML.append("optionsScaleMax = Math.ceil(optionsScaleMax);\n");
 
             //add zeros if value does not exist in new datatable
-		    resultHTML += "for(var i = 0, numOfRowsNew = data.getNumberOfRows(); i<numOfRowsNew; i++)\n";
-		    resultHTML += "for(var j = 1, numOfColsNew = data.getNumberOfColumns(); j<numOfColsNew; j++){\n";
-		    resultHTML += "  if(data.getValue(i,j) == null) data.setValue(i,j,0);\n";
-		    resultHTML += "}\n";	
+		    resultHTML.append("for(var i = 0, numOfRowsNew = data.getNumberOfRows(); i<numOfRowsNew; i++)\n");
+		    resultHTML.append("for(var j = 1, numOfColsNew = data.getNumberOfColumns(); j<numOfColsNew; j++){\n");
+		    resultHTML.append("  if(data.getValue(i,j) == null) data.setValue(i,j,0);\n");
+		    resultHTML.append("}\n");	
 		    
-		    resultHTML += "    var optionsLabels = '0:';\n";
-		    resultHTML += "    var optionsScale = '';\n";
-		    resultHTML += "    var optionsLineWidth = '';\n";
-		    resultHTML += "    var optionsLegend = 'r|l';\n";
-		    resultHTML += "     var optionsLegendSize = '000000,12';\n";
+		    resultHTML.append("    var optionsLabels = '0:';\n");
+		    resultHTML.append("    var optionsScale = '';\n");
+		    resultHTML.append("    var optionsLineWidth = '';\n");
+		    resultHTML.append("    var optionsLegend = 'r|l';\n");
+		    resultHTML.append("     var optionsLegendSize = '000000,12';\n");
 
-		    resultHTML += "    for(var i = 0, numOfRows = data.getNumberOfRows(); i<numOfRows; i++){\n";
-		    resultHTML += "      optionsLabels += '|' + data.getValue(i,0);\n";
-		    resultHTML += "    }\n";
+		    resultHTML.append("    for(var i = 0, numOfRows = data.getNumberOfRows(); i<numOfRows; i++){\n");
+		    resultHTML.append("      optionsLabels += '|' + data.getValue(i,0);\n");
+		    resultHTML.append("    }\n");
 
-		    resultHTML += "    data.removeColumn(0);\n";
+		    resultHTML.append("    data.removeColumn(0);\n");
 
-		    resultHTML += "    for(var i = 0, numOfCols=data.getNumberOfColumns(); i<numOfCols; i++){\n";
-		    resultHTML += "        optionsScale += '0,'+optionsScaleMax+(i==numOfCols-1 ? '' : ',');\n";
-		    resultHTML += "        optionsLineWidth += '2' + (i==numOfCols-1 ? '' : '|');\n";
-		    resultHTML += "    }\n";
+		    resultHTML.append("    for(var i = 0, numOfCols=data.getNumberOfColumns(); i<numOfCols; i++){\n");
+		    resultHTML.append("        optionsScale += '0,'+optionsScaleMax+(i==numOfCols-1 ? '' : ',');\n");
+		    resultHTML.append("        optionsLineWidth += '2' + (i==numOfCols-1 ? '' : '|');\n");
+		    resultHTML.append("    }\n");
  
-		    resultHTML += "    optionsLegend = 't|a';\n";
-		    resultHTML += "    optionsLegendSize = '000000,10';\n";
+		    resultHTML.append("    optionsLegend = 't|a';\n");
+		    resultHTML.append("    optionsLegendSize = '000000,10';\n");
                 
-		    resultHTML += "   var options = {\n";
-		    resultHTML += "      cht: 'r',\n";
-		    resultHTML += "      chxr: '1,0,'+optionsScaleMax+','+optionsScaleMax/10,\n";
-		    resultHTML += "      chds: optionsScale,\n";
-		    resultHTML += "      chs: '450x320',\n"; 
-		    resultHTML += "      chls: optionsLineWidth,\n";
-		    resultHTML += "      chxt: 'x,y',\n";
-		    resultHTML += "      chxl: optionsLabels,\n";
-		    resultHTML += "      chdlp: optionsLegend,\n";
-		    resultHTML += "      chdls: optionsLegendSize\n";
-		    resultHTML += "    };\n";
+		    resultHTML.append("   var options = {\n");
+		    resultHTML.append("      cht: 'r',\n");
+		    resultHTML.append("      chxr: '1,0,'+optionsScaleMax+','+optionsScaleMax/10,\n");
+		    resultHTML.append("      chds: optionsScale,\n");
+		    resultHTML.append("      chs: '450x320',\n"); 
+		    resultHTML.append("      chls: optionsLineWidth,\n");
+		    resultHTML.append("      chxt: 'x,y',\n");
+		    resultHTML.append("      chxl: optionsLabels,\n");
+		    resultHTML.append("      chdlp: optionsLegend,\n");
+		    resultHTML.append("      chdls: optionsLegendSize\n");
+		    resultHTML.append("    };\n");
 
-		    resultHTML += "    var view = new google.visualization.DataView(data);\n";
-		    resultHTML += "    view.setRows(view.getViewRows().concat([0]));\n";
-		    resultHTML += "var chart = new google.visualization.ImageChart(document.getElementById('" + randomNodeId + "'));\n";
-	        resultHTML += "chart.draw(view.toDataTable(), options);\n";
+		    resultHTML.append("    var view = new google.visualization.DataView(data);\n");
+		    resultHTML.append("    view.setRows(view.getViewRows().concat([0]));\n");
+		    resultHTML.append("var chart = new google.visualization.ImageChart(document.getElementById('" + randomNodeId).append("'));\n");
+	        resultHTML.append("chart.draw(view.toDataTable(), options);\n");
 		        	
-			resultHTML += "}\n</script>";
+			resultHTML.append("}\n</script>");
 			
-			return resultHTML;
+			return resultHTML.toString();
 		}
 		catch (Exception e) {
 			Context.logMessage(this, e.getMessage());

@@ -35,32 +35,32 @@ public class VisualizationCSV extends Visualization {
 			Iterator<Object[]> iterator = methodResult.getRowIterator();
 			int columnCount = columnTypes.length;
 			
-			String result = "";
+			StringBuilder result = new StringBuilder();
 			
 			// add the column names
 			for(int i=0;i<(columnCount-1);i++) {
-				result += columnNames[i] + ",";
+				result.append(columnNames[i]).append(",");
 			}
-			result += columnNames[columnCount-1].toString() + "\n";
+			result.append(columnNames[columnCount-1].toString()).append("\n");
 			
 			// add the column datatypes
 			for(int i=0;i<(columnCount-1);i++) {
-				result += columnTypes[i].toString() + ",";
+				result.append(columnTypes[i].toString()).append(",");
 			}
-			result += columnTypes[columnCount-1].toString() + "\n";
+			result.append(columnTypes[columnCount-1].toString()).append("\n");
 			
 			while(iterator.hasNext()) {
-				String row = "";
+				StringBuilder row = new StringBuilder();
 				Object[] currentRow = iterator.next();
 				for(int i = 0; i < (columnCount-1); i++) {
-					row += currentRow[i].toString() + ",";
+					row.append(currentRow[i].toString()).append(",");
 				}
-				row += currentRow[columnCount-1].toString();
+				row.append(currentRow[columnCount-1].toString());
 				
-				result += row + "\n";
+				result.append(row).append("\n");
 			}
 			
-			return result;
+			return result.toString();
 		}
 		catch (Exception e) {
 			Context.logMessage(this, e.getMessage());
