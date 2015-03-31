@@ -11,11 +11,18 @@
     <script type="text/javascript" src="js/queryviz.js"></script>
     <script type="text/javascript" src="js/jquery-1.8.0.min.js"></script>
     <script type="text/javascript" src="js/ICanHaz.min.js"></script>
-    <script id="qv_code_template" type="text/html">
+    <script id="qv_code_template_embed" type="text/html">
     {{! <!--}}<script src="https://api.learning-layers.eu/mobsos-qv/js/jquery-1.11.0.min.js"></script>
 <script src="https://api.learning-layers.eu/mobsos-qv/js/client.js"></script>
 <script src="https://api.learning-layers.eu/mobsos-qv/js/queryviz.js"></script>
 <script>QV.fromKey("{{key}}", null);</script>{{! -->}}
+    </script>
+    <script id="qv_code_template" type="text/html">
+    {{! <!--}}<script src="https://api.learning-layers.eu/mobsos-qv/js/jquery-1.11.0.min.js"></script>
+<script src="https://api.learning-layers.eu/mobsos-qv/js/client.js"></script>
+<script src="https://api.learning-layers.eu/mobsos-qv/js/queryviz.js"></script>
+<div id="{{eleId}}"></div>
+<script>QV.fromKey("{{key}}", "{{eleId}}");</script>{{! -->}}
     </script>
     <script id="qv_code_template2" type="text/html">
     {{! <!--}}<html><script type="text/javascript" src="http://api.learning-layers.eu/mobsos-qv/js/queryviz.js"></script>
@@ -32,7 +39,7 @@
     </ModulePrefs>
     <Content type="html">
         <![CDATA[
-{{>qv_code_template}}
+{{>qv_code_template_embed}}
         ]]>
     </Content>
 </Module>{{! -->}}

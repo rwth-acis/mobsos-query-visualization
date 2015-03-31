@@ -98,13 +98,30 @@ var form_data = [];
  */
 var filterKeys = [];
 
+var getRandomId = function(length,startWithLetter) {
+    var text = "";
+    var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+    if(typeof startWithLetter == "undefined") startWithLetter = false;
+
+    if(startWithLetter) {
+        text += possible.charAt(Math.floor(Math.random() * 52));
+        length--;
+    }
+
+    for( var i=0; i < length; i++ )
+    text += possible.charAt(Math.floor(Math.random() * possible.length));
+
+    return text;
+};
+
 /**
  * Generates HTML and Widget XML Code
  * @param key The key of the visualization
  * @return {Object} Property html of the returned object contains the HTML code, property widget the Widget XML
  */
 var getGeneratedCode = function(key){
-    var data = {key: key};
+    var data = {key: key, eleId: getRandomId(10, true)};
     return {html: ich.qv_code_template(data,true), widget: ich.qv_widget_template(data,true)};
 };
 
