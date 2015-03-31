@@ -786,15 +786,19 @@ var QV = (function(QV){
     };
 
     /**
-     * Shorthand for the unauthenticated retrieval of a visualization based on a visualization key and the direct embedding into the DOM tree at the position where the calling script is placed
+     * Shorthand for the unauthenticated retrieval of a visualization based on a visualization key and the direct embedding into the DOM tree at the position where the calling script is placed or in a DOM element selected by id
      * @param key The visualization key
+     * @param eleId The (optional) id of a DOM Element
      */
-    QV.fromKey = function(key){
-        var randomId = QV.HELPER.getRandomId(10,true);
-        /* jshint ignore:start */
-        document.write('<div id="' + randomId + '" ></div>');
-        /* jshint ignore:end */
-        var container = document.getElementById(randomId);
+    QV.fromKey = function(key, eleId){
+        if (!eleId) {
+            var randomId = QV.HELPER.getRandomId(10,true);
+            /* jshint ignore:start */
+            document.write('<div id="' + randomId + '" ></div>');
+            /* jshint ignore:end */
+            eleId = randomId;
+        }
+        var container = document.getElementById(eleId);
         var qv = new QV.Visualizer();
         qv.fromKey(key,container);
     };
