@@ -62,6 +62,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -121,9 +122,11 @@ public class QueryVisualizationService extends Service {
 	
 	private SQLDatabaseSettings databaseSettings = null;
 	private SQLDatabase storageDatabase = null;
-	public SQLDatabaseManager databaseManager = null;
-	private SQLFilterManager filterManager = null;
-	private QueryManager queryManager = null;
+
+	public HashMap<Long, SQLDatabaseManager> databaseManagerMap = new HashMap<Long, SQLDatabaseManager>();
+	private HashMap<Long, SQLFilterManager> filterManagerMap = new HashMap<Long, SQLFilterManager>();
+	private HashMap<Long, QueryManager> queryManagerMap = new HashMap<Long, QueryManager>();
+
 	private MethodResultCache resultCache = null;
 	private VisualizationManager visualizationManager = null;
 	private VisualizationException visualizationException = null;
@@ -189,7 +192,8 @@ public class QueryVisualizationService extends Service {
 	}		
 	
 	public void initializeDBConnection() {
-		if (databaseManager != null) {
+		long user = getActiveAgent().getId();
+		if (databaseManagerMap.get(user) != null) {
 			return;
 		}
 		try {
@@ -205,8 +209,12 @@ public class QueryVisualizationService extends Service {
 
 			// setup the database manager
 			storageDatabase = new SQLDatabase(databaseSettings);
-			databaseManager = new SQLDatabaseManager(this, storageDatabase);
-			queryManager = new QueryManager(this, storageDatabase);
+
+			SQLDatabaseManager databaseManager = new SQLDatabaseManager(this, storageDatabase);
+			databaseManagerMap.put(user, databaseManager);
+			QueryManager queryManager = new QueryManager(this, storageDatabase);
+			queryManagerMap.put(user, queryManager);
+
 			visualizationManager = VisualizationManager.getInstance();
 			visualizationException = VisualizationException.getInstance();
 			modificationManager = ModificationManager.getInstance();
@@ -227,7 +235,7 @@ public class QueryVisualizationService extends Service {
 			modificationManager.registerModification(new ModificationLogarithmic());
 			modificationManager.registerModification(new ModificationNormalization());
 
-			if(this.databaseManager.getDatabaseCount() < 1) {
+			if(databaseManager.getDatabaseCount() < 1) {
 
 				// the user has no databases yet - add the example database
 				addDatabase(exKey, SQLDatabaseType.valueOf(exType.toUpperCase()), exUser, exPassword, exDatabase, exHost, exPort, VisualizationType.JSON);
@@ -307,6 +315,8 @@ public class QueryVisualizationService extends Service {
 			}
 			
 			initializeDBConnection();
+			long user = getActiveAgent().getId();
+			SQLDatabaseManager databaseManager = databaseManagerMap.get(user);
 
 			SQLDatabaseType sqlDatabaseType = databaseTypeCode;
 			if(!databaseManager.addDatabase(databaseKey,sqlDatabaseType, username, password, database, host, port)) {
@@ -320,7 +330,7 @@ public class QueryVisualizationService extends Service {
 				} 
 			}
 			catch (Exception e) {
-				this.databaseManager.removeDatabase(databaseKey);
+				databaseManager.removeDatabase(databaseKey);
 				throw e;
 			}
 
@@ -365,6 +375,11 @@ public class QueryVisualizationService extends Service {
 			}
 			
 			initializeDBConnection();
+
+			long user = getActiveAgent().getId();
+			SQLDatabaseManager databaseManager = databaseManagerMap.get(user);
+			QueryManager queryManager = queryManagerMap.get(user);
+			SQLFilterManager filterManager = filterManagerMap.get(user);
 
 			try {
                 queryManager.databaseDeleted(databaseKey);
@@ -415,7 +430,9 @@ public class QueryVisualizationService extends Service {
 			@QueryParam(defaultValue = "JSON", name = "format") String visualizationTypeIndex) {
 		try {
 			initializeDBConnection();
-			List<String> keyList = this.databaseManager.getDatabaseKeyList();
+			long user = getActiveAgent().getId();
+			SQLDatabaseManager databaseManager = databaseManagerMap.get(user);
+			List<String> keyList = databaseManager.getDatabaseKeyList();
 
 			if(keyList == null) {
 				throw new Exception("Failed to get the key list for the users' databases!");
@@ -466,12 +483,15 @@ public class QueryVisualizationService extends Service {
 	public HttpResponse getFilterKeys(@QueryParam(defaultValue = "JSON", name = "format") String visualizationTypeIndex) {
 		try {
 			initializeDBConnection();
-			if(this.filterManager == null) {
+
+			long user = getActiveAgent().getId();
+			SQLFilterManager filterManager = filterManagerMap.get(user);
+			if(filterManager == null) {
 				// initialize filter manager
-				this.filterManager = new SQLFilterManager(storageDatabase);
+				filterManager = new SQLFilterManager(storageDatabase);
 			}
 
-			List<String> keyList = this.filterManager.getFilterKeyList();
+			List<String> keyList = filterManager.getFilterKeyList();
 
 			if(keyList == null) {
 				throw new Exception("Failed to get the key list for the users' filters!");
@@ -484,7 +504,7 @@ public class QueryVisualizationService extends Service {
 				// add some examples for the default DB
 				this.addFilter("Customers", "SELECT DISTINCT customerNumber FROM `customers`", exKey, vtypei);
 
-				keyList = this.filterManager.getFilterKeyList();
+				keyList = filterManager.getFilterKeyList();
 			}
 
 			MethodResult result = new MethodResult();
@@ -496,7 +516,7 @@ public class QueryVisualizationService extends Service {
 			Iterator<String> iterator = keyList.iterator();
 			while(iterator.hasNext()) {
 				String filterKey = iterator.next();
-				String databaseKey = this.filterManager.getDatabaseKey(filterKey);
+				String databaseKey = filterManager.getDatabaseKey(filterKey);
 				Object[] currentRow = {filterKey,databaseKey};
 				result.addRow(currentRow);
 			}
@@ -536,13 +556,15 @@ public class QueryVisualizationService extends Service {
 		try {
 			VisualizationType vtypei = VisualizationType.valueOf(visualizationTypeIndex.toUpperCase());
 			initializeDBConnection();
-			if(this.filterManager == null) {
+			long user = getActiveAgent().getId();
+			SQLFilterManager filterManager = filterManagerMap.get(user);
+			if(filterManager == null) {
 				// initialize filter manager
-				this.filterManager = new SQLFilterManager(storageDatabase);
+				filterManager = new SQLFilterManager(storageDatabase);
 			}
 
 			HttpResponse res = new HttpResponse(
-					this.filterManager.getFilterValues(filterKey, vtypei, this));
+					filterManager.getFilterValues(filterKey, vtypei, this));
 			res.setStatus(200);
 			return res;
 		} catch (DoesNotExistException e) {
@@ -596,24 +618,26 @@ public class QueryVisualizationService extends Service {
 		try {
 			initializeDBConnection();
 			//TODO: parameter sanity checks
+			long user = getActiveAgent().getId();
+			SQLFilterManager filterManager = filterManagerMap.get(user);
 
-			if(this.filterManager == null) {
+			if(filterManager == null) {
 				// initialize filter manager
-				this.filterManager = new SQLFilterManager(storageDatabase);
+				filterManager = new SQLFilterManager(storageDatabase);
 			}
 
-			if(!this.filterManager.addFilter(filterKey, SQLQuery, databaseKey)) {
+			if(!filterManager.addFilter(filterKey, SQLQuery, databaseKey)) {
 				throw new Exception("Failed to add a database for the user!");
 			}
 
 			// verify that it works (that one can get an instance, probably its going to be used later anyways)...
 			try {
-				if(this.filterManager.getFilterValues(filterKey, visualizationTypeIndex, this) == null) {
+				if(filterManager.getFilterValues(filterKey, visualizationTypeIndex, this) == null) {
 					throw new Exception("Failed to retrieve the filter values!");
 				}
 			}
 			catch (Exception e) {
-				this.filterManager.deleteFilter(filterKey);
+				filterManager.deleteFilter(filterKey);
 				throw e;
 			}
 
@@ -653,12 +677,14 @@ public class QueryVisualizationService extends Service {
 	public HttpResponse deleteFilter(@PathParam("key") String filterKey) {
 		try {		
 			initializeDBConnection();
-			if(this.filterManager == null) {
+			long user = getActiveAgent().getId();
+			SQLFilterManager filterManager = filterManagerMap.get(user);
+			if(filterManager == null) {
 				// initialize filter manager
-				this.filterManager = new SQLFilterManager(storageDatabase);
+				filterManager = new SQLFilterManager(storageDatabase);
 			}
 
-			if(!this.filterManager.deleteFilter(filterKey)) {
+			if(!filterManager.deleteFilter(filterKey)) {
 				HttpResponse res = new HttpResponse("Filter " + filterKey + " does not exist!");
 				res.setStatus(404);
 				return res;
@@ -840,7 +866,9 @@ public class QueryVisualizationService extends Service {
 			@QueryParam(defaultValue = "JSON", name = "format") String visualizationTypeIndex) {
 		try {
 			initializeDBConnection();
-			List<Query> keyList = this.queryManager.getQueryList();
+			long user = getActiveAgent().getId();
+			QueryManager queryManager = queryManagerMap.get(user);
+			List<Query> keyList = queryManager.getQueryList();
 
 			if(keyList == null) {
 				throw new Exception("Failed to get the key list for the users' queries!");
@@ -892,11 +920,13 @@ public class QueryVisualizationService extends Service {
 	public HttpResponse deleteQuery( @PathParam("key") String queryKey) {
 		try {		
 			initializeDBConnection();
-			if(this.queryManager == null) {
+			long user = getActiveAgent().getId();
+			QueryManager queryManager = queryManagerMap.get(user);
+			if(queryManager == null) {
 				throw new Exception("Query Manager is null");
 			}
 
-			this.queryManager.removeQ(queryKey);
+			queryManager.removeQ(queryKey);
 
 			MethodResult result = new MethodResult();
 			result.setColumnName("DeletedQuery");
@@ -941,9 +971,11 @@ public class QueryVisualizationService extends Service {
 		try {
 //			VisualizationType vtypei = VisualizationType.valueOf(format.toUpperCase());
 			initializeDBConnection();
-			if(this.queryManager == null) {
+			long user = getActiveAgent().getId();
+			QueryManager queryManager = queryManagerMap.get(user);
+			if(queryManager == null) {
 				// initialize query manager
-				this.queryManager = new QueryManager(this, storageDatabase);
+				queryManager = new QueryManager(this, storageDatabase);
 			}
 			Query q = queryManager.getQuery(key);
 			if (q == null) {
@@ -961,7 +993,9 @@ public class QueryVisualizationService extends Service {
 			return res;
 		} catch (DBDoesNotExistException e) {
 			logError(e);
-			this.queryManager.removeQ(key);
+			long user = getActiveAgent().getId();
+			QueryManager queryManager = queryManagerMap.get(user);
+			queryManager.removeQ(key);
 			HttpResponse res = new HttpResponse(visualizationException.generate(e, null));
 			res.setStatus(400);
 			return res;
@@ -995,6 +1029,8 @@ public class QueryVisualizationService extends Service {
 
 		Query query = null;
 		try {
+			long user = getActiveAgent().getId();
+			QueryManager queryManager = queryManagerMap.get(user);
 			query = queryManager.getQuery(key);
 			if(query == null) {
 				throw new DoesNotExistException("Query does not exist!"); 
@@ -1045,6 +1081,9 @@ public class QueryVisualizationService extends Service {
 		Query query = null;
 		String queryKey = ""; //If empty, the query generates a new one
 		try {
+			long user = getActiveAgent().getId();
+			SQLDatabaseManager databaseManager = databaseManagerMap.get(user);
+			QueryManager queryManager = queryManagerMap.get(user);
 			database = databaseManager.getDatabaseInstance(databaseKey);
 			query = new Query(getL2pThread().getContext().getMainAgent().getId(), database.getJdbcInfo(),
 					database.getUser(), database.getPassword(), database.getDatabase(), database.getHost(),
@@ -1292,6 +1331,8 @@ public class QueryVisualizationService extends Service {
 				databaseKey = stDbKey;
 				logMessage("No database key has been provided. Using default DB: " + databaseKey);
 			}
+			long user = getActiveAgent().getId();
+			SQLDatabaseManager databaseManager = databaseManagerMap.get(user);
 
 			if(databaseManager == null) {
 				throw new Exception("Did not provide a valid databaseManager!");

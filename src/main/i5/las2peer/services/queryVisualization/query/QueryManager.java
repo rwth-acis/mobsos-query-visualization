@@ -18,6 +18,7 @@ import i5.las2peer.services.queryVisualization.QueryVisualizationService;
 import i5.las2peer.services.queryVisualization.database.DBDoesNotExistException;
 import i5.las2peer.services.queryVisualization.database.DoesNotExistException;
 import i5.las2peer.services.queryVisualization.database.SQLDatabase;
+import i5.las2peer.services.queryVisualization.database.SQLDatabaseManager;
 import i5.las2peer.services.queryVisualization.database.SQLDatabaseSettings;
 import i5.las2peer.services.queryVisualization.database.SQLDatabaseType;
 import i5.las2peer.services.queryVisualization.encoding.ModificationType;
@@ -109,10 +110,7 @@ public class QueryManager {
 	public QueryManager(QueryVisualizationService service, SQLDatabase dbm) {
 		storageDatabase = dbm;
 		this.service = service;
-		this.storageDatabase = storageDatabase;
 		// get the user's security object which contains the database information
-		
-		long user = getL2pThread().getContext().getMainAgent().getId();
 		
 		Query[] settings = null;
 		
@@ -120,7 +118,7 @@ public class QueryManager {
 			connect();
 			PreparedStatement p = storageDatabase.prepareStatement(
 					"SELECT * FROM QVS.QUERIES WHERE USER = ?;");
-			p.setLong(1, user);
+			p.setLong(1, getL2pThread().getContext().getMainAgent().getId());
 			ResultSet databases = p.executeQuery();
 			settings = Query.fromResultSet(databases);
 		} catch ( Exception e ) {
@@ -153,7 +151,8 @@ public class QueryManager {
 			userQueryMap.put(query.getKey(), query);
 			logMessage("stored query: " + query.getKey());	
 			return true;
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			logMessage("Error storing query! " + e);
 			System.out.println ( "QV critical:");
 			e.printStackTrace();
@@ -194,7 +193,7 @@ public class QueryManager {
 	public void databaseDeleted(String dbKey) {
 		String db;
 		try {
-			db = service.databaseManager.getDatabaseInstance(dbKey).getDatabase();
+			db = service.databaseManagerMap.get(getL2pThread().getContext().getMainAgent().getId()).getDatabaseInstance(dbKey).getDatabase();
 		} catch (Exception e1) {
 			return;
 		}
@@ -299,7 +298,8 @@ public class QueryManager {
 	}
 	public SQLDatabaseSettings getDBSettings(Query q) {
 		String databaseName = q.getDatabase();
-		for (SQLDatabaseSettings db : service.databaseManager.getDatabaseSettingsList()) {
+        SQLDatabaseManager dbm = service.databaseManagerMap.get(getL2pThread().getContext().getMainAgent().getId());
+		for (SQLDatabaseSettings db : dbm.getDatabaseSettingsList()) {
 			if (databaseName.equals(db.getDatabase())) {
 				return db;
 			}
