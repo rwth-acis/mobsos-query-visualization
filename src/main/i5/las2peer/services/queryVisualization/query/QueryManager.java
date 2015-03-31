@@ -14,6 +14,7 @@ import i5.las2peer.execution.L2pThread;
 import i5.las2peer.logging.NodeObserver.Event;
 import i5.las2peer.p2p.Node;
 import i5.las2peer.security.Agent;
+import i5.las2peer.security.UserAgent;
 import i5.las2peer.services.queryVisualization.QueryVisualizationService;
 import i5.las2peer.services.queryVisualization.database.DBDoesNotExistException;
 import i5.las2peer.services.queryVisualization.database.DoesNotExistException;
@@ -163,6 +164,22 @@ public class QueryManager {
 	// get a query from the p2p storage
 	public Query getQuery(String queryKey) throws Exception {
 		try {
+			
+			UserAgent u = (UserAgent) getL2pThread().getContext().getMainAgent();
+			if (!u.hasLogin()) {
+                storageDatabase.connect();
+                PreparedStatement p = storageDatabase.prepareStatement(
+                                "SELECT * FROM QVS.QUERIES WHERE KEY = ?;");
+                p.setString(1, queryKey);
+                ResultSet databases = p.executeQuery();
+                Query[] settings = Query.fromResultSet(databases);
+                storageDatabase.disconnect();
+                if (settings.length > 0) {
+                        return settings[0];
+				}
+                throw new Exception("The requested Query is not known! (Requested:" + queryKey );
+			}
+			
 			Query query = userQueryMap.get(queryKey);
 
 			if(query != null) {
