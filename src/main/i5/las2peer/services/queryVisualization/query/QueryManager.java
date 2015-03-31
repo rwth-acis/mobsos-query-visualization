@@ -166,10 +166,10 @@ public class QueryManager {
 		try {
 			
 			UserAgent u = (UserAgent) getL2pThread().getContext().getMainAgent();
-			if (!u.hasLogin()) {
+			if (u.getLoginName().equals("anonymous") && u.getUserData() == null) {
                 storageDatabase.connect();
                 PreparedStatement p = storageDatabase.prepareStatement(
-                                "SELECT * FROM QVS.QUERIES WHERE KEY = ?;");
+                                "SELECT * FROM QVS.QUERIES WHERE `KEY` = ?;");
                 p.setString(1, queryKey);
                 ResultSet databases = p.executeQuery();
                 Query[] settings = Query.fromResultSet(databases);
