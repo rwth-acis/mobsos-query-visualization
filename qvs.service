@@ -1,0 +1,16 @@
+[Unit]
+Description=Query Visualization Service
+After=network.target
+
+[Service]
+#Uncomment and replace to run as a specific user/group
+#User=USERNAME
+#Group=GROUPNAME
+
+WorkingDirectory=/home/gordin/Dropbox/Hiwi/LAS2peer-Query-Visualization-Service
+ExecStart=/home/gordin/Dropbox/Hiwi/LAS2peer-Query-Visualization-Service/bin/start_network.sh
+
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
