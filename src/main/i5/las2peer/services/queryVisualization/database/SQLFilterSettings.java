@@ -26,15 +26,18 @@ public class SQLFilterSettings implements XmlAble, Serializable {
 	public SQLFilterSettings() {
 	}
 	
-	public SQLFilterSettings(String key, String query, String databaseKey) {
+	public SQLFilterSettings(String databaseKey, String name, String query) {
 		//TODO: sanity checks
-		this.key = key;
+		this.key = name;
 		this.query = query;
 		this.databaseKey = databaseKey;
 	}
 
-	public String getKey() {
+	public String getName() {
 		return key;
+	}
+	public StringPair getKey() {
+		return new StringPair (databaseKey, key);
 	}
 	public String getQuery() {
 		return query;
@@ -80,12 +83,17 @@ public class SQLFilterSettings implements XmlAble, Serializable {
 		LinkedList<SQLFilterSettings> settings = new LinkedList<SQLFilterSettings>();
 		try {
 			while (set.next()) {
-				SQLFilterSettings setting = new SQLFilterSettings(set.getString("KEY"), set.getString("QUERY"), set.getString("DB_KEY") );
+				SQLFilterSettings setting = new SQLFilterSettings(set.getString("DB_KEY"), set.getString("KEY"), set.getString("QUERY") );
 				settings.add(setting);
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 		return settings.toArray(new SQLFilterSettings[]{});
+	}
+
+	@Override
+	public String toString() {
+		return "SQLFilterSettings [databaseKey=" + databaseKey + ", name = " + key + ", query=" + query + "]";
 	}
 }

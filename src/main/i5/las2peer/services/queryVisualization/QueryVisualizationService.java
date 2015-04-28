@@ -23,7 +23,6 @@ import i5.las2peer.restMapper.annotations.swagger.ResourceListApi;
 import i5.las2peer.restMapper.annotations.swagger.Summary;
 import i5.las2peer.restMapper.tools.ValidationResult;
 import i5.las2peer.restMapper.tools.XMLCheck;
-import i5.las2peer.security.L2pSecurityException;
 import i5.las2peer.security.UserAgent;
 import i5.las2peer.services.queryVisualization.caching.MethodResultCache;
 import i5.las2peer.services.queryVisualization.database.DBDoesNotExistException;
@@ -33,6 +32,7 @@ import i5.las2peer.services.queryVisualization.database.SQLDatabaseManager;
 import i5.las2peer.services.queryVisualization.database.SQLDatabaseSettings;
 import i5.las2peer.services.queryVisualization.database.SQLDatabaseType;
 import i5.las2peer.services.queryVisualization.database.SQLFilterManager;
+import i5.las2peer.services.queryVisualization.database.StringPair;
 import i5.las2peer.services.queryVisualization.encoding.MethodResult;
 import i5.las2peer.services.queryVisualization.encoding.Modification;
 import i5.las2peer.services.queryVisualization.encoding.ModificationIdentity;
@@ -62,9 +62,11 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import net.minidev.json.JSONArray;
@@ -215,6 +217,8 @@ public class QueryVisualizationService extends Service {
 			databaseManagerMap.put(user, databaseManager);
 			QueryManager queryManager = new QueryManager(this, storageDatabase);
 			queryManagerMap.put(user, queryManager);
+			SQLFilterManager filterManager = new SQLFilterManager(storageDatabase);
+			filterManagerMap.put(user, filterManager);
 
 			visualizationManager = VisualizationManager.getInstance();
 			visualizationException = VisualizationException.getInstance();
@@ -455,8 +459,10 @@ public class QueryVisualizationService extends Service {
 				result.addRow(currentDatabaseKey);
 			}
 
-			HttpResponse res = new HttpResponse(
-					visualizationManager.getVisualization(VisualizationType.valueOf(visualizationTypeIndex.toUpperCase())).generate(result, null));
+			VisualizationType t = VisualizationType.valueOf(visualizationTypeIndex.toUpperCase());
+			Visualization vis = visualizationManager.getVisualization(t);
+			String visString = vis.generate(result, null);
+			HttpResponse res = new HttpResponse(visString);
 			res.setStatus(200);
 			return res;
 		} catch (Exception e) {
@@ -490,9 +496,10 @@ public class QueryVisualizationService extends Service {
 			if(filterManager == null) {
 				// initialize filter manager
 				filterManager = new SQLFilterManager(storageDatabase);
+				filterManagerMap.put(user, filterManager);
 			}
 
-			List<String> keyList = filterManager.getFilterKeyList();
+			List<StringPair> keyList = filterManager.getFilterKeyList();
 
 			if(keyList == null) {
 				throw new Exception("Failed to get the key list for the users' filters!");
@@ -503,7 +510,7 @@ public class QueryVisualizationService extends Service {
 			if(keyList.isEmpty()) {
 				// in order to encounter the cold-start...
 				// add some examples for the default DB
-				this.addFilter("Customers", "SELECT DISTINCT customerNumber FROM `customers`", exKey, vtypei);
+				this.addFilter(exKey, "Customers", "SELECT DISTINCT customerNumber FROM `customers`", vtypei);
 
 				keyList = filterManager.getFilterKeyList();
 			}
@@ -514,10 +521,11 @@ public class QueryVisualizationService extends Service {
 			String[] names = {"FilterKeys","DatabaseKeys"};
 			result.setColumnNames(names);
 
-			Iterator<String> iterator = keyList.iterator();
+			Iterator<StringPair> iterator = keyList.iterator();
 			while(iterator.hasNext()) {
-				String filterKey = iterator.next();
-				String databaseKey = filterManager.getDatabaseKey(filterKey);
+				StringPair p = iterator.next();
+				String databaseKey = p.getKey1();
+				String filterKey = p.getKey2();
 				Object[] currentRow = {filterKey,databaseKey};
 				result.addRow(currentRow);
 			}
@@ -537,35 +545,145 @@ public class QueryVisualizationService extends Service {
 	}
 
 	/**
-	 * Retrieves the values for a specific filter.
+	 * Retrieves the values for a specific filter of the current user.
 	 * 
 	 * @param filterKey
 	 * @param visualizationTypeIndex encoding of the returned message
 	 * @return success or error message, if possible in the requested encoding/format
 	 */
 	@GET
-	@Path("filter/{key}")
+	@Path("filter/{database}/{key}")
 	@Summary("Gets the values for a filter")
 	@Produces(MediaType.APPLICATION_JSON)
 	@ApiResponses(value={
 			  @ApiResponse(code = 200, message = "Got filter values."),
 			  @ApiResponse(code = 400, message = "Retrieving filter keys failed."),
 			  @ApiResponse(code = 204, message = "Filter does not exist.")})
-	public HttpResponse getFilterValues(
+	public HttpResponse getFilterValuesForCurrentUser(
+			@PathParam("database") String dbKey,
 			@PathParam("key") String filterKey,
+			@QueryParam(name="format", defaultValue = "JSON") String visualizationTypeIndex) {
+		return getFilterValuesOfUser(dbKey, filterKey, getActiveAgent().getId(), visualizationTypeIndex);
+	}		
+
+	/**
+	 * Retrieves the filter keys for a specific query by ID.
+	 * 
+	 * @param queryID
+	 * @param visualizationTypeIndex encoding of the returned message
+	 * @return success or error message, if possible in the requested encoding/format
+	 */
+	@GET
+	@Path("query/{query}/filter")
+	@Summary("Gets the filters for a query")
+	@Produces(MediaType.APPLICATION_JSON)
+	@ApiResponses(value={
+			  @ApiResponse(code = 200, message = "Got filters."),
+			  @ApiResponse(code = 400, message = "Retrieving filter keys failed."),
+			  @ApiResponse(code = 204, message = "Filter does not exist.")})
+	public HttpResponse getFilterValuesForQuery(@PathParam("key") String queryKey) {
+		try {
+			initializeDBConnection();
+			QueryManager queryManager = queryManagerMap.get(getActiveAgent().getId());
+			Query q = queryManager.getQuery(queryKey);
+			String[] params = q.getQueryParameters();
+			String statement = q.getQueryStatement();
+			
+			ArrayList<String> filterNames = new ArrayList<String>();
+
+			// go through the query, replace placeholders by the values from the query parameters
+			int parameterCount = params == null ? 0 : params.length;
+			Pattern placeholderPattern = Pattern.compile("\\$.*?\\$");
+			for(int i=0; i<parameterCount; i++) {
+				Matcher m =placeholderPattern.matcher(statement);
+				m.find();
+				String param = m.group();
+				filterNames.add(param.substring(1, param.length() -1));
+			}
+			String dbName = q.getDatabase();
+			long user = q.getUser();
+			
+			SQLDatabaseManager dbManager = databaseManagerMap.get(user);
+			if (dbManager == null) {
+				dbManager = new SQLDatabaseManager(this, storageDatabase);
+			}
+			SQLDatabaseSettings db = dbManager.getDatabaseByName(dbName);
+
+
+			ArrayList<StringPair> filters = new ArrayList<StringPair>();
+			for (String filter : filterNames) {
+				filters.add(new StringPair(db.getKey(), filter));
+			}
+
+			MethodResult result = new MethodResult();
+			Integer[] datatypes = {Types.VARCHAR,Types.VARCHAR,Types.VARCHAR};
+			result.setColumnDatatypes(datatypes);
+			String[] names = {"FilterKeys","DatabaseKeys","user"};
+			result.setColumnNames(names);
+
+			Iterator<StringPair> iterator = filters.iterator();
+			while(iterator.hasNext()) {
+				StringPair p = iterator.next();
+				String databaseKey = p.getKey1();
+				String filterKey = p.getKey2();
+				Object[] currentRow = {filterKey,databaseKey,""+user};
+				result.addRow(currentRow);
+			}
+
+
+			HttpResponse res = new HttpResponse(
+					visualizationManager.getVisualization(VisualizationType.JSON).generate(result, null));
+			res.setStatus(200);
+			return res;
+		} catch (DoesNotExistException e) {
+			HttpResponse res = new HttpResponse("Query " + queryKey + " does not exist.");
+			res.setStatus(404);
+			return res;
+		} catch (Exception e) {
+			logError(e);
+			HttpResponse res = new HttpResponse(visualizationException.generate(e, null));
+			res.setStatus(400);
+			return res;
+		}
+	}		
+
+	/**
+	 * Retrieves the values for a specific filter of a chosen user.
+	 * 
+	 * @param filterKey
+	 * @param visualizationTypeIndex encoding of the returned message
+	 * @return success or error message, if possible in the requested encoding/format
+	 */
+	@GET
+	@Path("filter/{database}/{key}/{user}")
+	@Summary("Gets the values for a filter")
+	@Produces(MediaType.APPLICATION_JSON)
+	@ApiResponses(value={
+			  @ApiResponse(code = 200, message = "Got filter values."),
+			  @ApiResponse(code = 400, message = "Retrieving filter keys failed."),
+			  @ApiResponse(code = 204, message = "Filter does not exist.")})
+	public HttpResponse getFilterValuesOfUser(
+			@PathParam("database") String dbKey,
+			@PathParam("key") String filterKey,
+			@PathParam("user") long user,
 			@QueryParam(name="format", defaultValue = "JSON") String visualizationTypeIndex) {
 		try {
 			VisualizationType vtypei = VisualizationType.valueOf(visualizationTypeIndex.toUpperCase());
 			initializeDBConnection();
-			long user = getActiveAgent().getId();
 			SQLFilterManager filterManager = filterManagerMap.get(user);
 			if(filterManager == null) {
+				if (((UserAgent)getActiveAgent()).getUserData() == null) {
+					filterManager = new SQLFilterManager(storageDatabase, user);
+//					throw new DoesNotExistException("Anonymous user requested non-existant filter");
+				} else {
 				// initialize filter manager
 				filterManager = new SQLFilterManager(storageDatabase);
+				filterManagerMap.put(user, filterManager);
+				}
 			}
 
 			HttpResponse res = new HttpResponse(
-					filterManager.getFilterValues(filterKey, vtypei, this));
+					filterManager.getFilterValues(dbKey, filterKey, vtypei, this));
 			res.setStatus(200);
 			return res;
 		} catch (DoesNotExistException e) {
@@ -583,30 +701,29 @@ public class QueryVisualizationService extends Service {
 	/**
 	 * Adds a filter to the user's settings/profile.
 	 * 
-	 * @param filterKey the Key that should be used for this filter
-	 * @param SQLQuery SQL  query which is used to retrieve the filter values
-	 * @param stDbKey	key of the database for which the filter has been configured
-	 * @param visualizationTypeIndex  encoding of the returned message
+	 * @param dbKey	key of the database for which the filter has been configured
+	 * @param filterName the Key that should be used for this filter
+	 * @param query  encoding of the returned message
 	 * 
 	 * @return success or error message, if possible in the requested encoding/format
 	 */
 	@PUT
-	@Path("filter/{key}")
+	@Path("filter/{database}/{key}")
 	@Summary("Adds a filter with a specified key")
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
 	@ApiResponses(value={
 			  @ApiResponse(code = 201, message = "Added filter."),
 			  @ApiResponse(code = 400, message = "Adding filter failed.")})
-	public HttpResponse addFilter(@PathParam("key") String filterKey,
-			@ContentParam String content) {
+	public HttpResponse addFilter(
+			@PathParam("database") String dbKey,
+			@PathParam("key") String filterName,
+			@ContentParam String query) {
 		JSONObject o;
 		try{	
 			VisualizationType vtypei = VisualizationType.JSON;
-			o = (JSONObject) JSONValue.parseWithException(content);
-			String query = stringfromJSON(o, "query");
-			String dbkey = stringfromJSON(o, "dbkey");
-			return addFilter(filterKey, query, dbkey, vtypei);
+			o = (JSONObject) JSONValue.parseWithException(query);
+			return addFilter(dbKey, filterName, stringfromJSON(o, "query"), vtypei);
 		} catch (Exception e) {
 			logError(e);
 			HttpResponse res = new HttpResponse(visualizationException.generate(e, "Received invalid JSON"));
@@ -615,7 +732,7 @@ public class QueryVisualizationService extends Service {
 		}
 	}
 
-	public HttpResponse addFilter(String filterKey, String SQLQuery, String databaseKey, VisualizationType visualizationTypeIndex) {
+	public HttpResponse addFilter(String databaseKey, String filterKey, String sqlQuery, VisualizationType visualizationTypeIndex) {
 		try {
 			initializeDBConnection();
 			//TODO: parameter sanity checks
@@ -625,20 +742,21 @@ public class QueryVisualizationService extends Service {
 			if(filterManager == null) {
 				// initialize filter manager
 				filterManager = new SQLFilterManager(storageDatabase);
+				filterManagerMap.put(user, filterManager);
 			}
 
-			if(!filterManager.addFilter(filterKey, SQLQuery, databaseKey)) {
+			if(!filterManager.addFilter(databaseKey, filterKey, sqlQuery)) {
 				throw new Exception("Failed to add a database for the user!");
 			}
 
 			// verify that it works (that one can get an instance, probably its going to be used later anyways)...
 			try {
-				if(filterManager.getFilterValues(filterKey, visualizationTypeIndex, this) == null) {
+				if(filterManager.getFilterValues(databaseKey, filterKey, visualizationTypeIndex, this) == null) {
 					throw new Exception("Failed to retrieve the filter values!");
 				}
 			}
 			catch (Exception e) {
-				filterManager.deleteFilter(filterKey);
+				filterManager.deleteFilter(databaseKey, filterKey);
 				throw e;
 			}
 
@@ -669,13 +787,15 @@ public class QueryVisualizationService extends Service {
 	 * @return success or error message, if possible in the requested encoding/format
 	 */
 	@DELETE
-	@Path("filter/{key}")
+	@Path("filter/{database}/{key}")
 	@Summary("Deletes a filter with a specified key")
 	@Produces(MediaType.APPLICATION_JSON)
 	@ApiResponses(value={
 			  @ApiResponse(code = 200, message = "Deleted filter."),
 			  @ApiResponse(code = 400, message = "Deleting filter failed.")})
-	public HttpResponse deleteFilter(@PathParam("key") String filterKey) {
+	public HttpResponse deleteFilter(
+			@PathParam("database") String dbKey,
+			@PathParam("key") String filterKey) {
 		try {		
 			initializeDBConnection();
 			long user = getActiveAgent().getId();
@@ -683,9 +803,10 @@ public class QueryVisualizationService extends Service {
 			if(filterManager == null) {
 				// initialize filter manager
 				filterManager = new SQLFilterManager(storageDatabase);
+				filterManagerMap.put(user, filterManager);
 			}
 
-			if(!filterManager.deleteFilter(filterKey)) {
+			if(!filterManager.deleteFilter(dbKey, filterKey)) {
 				HttpResponse res = new HttpResponse("Filter " + filterKey + " does not exist!");
 				res.setStatus(404);
 				return res;
@@ -824,12 +945,10 @@ public class QueryVisualizationService extends Service {
 				}
 			}
 
-			query = insertParameters(query, queryParameters);
-
 			if(save){
-				return saveQuery(query, databaseKey, useCache, modificationTypeIndex, visualizationTypeIndex, visualizationParameters);
+				return saveQuery(query, queryParameters, databaseKey, useCache, modificationTypeIndex, visualizationTypeIndex, visualizationParameters);
 			}
-			methodResult = executeSQLQuery(query, databaseKey, cacheKey);
+			methodResult = executeSQLQuery(query, queryParameters, databaseKey, cacheKey);
 			Modification modification = modificationManager.getModification(ModificationType.fromInt(modificationTypeIndex));
 			Visualization visualization = visualizationManager.getVisualization(visualizationTypeIndex);
 
@@ -1017,6 +1136,28 @@ public class QueryVisualizationService extends Service {
 	 * 
 	 * @return Result of the query in the given output format
 	 */
+	@POST
+	@Path("query/{key}/visualize")
+	@Summary("Visualizes a query with a given key and provides filter Values")
+	@ApiResponses(value={
+			  @ApiResponse(code = 200, message = "Visualization generated."),
+			  @ApiResponse(code = 400, message = "Creating visualization failed."),
+			  @ApiResponse(code = 404, message = "Didn't find requested query.")})
+	public HttpResponse visualizeQueryByKeyWithValues(@PathParam("key") String key,
+			@QueryParam(name="format", defaultValue = "") String format,
+			@ContentParam String content) {
+		return visualizeQueryByKey(key, format, content);
+	}
+
+	/**
+	 * Executes a stored query on the specified database.
+	 * <br>
+	 * This is the main services entry point that should be used to visualize saved queries.
+	 * 
+	 * @param key a String that contains the id of the query
+	 * 
+	 * @return Result of the query in the given output format
+	 */
 	@GET
 	@Path("query/{key}/visualize")
 	@Summary("Visualizes a query with a given key")
@@ -1025,12 +1166,22 @@ public class QueryVisualizationService extends Service {
 			  @ApiResponse(code = 400, message = "Creating visualization failed."),
 			  @ApiResponse(code = 404, message = "Didn't find requested query.")})
 	public HttpResponse visualizeQueryByKey(@PathParam("key") String key,
-			@QueryParam(name="format", defaultValue = "") String format) {
+			@QueryParam(name="format", defaultValue = "") String format,
+			@ContentParam String content) {
 		initializeDBConnection();
 
 		Query query = null;
+		String[] queryParameters = null;
 		try {
 			long user = getActiveAgent().getId();
+			try{	
+				JSONObject o = (JSONObject) JSONValue.parseWithException(content);
+				queryParameters = stringArrayfromJSON(o, "queryparams");
+			} catch (Exception e) {
+				// Use default filters
+				queryParameters = null;
+			}
+
 			QueryManager queryManager = queryManagerMap.get(user);
 			query = queryManager.getQuery(key);
 			if(query == null) {
@@ -1050,7 +1201,7 @@ public class QueryVisualizationService extends Service {
 		}
 
 		try {
-			HttpResponse res = new HttpResponse(visualizeQuery(query));
+			HttpResponse res = new HttpResponse(visualizeQuery(query, queryParameters));
 			res.setStatus(200);
 			return res;
 		} catch(Exception e) {
@@ -1075,7 +1226,7 @@ public class QueryVisualizationService extends Service {
 	 * 
 	 * @return The id of the saved query as a String
 	 */
-	private String saveQuery(String queryStatement, String databaseKey,
+	private String saveQuery(String queryStatement, String[] queryParameters, String databaseKey,
 			boolean useCache, int modificationTypeIndex, VisualizationType visualizationTypeIndex, String[] visualizationParamaters) {
 
 		SQLDatabase database = null;
@@ -1088,7 +1239,7 @@ public class QueryVisualizationService extends Service {
 			database = databaseManager.getDatabaseInstance(databaseKey);
 			query = new Query(getL2pThread().getContext().getMainAgent().getId(), database.getJdbcInfo(),
 					database.getUser(), database.getPassword(), database.getDatabase(), database.getHost(),
-					database.getPort(), queryStatement, useCache, modificationTypeIndex, visualizationTypeIndex,
+					database.getPort(), queryStatement, queryParameters, useCache, modificationTypeIndex, visualizationTypeIndex,
 					visualizationParamaters, queryKey);
 			queryManager.storeQuery(query);
 		} catch (Exception e) {
@@ -1106,9 +1257,9 @@ public class QueryVisualizationService extends Service {
 	 * 
 	 * @return Result a visualization of the query
 	 */
-	private String visualizeQuery(Query query) throws Exception{
+	private String visualizeQuery(Query query, String[] queryParameters) throws Exception{
 		MethodResult methodResult = null;
-		if(query.usesCache()){
+		if(query.usesCache() && queryParameters == null){
 			methodResult = resultCache.get(query.getKey());
 		}
 
@@ -1116,7 +1267,7 @@ public class QueryVisualizationService extends Service {
 			SQLDatabase sqlDatabase = new SQLDatabase(query);
 
 			sqlDatabase.connect();
-			ResultSet resultSet = sqlDatabase.executeQuery(query.getQueryStatement());
+			ResultSet resultSet = sqlDatabase.executeQuery(query.getInsertedQueryStatement(queryParameters));
 			if(resultSet == null) {
 				return visualizationException.generate(new Exception(), "Failed to get a result set from the desired database!");
 			}
@@ -1145,35 +1296,6 @@ public class QueryVisualizationService extends Service {
 	}
 
 	/**
-	 * Inserts the query parameters and returns the "ready to use" query.
-	 * 
-	 * @param query a query with placeholders
-	 * @param queryParameters the corresponding query parameters
-	 * 
-	 * @return the query with the inserted query parameters
-	 * @throws L2pServiceException 
-	 * 
-	 */
-	private String insertParameters(String query, String[] queryParameters) throws L2pSecurityException, L2pServiceException {
-		try {
-			//Check, if the Array is empty, then no parameters have to be inserted
-			if(queryParameters == null) return query;
-
-			// go through the query, replace placeholders by the values from the query parameters
-			int parameterCount = queryParameters.length;
-			Pattern placeholderPattern = Pattern.compile("\\$.*?\\$");
-			for(int i=0; i<parameterCount; i++) {
-				query = placeholderPattern.matcher(query).replaceFirst(queryParameters[i]);
-			}
-			return query;
-		}
-		catch(Exception e) {
-			logError(e);
-			throw new L2pServiceException("exception in insertParameters", e);
-		}
-	}
-
-	/**
 	 * 
 	 * Executes a sql query on the specified database.
 	 * Warning: only a very simple checking mechanism for escape characters is implemented. Only queries from trusted sources should be executed!
@@ -1184,7 +1306,10 @@ public class QueryVisualizationService extends Service {
 	 * 
 	 * @return a Method Result
 	 */
-	private MethodResult executeSQLQuery(String sqlQuery, String databaseKey, String cacheKey) throws L2pServiceException {	
+	private MethodResult executeSQLQuery(String sqlQuery, String[] queryParameters, String databaseKey, String cacheKey) throws L2pServiceException {	
+		if (queryParameters != null && queryParameters.length > 0) {
+			sqlQuery = Query.insertParameters(sqlQuery, queryParameters);
+		}
 		ResultSet resultSet = getResultSet(sqlQuery, databaseKey);
 		return transformToMethodResult(resultSet, cacheKey);
 	}
@@ -1394,7 +1519,6 @@ public class QueryVisualizationService extends Service {
 	public HttpResponse validateLogin() {
 		String returnString = "";
 		returnString += "You are " + ((UserAgent) getActiveAgent()).getUserData() + " and your login is valid!";
-		UserAgent u = (UserAgent) getActiveAgent();
 
 		HttpResponse res = new HttpResponse(returnString);
 		res.setStatus(200);

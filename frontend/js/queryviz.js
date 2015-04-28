@@ -179,14 +179,18 @@ var QV = (function(QV){
          *  private properties  *
          *                  * * */
 
-        var LASHOST = "http://localhost:8080/";
-        var QVSPATH = "QVS/";
+        var LASHOST = window.LASHOST || "http://localhost:8080/";
+        var QVSPATH = window.QVSPATH || "QVS/";
         var LASSERVICENAME = "i5.las2peer.services.queryVisualization.QueryVisualizationService";
         var LASUSERNAME = "anonymous";
         var LASPASSWORD = "anonymous";
 
         // create new instance of TemplateServiceClient, given its endpoint URL
         var restClient = new TemplateServiceClient(LASHOST + QVSPATH);
+
+        var visualizations = {};
+        var filters = {};
+        var autoupdate = false;
 
         /* * *               *
          *  private methods  *
@@ -319,22 +323,35 @@ var QV = (function(QV){
          * @param outputnode The DOM node to embed the visualization into
          * @param callback Callback function, called when the result has been retrieved. Has one paramter consisting of the retrieved data (visualization's HTML code)
          */
-        var retrieveFromKey = function(key,outputnode,callback){
+        var retrieveFromKey = function(key,outputnode,callback,filterValues){
             // if(!restClient.loggedIn()) return;
             var queryURL = "query/" + key + "/visualize";
+
+            var content = null;
+            if (filterValues) {
+                content = {queryparams: filterValues};
+            }
 
             var success = function(result, type, status) {
                 outputnode.innerHTML = QV.HELPER.stripAndExecuteScript(" " + result);
                 if(typeof callback == 'function'){
                     if (result === null) {
-                        restClient.get(queryURL, null, null, success, error);
+                        if(filterValues) {
+                            restClient.post(queryURL, content, null, success, error);
+                        } else {
+                            restClient.get(queryURL, content, null, success, error);
+                        }
                     } else {
                         callback(result);
                     }
                 }
             };
 
-            restClient.get(queryURL, null, null, success, error);
+            if(filterValues) {
+                restClient.post(queryURL, content, null, success, error);
+            } else {
+                restClient.get(queryURL, content, null, success, error);
+            }
         };
 
         /* * *              *
@@ -342,6 +359,23 @@ var QV = (function(QV){
          *              * * */
 
         return {
+            addVisualization: function(key, callback){
+                visualizations[key] = {key: key, cb: callback};
+            },
+
+            removeVisualization: function(key) {
+                delete visualizations[key];
+            },
+
+            trigger: function(event) {
+                for (var key in visualizations) {
+                    if (typeof visualizations[key].cb === "function") {
+                        visualizations[key].cb(event);
+                        console.log("Triggered vis " + key + " with event ", event);
+                    }
+                }
+            },
+
             /**
              * Adds a new database to the set of the configured databases of the user currently logged in
              * @param databaseKey
@@ -439,8 +473,7 @@ var QV = (function(QV){
                 if(!restClient.loggedIn()) return;
 
                 var content = {
-                    query: query,
-                    dbkey: databaseKey,
+                    query: query
                 };
 
                 var queryParams = {
@@ -460,7 +493,7 @@ var QV = (function(QV){
                         alert("Filter added!");
                         if(typeof callback == 'function'){
                             if (result === null) {
-                                restClient.put("filter/" + filterKey, content, queryParams, success, error);
+                                restClient.put("filter/" + databaseKey + "/" + filterKey, content, queryParams, success, error);
                             } else {
                                 callback(result.slice(2));
                             }
@@ -470,7 +503,7 @@ var QV = (function(QV){
                     }
                 };
 
-                restClient.put("filter/" + filterKey, content, queryParams, success, error);
+                restClient.put("filter/" + databaseKey + "/" + filterKey, content, queryParams, success, error);
             },
             /**
              * Removes a filter of the set of the configured filters of the user currently logged in
@@ -578,6 +611,36 @@ var QV = (function(QV){
                 restClient.get("database", null, queryParams, success, error);
             },
             /**
+             * Retrieves the keys of the filters used in a specified query.
+             * @param query the ID of the query
+             * @param callback Callback, called when the keys have been retrieved. Has one paramter consisting of an array of the filter keys
+             */
+            retrieveFilterKeysOfQuery: function(query, callback){
+                var queryParams = {
+                    format: QV.VISUALIZATIONTYPE.JSON.STRING
+                };
+
+                var success = function(result, type, status) {
+                    if (typeof result !== "object") {
+                        try{
+                            result = JSON.parse(result);
+                        } catch (e){
+                            log("Error! Failed to parse JSON");
+                            return;
+                        }
+                    }
+                    if(typeof callback == 'function'){
+                        if (result === null) {
+                            restClient.get("query/" + query + "/filter", null, queryParams, success, error);
+                        } else {
+                            callback(result.slice(2));
+                        }
+                    }
+                };
+
+                restClient.get("query/" + query + "/filter", null, queryParams, success, error);
+            },
+            /**
              * Retrieves the keys of the filters configured for the user currently logged in
              * @param callback Callback, called when the keys have been retrieved. Has one paramter consisting of an array of the filter keys
              */
@@ -613,7 +676,33 @@ var QV = (function(QV){
              * @param filterKey
              * @param callback Callback, called when the values have been retrieved. Has one paramter consisting of an array of the filter values
              */
-            retrieveFilterValues: function(filterKey,callback){
+            retrieveFilterValuesOfUser: function(dbKey, filterKey, user, callback){
+                var success = function(result, type, status) {
+                    if (typeof result !== "object") {
+                        try{
+                            result = JSON.parse(result);
+                        } catch (e){
+                            log("Error! Failed to parse JSON");
+                            return;
+                        }
+                    }
+                    if(typeof callback == 'function'){
+                        callback(result.slice(2));
+                    }
+                };
+
+                var queryParams = {
+                    format: QV.VISUALIZATIONTYPE.JSON.STRING
+                };
+
+                restClient.get("filter/" + dbKey + "/" + filterKey + "/" + user, null, queryParams, success, error);
+            },
+            /**
+             * Retrieves the values for a specific filter specified by its key
+             * @param filterKey
+             * @param callback Callback, called when the values have been retrieved. Has one paramter consisting of an array of the filter values
+             */
+            retrieveFilterValues: function(dbKey, filterKey, callback){
                 if(!restClient.loggedIn()) return;
 
                 var success = function(result, type, status) {
@@ -634,7 +723,7 @@ var QV = (function(QV){
                     format: QV.VISUALIZATIONTYPE.JSON.STRING
                 };
 
-                restClient.get("filter/" + filterKey, null, queryParams, success, error);
+                restClient.get("filter/" + dbKey + "/" + filterKey, null, queryParams, success, error);
             },
             /**
              * Retrieves the keys of the queries saved for the user currently logged in
@@ -758,9 +847,10 @@ var QV = (function(QV){
              * @param key The visualization key
              * @param outputNode The DOM node to embed the visualization into
              * @param callback Callback function, called when the result has been retrieved. Has one paramter consisting of the retrieved data (visualization's HTML code)
+             * @param filterValues Values to be filled in inside of a parameterized Query
              */
-            retrieveFromKey: function(key,outputNode,callback){
-                retrieveFromKey(key,outputNode,callback);
+            retrieveFromKey: function(key,outputNode,callback,filterValues){
+                retrieveFromKey(key,outputNode,callback,filterValues);
             },
             /**
              * Directly retrieves the visualization for a visualization key and some LAS credentials
@@ -768,18 +858,27 @@ var QV = (function(QV){
              * @param password A LAS Password
              * @param key The visualization key
              * @param outputNode The DOM node to embed the visualization into
+             * @param filterValues Values to be filled in inside of a parameterized Query
              */
-            quickRetrieveFromKey: function(username,password,key,outputNode){
-                this.retrieveFromKey(key,outputNode,function(){
-                });
+            quickRetrieveFromKey: function(username,password,key,outputNode,filterValues){
+                this.retrieveFromKey(key,outputNode,function(){},filterValues);
+            },
+            /**
+             * Directly retrieves the visualization for a visualization key. No unauthentication required.
+             * @param key The visualization key
+             * @param outputNode The DOM node to embed the visualization into
+             * @param filterValues Values to be filled in inside of a parameterized Query
+             */
+            fromKey: function(key,outputNode,filterValues){
+                this.quickRetrieveFromKey(LASUSERNAME,LASPASSWORD,key,outputNode, filterValues);
             },
             /**
              * Directly retrieves the visualization for a visualization key. No unauthentication required.
              * @param key The visualization key
              * @param outputNode The DOM node to embed the visualization into
              */
-            fromKey: function(key,outputNode){
-                this.quickRetrieveFromKey(LASUSERNAME,LASPASSWORD,key,outputNode);
+            getFilterValues: function(database, filter, user,outputNode){
+                this.quickRetrieveFromKey(database, filter, user, outputNode);
             },
         };
 
@@ -790,7 +889,7 @@ var QV = (function(QV){
      * @param key The visualization key
      * @param eleId The (optional) id of a DOM Element
      */
-    QV.fromKey = function(key, eleId){
+    QV.fromKey = function(key, eleId, filtersEleId, qv){
         if (!eleId) {
             var randomId = QV.HELPER.getRandomId(10,true);
             /* jshint ignore:start */
@@ -799,8 +898,76 @@ var QV = (function(QV){
             eleId = randomId;
         }
         var container = document.getElementById(eleId);
-        var qv = new QV.Visualizer();
+        qv = qv || new QV.Visualizer();
         qv.fromKey(key,container);
+        if (filtersEleId) {
+            QV.getFilters(key, qv, container, filtersEleId);
+        }
+        return qv;
+    };
+
+    /**
+     * Shorthand for the unauthenticated retrieval of filter values based on a database key and filter Name
+     * @param database The visualization key
+     * @param filter The visualization key
+     * @param eleId The (optional) id of a DOM Element
+     */
+    QV.getFilterValues = function(database, filter, user, eleId, qv){
+        if (!eleId) {
+            var randomId = QV.HELPER.getRandomId(10,true);
+            /* jshint ignore:start */
+            document.write('<div id="' + randomId + '" ></div>');
+            /* jshint ignore:end */
+            eleId = randomId;
+        }
+        var container = document.getElementById(eleId);
+        qv.retrieveFilterValuesOfUser(database, filter, user, function(values) {
+            console.log(values);
+            var h3 = $('<h3><label for="qv_filter_' + filter +'">' + filter + '</label></h3>');
+            var select = $('<select id="qv_filter_' + filter +'"></select>');
+            $(container).append(h3);
+            $(container).append(select);
+            for (var i = 0, len = values.length; i < len; i++) {
+                var v = values[i];
+                $('<option value="' + v +'">' + v + '</option>').appendTo(select);
+            }
+            select.on("change", function() {
+                qv.trigger({filter: {key: filter, value:this.value}, reload: true});
+            });
+        });
+    };
+
+    QV.getFilters = function(key, qv, container, eleId) {
+        if (typeof eleId !== "string") {
+            eleId = "qv_filter_div";
+        }
+        if ($("#"+eleId).length < 1) {
+            /* jshint ignore:start */
+            document.write('<div id="' + eleId + '" ></div>');
+            /* jshint ignore:end */
+        }
+        qv.retrieveFilterKeysOfQuery(key, function(values) {
+            var filters = {};
+            for (var i = 0, len = values.length; i < len; i++) {
+                var filter = values[i][0];
+                var database = values[i][1];
+                var user = values[i][2];
+                QV.getFilterValues(database, filter, user, eleId, qv);
+                filters[filter] = null;
+            }
+            qv.addVisualization(key, function(event) {
+                if (event.filter) {
+                    filters[event.filter.key] = event.filter.value;
+                }
+                var filterArray = [];
+                for (var x in filters) {
+                    filterArray.push(filters[x]);
+                }
+                if (event.reload === true) {
+                    qv.fromKey(key,container,filterArray);
+                }
+            });
+        });
     };
 
     return QV;

@@ -1,5 +1,6 @@
 package i5.las2peer.services.queryVisualization.query;
 
+import i5.las2peer.execution.L2pServiceException;
 import i5.las2peer.persistency.MalformedXMLException;
 import i5.las2peer.persistency.XmlAble;
 import i5.las2peer.security.Context;
@@ -11,10 +12,8 @@ import java.io.Serializable;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.LinkedList;
-
-import net.minidev.json.JSONObject;
+import java.util.regex.Pattern;
 
 
 /**
@@ -27,6 +26,7 @@ public class Query implements XmlAble, Serializable {
 	
 
 	private static final long serialVersionUID = -4423072045695775785L;
+	private static final String qpDelim = "$-$.$";
 	
 	private String key = null;
 	private long user = 0;
@@ -38,6 +38,7 @@ public class Query implements XmlAble, Serializable {
 	private int port = -1;
 	private boolean useCache = false;
 	private String queryStatement = null;
+	private String[] queryParameters = null;
 	private int modificationTypeIndex = -1;
 	private VisualizationType visualizationTypeIndex = VisualizationType.JSON;
 	private String title = null;
@@ -46,7 +47,7 @@ public class Query implements XmlAble, Serializable {
 	
 	
 	public Query(long user, SQLDatabaseType jdbcInfo, String username, String password, String database, String host, int port,
-			String queryStatement, boolean useCache, int modificationTypeIndex, VisualizationType visualizationTypeIndex, String[] visualizationParameters, String key) {
+			String queryStatement, String[] queryParameters, boolean useCache, int modificationTypeIndex, VisualizationType visualizationTypeIndex, String[] visualizationParameters, String key) {
 				
 		this.user = user;
 		this.jdbcInfo = jdbcInfo;
@@ -56,6 +57,7 @@ public class Query implements XmlAble, Serializable {
 		this.port = port;
 		this.databaseName = database;
 		this.queryStatement = queryStatement;
+		this.queryParameters = queryParameters;
 		this.useCache = useCache;
 		this.visualizationTypeIndex = visualizationTypeIndex;
 		this.modificationTypeIndex = modificationTypeIndex;
@@ -69,6 +71,9 @@ public class Query implements XmlAble, Serializable {
 		
 	}
 	
+	public long getUser() {
+		return user;
+	}
 	public SQLDatabaseType getJdbcInfo() {
 		return jdbcInfo;
 	}
@@ -92,6 +97,21 @@ public class Query implements XmlAble, Serializable {
 	}
 	public String getQueryStatement() {
 		return queryStatement;
+	}
+	public String[] getQueryParameters() {
+		return queryParameters;
+	}
+	public String getInsertedQueryStatement(String[] queryParameters) {
+		try {
+			if (queryParameters == null) {
+				return insertParameters(queryStatement, getQueryParameters());
+			}
+			return insertParameters(queryStatement, queryParameters);
+		} catch (L2pServiceException e) {
+			// TODO Auto-generated catch block
+			return null;
+		}
+
 	}
 	public int getModificationTypeIndex() {
 		return modificationTypeIndex;
@@ -178,6 +198,14 @@ public class Query implements XmlAble, Serializable {
 	}
 	
 	public PreparedStatement prepareStatement(PreparedStatement s) throws SQLException {
+		StringBuilder qp = new StringBuilder();
+		for (String param : queryParameters) {
+			qp.append(param);
+			qp.append(qpDelim);
+		}
+		if (qp.length() > 0) {
+			qp.delete(qp.length() - 5, qp.length());
+		}
 		s.setString(1, key);
 		s.setLong(2, user);
 		s.setString(3, username);
@@ -188,20 +216,22 @@ public class Query implements XmlAble, Serializable {
 		s.setInt(8, port);
 		s.setInt(9, useCache ? 1 : 0);
 		s.setString(10, queryStatement);
-		s.setInt(11, modificationTypeIndex);
-		s.setString(12, visualizationTypeIndex.toString());
-		s.setString(13, title);
-		s.setInt(14, height);
-		s.setInt(15, width);
+		s.setString(11, qp.toString());
+		s.setInt(12, modificationTypeIndex);
+		s.setString(13, visualizationTypeIndex.toString());
+		s.setString(14, title);
+		s.setInt(15, height);
+		s.setInt(16, width);
 	return s;
 	}
 	
 	public static String getReplace() {
 		return "REPLACE INTO `QUERIES` (`KEY`, `USER`, `USERNAME`, `PASSWORD`, `JDBCINFO`,"
 				+ "`DATABASE_NAME`, `HOST`, `PORT`, `USE_CACHE`, `QUERY_STATEMENT`,"
+				+ "`FILTER_DEFAULTS`,"
 				+ "`MODIFICATION_TYPE`, `VISUALIZATION_TYPE`, `VISUALIZATION_TITLE`,"
 				+ "`VISUALIZATION_HEIGHT`, `VISUALIZATION_WIDTH`) VALUES"
-				+ "(?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?);";
+				+ "(?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?);";
 	}
 	
 	public static Query[] fromResultSet(ResultSet set) {
@@ -218,6 +248,11 @@ public class Query implements XmlAble, Serializable {
 				int port = set.getInt("PORT");
 				boolean useCache = set.getInt("USE_CACHE") == 1;
 				String queryStatement = set.getString("QUERY_STATEMENT");
+				String qp = set.getString("FILTER_DEFAULTS");
+				String[] queryParameters = null;
+				if (qp != null) {
+					queryParameters = qp.split(qpDelim);
+				}
 				int modificationTypeIndex = set.getInt("MODIFICATION_TYPE");
 				VisualizationType visualizationTypeIndex = VisualizationType.valueOf(set.getString("VISUALIZATION_TYPE"));
 				String visualizationTitle = set.getString("VISUALIZATION_TITLE");
@@ -225,13 +260,42 @@ public class Query implements XmlAble, Serializable {
 				int visualizationWidth = set.getInt("VISUALIZATION_WIDTH");
 				String[] s = new String[] {visualizationTitle, ""+visualizationHeight, ""+visualizationWidth};
 				Query q = new Query(user, jdbcInfo, username, password, databaseName, host, port,
-						queryStatement, useCache, modificationTypeIndex, visualizationTypeIndex, s, key);
+						queryStatement, queryParameters, useCache, modificationTypeIndex, visualizationTypeIndex, s, key);
 				qs.add(q);
 			}
 			return qs.toArray(new Query[]{});
 		} catch (SQLException e) {
 			e.printStackTrace();
 			return null;
+		}
+	}
+	
+
+	/**
+	 * Inserts the query parameters and returns the "ready to use" query.
+	 * 
+	 * @param query a query with placeholders
+	 * @param queryParameters the corresponding query parameters
+	 * 
+	 * @return the query with the inserted query parameters
+	 * @throws L2pServiceException 
+	 * 
+	 */
+	public static String insertParameters(String query, String[] queryParameters) throws L2pServiceException {
+		try {
+			//Check, if the Array is empty, then no parameters have to be inserted
+			if(queryParameters == null) return query;
+
+			// go through the query, replace placeholders by the values from the query parameters
+			int parameterCount = queryParameters.length;
+			Pattern placeholderPattern = Pattern.compile("\\$.*?\\$");
+			for(int i=0; i<parameterCount; i++) {
+				query = placeholderPattern.matcher(query).replaceFirst(queryParameters[i]);
+			}
+			return query;
+		}
+		catch(Exception e) {
+			throw new L2pServiceException("exception in insertParameters", e);
 		}
 	}
 

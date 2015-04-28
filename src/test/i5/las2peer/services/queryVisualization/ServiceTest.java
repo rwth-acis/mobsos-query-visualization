@@ -8,7 +8,6 @@ import i5.las2peer.restMapper.data.Pair;
 import i5.las2peer.security.ServiceAgent;
 import i5.las2peer.security.UserAgent;
 import i5.las2peer.services.queryVisualization.database.SQLDatabaseType;
-import i5.las2peer.services.queryVisualization.encoding.VisualizationType;
 import i5.las2peer.testing.MockAgentFactory;
 import i5.las2peer.webConnector.WebConnector;
 import i5.las2peer.webConnector.client.ClientResponse;
@@ -53,11 +52,11 @@ public class ServiceTest {
 
 	static JSONObject testDB = new JSONObject();
 	private static final String testDBName = "newTestDB";
-	private static final String dbPath = "database";
+	private static final String dbPath = "database/";
 
 	static JSONObject testFilter = new JSONObject();
 	private static final String testFilterName = "newTestFilter";
-	private static final String filterPath = "filter";
+	private static final String filterPath = "filter/";
 
 	@SuppressWarnings("unchecked")
 	Pair<String>[] emptyPairs = (Pair<String>[])new Pair[0];
@@ -103,7 +102,6 @@ public class ServiceTest {
         testDB.put("port", 3306);
 
         testFilter.put("query", "SELECT * FROM USERS");
-        testFilter.put("dbkey", testDBName);
 
         testQuery.put("query", "SELECT * FROM `DATABASE_CONNECTIONS` WHERE `KEY` = ?");
         testQuery.put("dbkey", testDBName);
@@ -167,10 +165,10 @@ public class ServiceTest {
     }
 	
 	private static void cleanUp(MiniClient c) {
-		c.sendRequest("DELETE", mainPath + filterPath + "/" + testDBName, "");
-		c.sendRequest("DELETE", mainPath + filterPath + "/" + testFilterName, "");
-		c.sendRequest("DELETE", mainPath + dbPath + "/" + testDBName, "");
-		c.sendRequest("DELETE", mainPath + dbPath + "/" + testFilterName, "");
+		c.sendRequest("DELETE", mainPath + filterPath + testDBName, "");
+		c.sendRequest("DELETE", mainPath + filterPath + testFilterName, "");
+		c.sendRequest("DELETE", mainPath + dbPath + testDBName, "");
+		c.sendRequest("DELETE", mainPath + dbPath + testFilterName, "");
 	}
 	
 	
@@ -239,7 +237,7 @@ public class ServiceTest {
 		try
 		{
 			c.setLogin(Long.toString(testAgent.getId()), testPass);
-            c.sendRequest("PUT", mainPath + dbPath + "/" + testDBName, testDB.toJSONString(), "application/json", "application/json", emptyPairs);
+            c.sendRequest("PUT", mainPath + dbPath + testDBName, testDB.toJSONString(), "application/json", "application/json", emptyPairs);
             ClientResponse result = c.sendRequest("GET", mainPath + dbPath, ""); // Remove DB first
             assertEquals(200, result.getHttpCode());
             JSONArray expected = new JSONArray();
@@ -274,10 +272,10 @@ public class ServiceTest {
 			c.setLogin(Long.toString(testAgent.getId()), testPass);
 			cleanUp(c);
 
-            ClientResponse result = c.sendRequest("PUT", mainPath + dbPath + "/" + testDBName, testFilter.toJSONString(), "application/json", "application/json", emptyPairs);
+            ClientResponse result = c.sendRequest("PUT", mainPath + dbPath + testDBName, testFilter.toJSONString(), "application/json", "application/json", emptyPairs);
             assertEquals(400, result.getHttpCode());
 
-            result = c.sendRequest("PUT", mainPath + dbPath + "/" + testDBName, testDB.toJSONString(), "application/json", "application/json", emptyPairs);
+            result = c.sendRequest("PUT", mainPath + dbPath + testDBName, testDB.toJSONString(), "application/json", "application/json", emptyPairs);
 			cleanUp(c);
             assertEquals(201, result.getHttpCode());
             JSONArray expected = new JSONArray();
@@ -310,11 +308,11 @@ public class ServiceTest {
 			c.setLogin(Long.toString(testAgent.getId()), testPass);
 			cleanUp(c);
 
-            ClientResponse result = c.sendRequest("DELETE", mainPath + dbPath + "/asohusnaoue", "");
+            ClientResponse result = c.sendRequest("DELETE", mainPath + dbPath + "asohusnaoue", "");
             assertEquals(404, result.getHttpCode());
 
-            c.sendRequest("PUT", mainPath + dbPath + "/" + testDBName, testDB.toJSONString(), "application/json", "application/json", emptyPairs);
-            result = c.sendRequest("DELETE", mainPath + dbPath + "/" + testDBName, "");
+            c.sendRequest("PUT", mainPath + dbPath + testDBName, testDB.toJSONString(), "application/json", "application/json", emptyPairs);
+            result = c.sendRequest("DELETE", mainPath + dbPath + testDBName, "");
             assertEquals(200, result.getHttpCode());
             JSONArray expected = new JSONArray();
             for (String s : new String[]{"RemovedDatabase", "string", testDBName}) {
@@ -351,8 +349,8 @@ public class ServiceTest {
             assertEquals(200, result.getHttpCode());
 
             // Add a filter
-            result = c.sendRequest("PUT", mainPath + dbPath + "/" + testDBName, testDB.toJSONString(), "application/json", "application/json", emptyPairs);
-            result = c.sendRequest("PUT", mainPath + filterPath + "/" + testFilterName, testFilter.toJSONString(), "application/json", "application/json", emptyPairs);
+            result = c.sendRequest("PUT", mainPath + dbPath + testDBName, testDB.toJSONString(), "application/json", "application/json", emptyPairs);
+            result = c.sendRequest("PUT", mainPath + filterPath + testDBName + "/" + testFilterName, testFilter.toJSONString(), "application/json", "application/json", emptyPairs);
 
             result = c.sendRequest("GET", mainPath + filterPath, "");
             assertEquals(200, result.getHttpCode());
@@ -372,7 +370,7 @@ public class ServiceTest {
             content.add(testDBName);
             expected.add(content);
             
-            JSONArray actual = (JSONArray)JSONValue.parse(result.getResponse());
+            // JSONArray actual = (JSONArray)JSONValue.parse(result.getResponse());
             assertTrue(expected.contains(names));
             assertTrue(expected.contains(types));
             assertTrue(expected.contains(content));
@@ -399,15 +397,15 @@ public class ServiceTest {
 			c.setLogin(Long.toString(testAgent.getId()), testPass);
 			cleanUp(c);
 
-            ClientResponse result = c.sendRequest("PUT", mainPath + filterPath + "/" + testFilterName, testDB.toJSONString(), "application/json", "application/json", emptyPairs);
+            ClientResponse result = c.sendRequest("PUT", mainPath + filterPath + testDBName + "/" + testFilterName, testDB.toJSONString(), "application/json", "application/json", emptyPairs);
             assertEquals(400, result.getHttpCode());
 
-            result = c.sendRequest("PUT", mainPath + filterPath + "/" + testFilterName, testFilter.toJSONString(), "application/json", "application/json", emptyPairs);
+            result = c.sendRequest("PUT", mainPath + filterPath + testDBName + "/" + testFilterName, testFilter.toJSONString(), "application/json", "application/json", emptyPairs);
             assertEquals(400, result.getHttpCode()); // testDB does not exist yet!
 
-            result = c.sendRequest("PUT", mainPath + dbPath + "/" + testDBName, testDB.toJSONString(), "application/json", "application/json", emptyPairs);
+            result = c.sendRequest("PUT", mainPath + dbPath + testDBName, testDB.toJSONString(), "application/json", "application/json", emptyPairs);
             assertEquals(201, result.getHttpCode());
-            result = c.sendRequest("PUT", mainPath + filterPath + "/" + testFilterName, testFilter.toJSONString(), "application/json", "application/json", emptyPairs);
+            result = c.sendRequest("PUT", mainPath + filterPath + testDBName + "/" + testFilterName, testFilter.toJSONString(), "application/json", "application/json", emptyPairs);
             assertEquals(201, result.getHttpCode()); // testDB exists now!
             JSONArray expected = new JSONArray();
             for (String s : new String[]{"AddedFilter", "string", testFilterName}) {
@@ -442,9 +440,9 @@ public class ServiceTest {
             ClientResponse result = c.sendRequest("DELETE", mainPath + filterPath + "/asohusnaoue", "");
             assertEquals(404, result.getHttpCode());
 
-            result = c.sendRequest("PUT", mainPath + dbPath + "/" + testDBName, testDB.toJSONString(), "application/json", "application/json", emptyPairs);
-            result = c.sendRequest("PUT", mainPath + filterPath + "/" + testFilterName, testFilter.toJSONString(), "application/json", "application/json", emptyPairs);
-            result = c.sendRequest("DELETE", mainPath + filterPath + "/" + testFilterName, "");
+            result = c.sendRequest("PUT", mainPath + dbPath + testDBName, testDB.toJSONString(), "application/json", "application/json", emptyPairs);
+            result = c.sendRequest("PUT", mainPath + filterPath + testDBName + "/" + testFilterName, testFilter.toJSONString(), "application/json", "application/json", emptyPairs);
+            result = c.sendRequest("DELETE", mainPath + filterPath + testDBName + "/" + testFilterName, "");
             assertEquals(200, result.getHttpCode());
             JSONArray expected = new JSONArray();
             for (String s : new String[]{"DeletedFilter", "string", testFilterName}) {
@@ -485,7 +483,7 @@ public class ServiceTest {
             assertEquals(400, result.getHttpCode());
 
             // Now create database first
-            result = c.sendRequest("PUT", mainPath + dbPath + "/" + testDBName, testDB.toJSONString(), "application/json", "application/json", emptyPairs);
+            result = c.sendRequest("PUT", mainPath + dbPath + testDBName, testDB.toJSONString(), "application/json", "application/json", emptyPairs);
             assertEquals(201, result.getHttpCode());
             result = c.sendRequest("POST", mainPath + queryPath, testQuery.toJSONString(), "application/json", "*/*", emptyPairs);
             assertEquals(201, result.getHttpCode());

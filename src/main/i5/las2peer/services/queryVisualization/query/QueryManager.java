@@ -2,14 +2,12 @@ package i5.las2peer.services.queryVisualization.query;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
 import net.minidev.json.JSONObject;
-import i5.las2peer.api.Service;
 import i5.las2peer.execution.L2pThread;
 import i5.las2peer.logging.NodeObserver.Event;
 import i5.las2peer.p2p.Node;
@@ -17,13 +15,9 @@ import i5.las2peer.security.Agent;
 import i5.las2peer.security.UserAgent;
 import i5.las2peer.services.queryVisualization.QueryVisualizationService;
 import i5.las2peer.services.queryVisualization.database.DBDoesNotExistException;
-import i5.las2peer.services.queryVisualization.database.DoesNotExistException;
 import i5.las2peer.services.queryVisualization.database.SQLDatabase;
 import i5.las2peer.services.queryVisualization.database.SQLDatabaseManager;
 import i5.las2peer.services.queryVisualization.database.SQLDatabaseSettings;
-import i5.las2peer.services.queryVisualization.database.SQLDatabaseType;
-import i5.las2peer.services.queryVisualization.encoding.ModificationType;
-import i5.las2peer.services.queryVisualization.encoding.VisualizationType;
 
 /**
  * 
@@ -35,7 +29,6 @@ import i5.las2peer.services.queryVisualization.encoding.VisualizationType;
 public class QueryManager {
 	
 	private HashMap<String, Query> userQueryMap = new HashMap<String, Query>();
-	private HashMap<String, String> loadedQueryValues = new HashMap<String, String>();
 	private SQLDatabase storageDatabase = null;
 	private QueryVisualizationService service = null;
 	
@@ -280,39 +273,6 @@ public class QueryManager {
 		return null;
 	}
 
-	public String getQueryValues(String queryKey, QueryVisualizationService agent) throws Exception {
-		try {
-			String queryValues = loadedQueryValues.get(queryKey);
-			
-			if(queryValues == null) {
-				// load them
-				Query querySettings = userQueryMap.get(queryKey);
-				
-				if(querySettings == null) {
-					// the requested filter is not known/defined
-					throw new Exception("The requested filter is not known/configured! sRequested:" + queryKey);
-				}
-				
-				// get the filter values from the database...
-				String query = querySettings.getQueryStatement();
-				String databaseName = querySettings.getDatabase();
-				String databaseKey = getDBSettings(querySettings).getKey();
-				String[] vparams = querySettings.getVisualizationParameters();
-				VisualizationType vtypei = querySettings.getVisualizationTypeIndex();
-				queryValues = agent.createQueryString(query, null, databaseKey, true, ModificationType.IDENTITIY.ordinal(), vtypei, vparams,false);
-
-				// store/cache the filter values
-				loadedQueryValues.put(queryKey, queryValues);
-			}
-			
-			return queryValues;
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			logMessage(e.getMessage());
-			throw e;
-		}
-	}
 	public SQLDatabaseSettings getDBSettings(Query q) {
 		String databaseName = q.getDatabase();
         SQLDatabaseManager dbm = service.databaseManagerMap.get(getL2pThread().getContext().getMainAgent().getId());

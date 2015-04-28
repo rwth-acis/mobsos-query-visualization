@@ -93,7 +93,6 @@ public class SQLDatabaseManager {
 		return getL2pThread().getContext().getMainAgent();
 	}
 	
-	
 	/**
 	 * write a log message
 	 * 
@@ -278,6 +277,18 @@ public class SQLDatabaseManager {
 		}
 	}
 	
+    /**
+     * Get Settings of a database by its database name
+     */
+	public SQLDatabaseSettings getDatabaseByName(String databasName) throws Exception {
+		for (SQLDatabaseSettings db : userDatabaseMap.values()) {
+			if (db.getDatabase().equals(databasName)) {
+				return db;
+			}
+		}
+		return null;
+	}
+
 	// get a instance of a SQL database (JDBC based)
 	public SQLDatabase getDatabaseInstance(String databaseKey) throws Exception {
 		try {

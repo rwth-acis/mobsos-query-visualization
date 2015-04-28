@@ -120,8 +120,18 @@ var getRandomId = function(length,startWithLetter) {
  * @param key The key of the visualization
  * @return {Object} Property html of the returned object contains the HTML code, property widget the Widget XML
  */
-var getGeneratedCode = function(key){
-    var data = {key: key, eleId: getRandomId(10, true)};
+var getGeneratedCode = function(data){
+    var l = window.location;
+    data.sources = l.protocol + "//" + l.hostname + l.port + l.pathname.split("demo.html")[0];
+    if (!data.eleId) {
+        data.eleId = getRandomId(10, true);
+    }
+    if (data.filters) {
+        if (!data.filterId) {
+            data.filterId = getRandomId(10, true);
+        }
+        return {html: ich.qv_code_template_filters(data,true), widget: ich.qv_widget_template(data,true)};
+    }
     return {html: ich.qv_code_template(data,true), widget: ich.qv_widget_template(data,true)};
 };
 
@@ -156,7 +166,7 @@ var load_filter_keys = function(){
         filterKeys = [];
         $(removeFilterFilterNode).empty();
         for(i=0; i<numOfKeys; i++){
-            data = {key: keys[i][0], name: keys[i][0]+" ["+keys[i][1]+"]"};
+            data = {db: keys[i][1], key: keys[i][0]};
             filterKeys.push(data);
             $(removeFilterFilterNode).append(ich.qv_filter_key_option_template(data));
         }
@@ -181,8 +191,8 @@ var load_filter_values = function(keys){
     }
 
     for(i=0; i<numOfKeys;i++){
-        data = {key: keys[i].key, key_lc: keys[i].key.toLowerCase(), name: keys[i].name, values: []};
-        demo.retrieveFilterValues(keys[i].key,(function(data){
+        data = {db: keys[i].db, key: keys[i].key, key_lc: keys[i].key.toLowerCase(), name: keys[i].key, values: []};
+        demo.retrieveFilterValues(keys[i].db, keys[i].key, (function(data){
             return function(filterKeys){
                     for(j=0, numOfFilterKeys = filterKeys.length; j<numOfFilterKeys; j++){
                         data.values.push(filterKeys[j][0]);
@@ -475,6 +485,38 @@ var unlock_preview = function(){
     $(previewSectionNode).removeClass('locked');
 };
 
+var filter_regex = /\$([^\$]+)\$/g;
+
+var get_available_filters = function() {
+    var available_filters = {};
+    for(i = 0; i<filterKeys.length; i++){
+        available_filters[filterKeys[i].key] = $("#qv_filter_" + filterKeys[i].key.toLowerCase()).val();
+    }
+    return available_filters;
+};
+
+var filters_used = function(query) {
+    if (!query) {
+        query = queryNode.value;
+    }
+    var available_filters = get_available_filters();
+    var found_filters = query.match(filter_regex);
+    for (var i = 0, len = found_filters.length; i < len; i++) {
+        found_filters[i] = found_filters[i].slice(1, -1);
+    }
+    var filters = {};
+    if (found_filters !== null) {
+        for (i = 0, len = found_filters.length; i < len; i++) {
+            var found = found_filters[i];
+            var filter = available_filters[found];
+            if (filter) {
+                filters[found] = filter;
+            }
+        }
+    }
+    return filters;
+};
+
 /**
  * Callback for the submission of the Query Form.
  */
@@ -485,10 +527,7 @@ var visualization_form_submit = function(){
         toggle_tabs(2,1);
 
         form_data.query = queryNode.value;
-        form_data.filters = [];
-        for(i = 0; i<numOfKeys; i++){
-            form_data.filters[filterKeys[i].key] = $("#qv_filter_" + filterKeys[i].key.toLowerCase()).val();
-        }
+        form_data.filters = get_available_filters();
         form_data.databaseKey = databaseNode.options[databaseNode.selectedIndex].value;
         form_data.modificationTypeIndex = parseInt(modificationTypeNode.options[modificationTypeNode.selectedIndex].value);
         form_data.visualizationTypeIndex = visualizationTypeNode.options[visualizationTypeNode.selectedIndex].value;
@@ -504,7 +543,7 @@ var visualization_form_submit = function(){
 
         form_data.queryParams = [];
 
-        form_data.query.replace(/\$([^\$]+)\$/g,function($0,$1){
+        form_data.query.replace(filter_regex,function($0,$1){
             found = false;
             for(i=0; i<numOfKeys; i++){
                 if(filterKeys[i].key == $1){
@@ -568,8 +607,10 @@ var load_embed_code = function(){
         $(generatedHtmlWrapperNode).addClass("loading");
         $(generatedWidgetWrapperNode).children().hide();
         $(generatedWidgetWrapperNode).addClass("loading");
-        demo.retrieveChartKey(form_data.query,form_data.queryParams,form_data.databaseKey,form_data.modificationTypeIndex,form_data.visualizationTypeIndex,form_data.visualizationOptions,form_data.cache,function(data){
+        demo.retrieveChartKey(form_data.query,form_data.queryParams,form_data.databaseKey,form_data.modificationTypeIndex,form_data.visualizationTypeIndex,form_data.visualizationOptions,form_data.cache,function(key){
             var generatedCode;
+            var data = {key: key};
+            data.filters = filters_used(form_data.query);
             generatedCode = getGeneratedCode(data);
             ready.html = true;
             generatedHtmlNode.value = generatedCode.html;

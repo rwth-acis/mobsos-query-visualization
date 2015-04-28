@@ -23,8 +23,8 @@ import java.util.List;
  */
 public class SQLFilterManager {
 	
-	private HashMap<String, SQLFilterSettings> userFilterMap = new HashMap<String, SQLFilterSettings>();
-	private HashMap<String, String> loadedFilterValues = new HashMap<String, String>();
+	private FilterMap userFilterMap = new FilterMap();
+	private HashMap<StringPair, String> loadedFilterValues = new HashMap<StringPair, String>();
 		
 	private SQLDatabase storageDatabase;
 	private boolean connected = false;
@@ -92,11 +92,13 @@ public class SQLFilterManager {
 	
 	/************************** end of service helper methods ************************************/
 	
-	public SQLFilterManager(SQLDatabase storageDatabase) {
+	public SQLFilterManager(SQLDatabase storageDatabase, long user) {
 		this.storageDatabase = storageDatabase;
-		// get the user's security object which contains the database information
-		Agent user = getActiveAgent();
-		
+		if (user == 0) {
+			// get the user's security object which contains the database information
+			user = getActiveAgent().getId();
+		}
+
 		SQLFilterSettings[] settings = null;
 
 		boolean wasConnected = connected;
@@ -104,7 +106,7 @@ public class SQLFilterManager {
 			connect();
 			PreparedStatement p = storageDatabase.prepareStatement(
 					"SELECT * FROM QVS.FILTERS WHERE USER = ?;");
-			p.setLong(1, user.getId());
+			p.setLong(1, user);
 			ResultSet set = p.executeQuery();
 			settings = SQLFilterSettings.fromResultSet(set);
 		} catch ( Exception e ) {
@@ -117,25 +119,30 @@ public class SQLFilterManager {
 			// there no database settings available yet...
 		} else {
 			for ( SQLFilterSettings setting: settings )
-				userFilterMap.put ( setting.getKey(), setting);
+				userFilterMap.put (setting.getKey(), setting);
 		}
 		
 	}
+
+	public SQLFilterManager(SQLDatabase storageDatabase) {
+		this(storageDatabase, 0);
+	}
 	
-	public boolean addFilter(String filterKey, String SQLQuery, String databaseKey) throws Exception {
+	public boolean addFilter(String databaseKey, String filterName, String sqlQuery) throws Exception {
+		StringPair filterKey = new StringPair(databaseKey, filterName);
 		try {			
 			//TODO: sanity checks for the parameters
-			if(filterExists(filterKey)) {
-				throw new Exception("Filter with key " + filterKey + " already exists!");
+			if(filterExists(databaseKey, filterName)) {
+				throw new Exception("Filter " + filterKey + " already exists!");
 			}
 			
-			SQLFilterSettings filterSettings = new SQLFilterSettings(filterKey, SQLQuery, databaseKey);
+			SQLFilterSettings filterSettings = new SQLFilterSettings(databaseKey, filterName, sqlQuery);
 			boolean wasConnected = connected;
 			connect();
 			PreparedStatement p = storageDatabase.prepareStatement(
 					"INSERT INTO `FILTERS` (`KEY`, `QUERY`, `USER`, `DB_KEY`) VALUES (?,	?,	?,	?);");
-			p.setString(1, filterKey);
-			p.setString(2, SQLQuery);
+			p.setString(1, filterName);
+			p.setString(2, sqlQuery);
 			p.setLong(3, getActiveAgent().getId());
 			p.setString(4, databaseKey);
 			p.executeUpdate();
@@ -155,16 +162,17 @@ public class SQLFilterManager {
 		for (SQLFilterSettings f : userFilterMap.values()) {
 			if (f.getDatabaseKey().equals(dbKey)) {
 				try {
-					deleteFilter(f.getKey());
+					deleteFilter(f.getDatabaseKey(), f.getName());
 				} catch (Exception e) {
 				}
 			}
 		}
 	}
 	
-	public boolean deleteFilter(String filterKey) throws Exception {
+	public boolean deleteFilter(String dbKey, String filterName) throws Exception {
+		StringPair filterKey = new StringPair(dbKey, filterName);
 		try {
-			if(!filterExists(filterKey)) {
+			if(!filterExists(dbKey, filterName)) {
 //				throw new Exception("Filter with key " + filterKey + " does not exists!");
 				return false;
 			}
@@ -173,9 +181,10 @@ public class SQLFilterManager {
 				// delete from hash map
 				boolean wasConnected = connected;
 				connect();
-				PreparedStatement s = storageDatabase.prepareStatement("DELETE FROM `FILTERS` WHERE `KEY` = ? AND `USER` = ?");
-				s.setString(1, filterKey);
-				s.setLong(2, getActiveAgent().getId());
+				PreparedStatement s = storageDatabase.prepareStatement("DELETE FROM `FILTERS` WHERE `KEY` = ? AND `DB_KEY` = ? AND `USER` = ?");
+				s.setString(1, filterName);
+				s.setString(2, dbKey);
+				s.setLong(3, getActiveAgent().getId());
 				s.executeUpdate();
 				disconnect(wasConnected);
 				userFilterMap.remove(filterKey);
@@ -190,7 +199,11 @@ public class SQLFilterManager {
 		}
 	}
 	
-	public boolean filterExists(String key) {
+	public boolean filterExists(String db, String key) {
+		return filterExists(new StringPair(db, key));
+	}
+
+	public boolean filterExists(StringPair key) {
 		try {
 			return (userFilterMap.get(key) != null);
 		}
@@ -205,10 +218,10 @@ public class SQLFilterManager {
 		return this.userFilterMap.size();
 	}
 	
-	public List<String> getFilterKeyList() {
+	public List<StringPair> getFilterKeyList() {
 		try {
-			LinkedList<String> keyList = new LinkedList<String>();
-			Iterator<String> iterator = this.userFilterMap.keySet().iterator();
+			LinkedList<StringPair> keyList = new LinkedList<StringPair>();
+			Iterator<StringPair> iterator = this.userFilterMap.keySet().iterator();
 			while(iterator.hasNext()) {
 				keyList.add(iterator.next());
 			}
@@ -222,16 +235,20 @@ public class SQLFilterManager {
 		return null;
 	}
 	
-	
-	public String getDatabaseKey(String filterKey){
-		String databaseKey = this.userFilterMap.get(filterKey).getDatabaseKey();
-		return databaseKey;
+	public SQLFilterSettings getFilter(String dbKey, String filterName) {
+		StringPair filterKey = new StringPair(dbKey, filterName);
+		SQLFilterSettings filterSettings = userFilterMap.get(filterKey);
+		if (filterSettings == null) {
+			return null;
+		}
+		return filterSettings;
 	}
 	
 	
-	public String getFilterValues(String filterKey, VisualizationType visualizationTypeIndex, QueryVisualizationService agent) throws Exception {
+	public String getFilterValues(String dbKey, String filterName, VisualizationType visualizationTypeIndex, QueryVisualizationService agent) throws Exception {
+		StringPair filterKey = new StringPair(dbKey, filterName);
 		try {
-			String filterValues = loadedFilterValues.get(filterKey + ":" + visualizationTypeIndex);
+			String filterValues = loadedFilterValues.get(new StringPair(dbKey, filterName + ":" + visualizationTypeIndex));
 			
 			if(filterValues == null) {
 				// load them
@@ -239,7 +256,7 @@ public class SQLFilterManager {
 				
 				if(filterSettings == null) {
 					// the requested filter is not known/defined
-					throw new DoesNotExistException("The requested filter is not known/configured! sRequested:" + filterKey);
+					throw new DoesNotExistException("The requested filter is not known/configured! Requested:" + filterKey);
 				}
 				
 				// get the filter values from the database...
@@ -248,7 +265,7 @@ public class SQLFilterManager {
 				filterValues = agent.createQueryString(query, null, databaseKey, true, ModificationType.IDENTITIY.ordinal(), visualizationTypeIndex, null,false);
 
 				// store/cache the filter values (note: the output format is added in case the values for the same filter are requested multiple times but in different output formats)
-				loadedFilterValues.put(filterKey + ":" + visualizationTypeIndex, filterValues);
+				loadedFilterValues.put(new StringPair(dbKey, filterName + ":" + visualizationTypeIndex), filterValues);
 			}
 			
 			return filterValues;
