@@ -594,8 +594,8 @@ public class QueryVisualizationService extends Service {
 			// go through the query, replace placeholders by the values from the query parameters
 			int parameterCount = params == null ? 0 : params.length;
 			Pattern placeholderPattern = Pattern.compile("\\$.*?\\$");
+			Matcher m =placeholderPattern.matcher(statement);
 			for(int i=0; i<parameterCount; i++) {
-				Matcher m =placeholderPattern.matcher(statement);
 				m.find();
 				String param = m.group();
 				filterNames.add(param.substring(1, param.length() -1));

@@ -26,7 +26,7 @@ public class Query implements XmlAble, Serializable {
 	
 
 	private static final long serialVersionUID = -4423072045695775785L;
-	private static final String qpDelim = "$-$.$";
+	private static final String qpDelim = "¦¦¦";
 	
 	private String key = null;
 	private long user = 0;
@@ -102,9 +102,15 @@ public class Query implements XmlAble, Serializable {
 		return queryParameters;
 	}
 	public String getInsertedQueryStatement(String[] queryParameters) {
+		String[] params = getQueryParameters();
 		try {
 			if (queryParameters == null) {
-				return insertParameters(queryStatement, getQueryParameters());
+				return insertParameters(queryStatement, params);
+			}
+			for (int i = 0; i < queryParameters.length; i++) {
+				if (queryParameters[i] == null) {
+					queryParameters[i] = params[i];
+				};
 			}
 			return insertParameters(queryStatement, queryParameters);
 		} catch (L2pServiceException e) {
