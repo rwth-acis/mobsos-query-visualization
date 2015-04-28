@@ -199,6 +199,7 @@ public class QueryVisualizationService extends Service {
 		try {
 			if(stDbHost == null || stDbPort < 1 || stDbDatabase == null || stDbUser == null || stDbPassword == null) {
 				logError("Provided invalid parameters (default database) for the service! Please check you service config file!");
+				throw new Exception("No Database Connection values from config file available!");
 			}
 			if(resultTimeout == null) {
 				resultTimeout = "90";
