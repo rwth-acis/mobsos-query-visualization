@@ -173,15 +173,14 @@ var QV = (function(QV){
      * The Query Visualization Library
      * @return {Object}
      */
-    QV.Visualizer = function(){
+    QV.Visualizer = function(host, path){
 
         /* * *                  *
          *  private properties  *
          *                  * * */
 
-        var LASHOST = window.LASHOST || "http://localhost:8080/";
-        var QVSPATH = window.QVSPATH || "QVS/";
-        var LASSERVICENAME = "i5.las2peer.services.queryVisualization.QueryVisualizationService";
+        var LASHOST = host || "http://localhost:8080/";
+        var QVSPATH = path || "QVS/";
         var LASUSERNAME = "anonymous";
         var LASPASSWORD = "anonymous";
 
@@ -359,6 +358,14 @@ var QV = (function(QV){
          *              * * */
 
         return {
+            getHost: function() {
+                return LASHOST;
+            },
+
+            getPath: function() {
+                return QVSPATH;
+            },
+            
             addVisualization: function(key, callback){
                 visualizations[key] = {key: key, cb: callback};
             },
@@ -880,6 +887,7 @@ var QV = (function(QV){
             getFilterValues: function(database, filter, user,outputNode){
                 this.quickRetrieveFromKey(database, filter, user, outputNode);
             },
+
         };
 
     };
@@ -889,7 +897,7 @@ var QV = (function(QV){
      * @param key The visualization key
      * @param eleId The (optional) id of a DOM Element
      */
-    QV.fromKey = function(key, eleId, filtersEleId, qv){
+    QV.fromKey = function(key, eleId, filtersEleId, host, path, qv){
         if (!eleId) {
             var randomId = QV.HELPER.getRandomId(10,true);
             /* jshint ignore:start */
@@ -898,7 +906,7 @@ var QV = (function(QV){
             eleId = randomId;
         }
         var container = document.getElementById(eleId);
-        qv = qv || new QV.Visualizer();
+        qv = qv || new QV.Visualizer(host, path);
         qv.fromKey(key,container);
         if (filtersEleId) {
             QV.getFilters(key, qv, container, filtersEleId);

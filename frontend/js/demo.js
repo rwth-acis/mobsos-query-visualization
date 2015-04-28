@@ -123,6 +123,8 @@ var getRandomId = function(length,startWithLetter) {
 var getGeneratedCode = function(data){
     var l = window.location;
     data.sources = l.protocol + "//" + l.hostname + l.port + l.pathname.split("demo.html")[0];
+    data.host = demo.getHost();
+    data.path = demo.getPath();
     if (!data.eleId) {
         data.eleId = getRandomId(10, true);
     }
