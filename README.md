@@ -14,9 +14,9 @@ described by meta data such as title or display dimensions.
 
 ## Use
 
-You can try the service at https://api.learning-layers.eu/mobsos-qv.
-Help on how to use the service's browser interface is available at https://api.learning-layers.eu/mobsos-qv/help.html.
-If you want to build and deploy the service yourself, jump to the next sections.
+* You can try the service at https://api.learning-layers.eu/mobsos-qv.
+* The wiki of this project features a [tutorial](https://github.com/rwth-acis/LAS2peer-Query-Visualization-Service/wiki/Tutorial) with step-by-step instructions.
+* A short description of the service's browser interface is available as separate [help page](https://api.learning-layers.eu/mobsos-qv/help.html).
 
 ## Build
 
