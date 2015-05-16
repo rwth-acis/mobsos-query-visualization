@@ -92,6 +92,9 @@ var ready = [];
  */
 var form_data = [];
 
+var databases = {};
+var queries = {};
+
 /**
  * Stores the keys of the available filters
  * @type {Array} Array with filter keys
@@ -218,19 +221,44 @@ var load_query_keys = function(){
         queries_locked = true;
         $(selectQuery).empty();
         for(i=0; i<numOfKeys; i++){
-            data = {key: keys[i][0]};
-            if (keys[i][2] !== "") {
-                data.name = keys[i][2]+" ["+keys[i][1]+"]";
+            query = {key: keys[i][0],
+                     dbKey: keys[i][1],
+                     dbInternal: keys[i][2],
+                     description: keys[i][3]};
+            if (query.description !== "") {
+                query.name = query.description+" ["+query.dbKey+"]";
             } else {
-                data.name = keys[i][0]+" ["+keys[i][1]+"]";
+                query.name = query.key+" ["+query.dbKey+"]";
             }
-            queryKeys.push(data);
-            $(removeQueryQueryNode).append(ich.qv_query_key_option_template(data));
-            $(selectQuery).append(ich.qv_query_key_option_template(data));
+            if (!queries[query.dbKey]) {
+                queries[query.dbKey] = {};
+            }
+            queries[query.dbKey][query.key] = query;
+            queryKeys.push(query);
         }
+        fill_query_dropdown(databaseNode.options[databaseNode.selectedIndex].value);
         load_query_values(queryKeys);
         queries_locked = false;
     });
+};
+
+var fill_query_dropdown = function(dbKey) {
+    queries_for_db = queries[dbKey];
+    $(removeQueryQueryNode).empty();
+    queries_locked = true;
+    $(selectQuery).empty();
+    for (var key in queries_for_db) {
+        query = queries_for_db[key];
+        data = {key: query.key};
+        if (query.description !== "") {
+            data.name = query.description+" ["+query.dbKey+"]";
+        } else {
+            data.name = query.key+" ["+query.dbKey+"]";
+        }
+        $(removeQueryQueryNode).append(ich.qv_query_key_option_template(data));
+        $(selectQuery).append(ich.qv_query_key_option_template(data));
+    }
+    queries_locked = false;
 };
 
 var query_cache = {};
@@ -503,11 +531,11 @@ var filters_used = function(query) {
     }
     var available_filters = get_available_filters();
     var found_filters = query.match(filter_regex);
-    for (var i = 0, len = found_filters.length; i < len; i++) {
-        found_filters[i] = found_filters[i].slice(1, -1);
-    }
     var filters = {};
     if (found_filters !== null) {
+        for (var i = 0, len = found_filters.length; i < len; i++) {
+            found_filters[i] = found_filters[i].slice(1, -1);
+        }
         for (i = 0, len = found_filters.length; i < len; i++) {
             var found = found_filters[i];
             var filter = available_filters[found];
@@ -785,6 +813,12 @@ toggle_metadata();
 toggle_filter();
 
 var queries_locked = false;
+
+
+$(databaseNode).change(function(){
+    fill_query_dropdown(databaseNode.options[databaseNode.selectedIndex].value);
+    $(selectQuery).change();
+});
 
 $(selectQuery).change(function(){
     if (!queries_locked) {

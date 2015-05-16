@@ -11,12 +11,6 @@
     <script type="text/javascript" src="js/queryviz.js"></script>
     <script type="text/javascript" src="js/jquery-1.8.0.min.js"></script>
     <script type="text/javascript" src="js/ICanHaz.min.js"></script>
-    <script id="qv_code_template_embed" type="text/html">
-    {{! <!--}}<script src="https://api.learning-layers.eu/mobsos-qv/js/jquery-1.11.0.min.js"></script>
-<script src="https://api.learning-layers.eu/mobsos-qv/js/client.js"></script>
-<script src="https://api.learning-layers.eu/mobsos-qv/js/queryviz.js"></script>
-<script>QV.fromKey("{{key}}", null);</script>{{! -->}}
-    </script>
     <script id="qv_code_template" type="text/html">
     {{! <!--}}<script src="https://api.learning-layers.eu/mobsos-qv/js/jquery-1.11.0.min.js"></script>
 <script src="https://api.learning-layers.eu/mobsos-qv/js/client.js"></script>
@@ -42,12 +36,19 @@
     <script id="qv_widget_template" type="text/html">
 {{! <!--}}<?xml version="1.0" encoding="UTF-8" ?>
 <Module>
-    <ModulePrefs title="Query Visualizer Widget">
+    <ModulePrefs title="Query Visualizion Viewer">
         <Require feature="opensocial-0.8" />
     </ModulePrefs>
     <Content type="html">
         <![CDATA[
-{{>qv_code_template_embed}}
+    <script src="http://dbis.rwth-aachen.de/gadgets/query-visualization/JavaScript/openapp.js"></script>
+    <script src="https://api.learning-layers.eu/mobsos-qv/js/jquery-1.11.0.min.js"></script>
+    <script src="https://api.learning-layers.eu/mobsos-qv/js/client.js"></script>
+    <script src="http://insecure.gord.in/queryviz.js"></script>
+    <script src="https://rawgit.com/Gordin/Logexchange/master/js/Gadgets.js"></script>
+    <div id="viewer"></div>
+    <script src="http://insecure.gord.in/qvsviewer.js"></script>
+    <script>var qv = gadget_init("{{key}}", "{{host}}", "{{path}}");</script>
         ]]>
     </Content>
 </Module>{{! -->}}
@@ -160,14 +161,15 @@
         <a style="float: right; color: black; margin-left: 5px;" href="javascript:show_filter_management()">Manage Filters</a>
         <a style="float: right; color: black; margin-left: 5px;" href="javascript:show_query_management()">Manage Queries</a>
         <a style="float: right; color: black; margin-left: 5px;" href="javascript:show_help()">Help</a>
-        <label>Stored Queries:
-            <select id="qv_select_query">
-            </select>
-        </label>
-        <h2>Query Title:<input id="qv_chart_title" type="text" /></h2>
         <h2><label for="qv_database">Database:</label></h2>
         <select id="qv_database">
         </select>
+        <label>Stored Queries:
+            <select id="qv_select_query">
+              <option value=""></option>
+            </select>
+        </label>
+        <h2>Query Title:<input id="qv_chart_title" type="text" /></h2>
         <h2><label for="qv_query">Query statement:</label></h2>
         <!--<textarea id="qv_query" rows="5" cols="">select est_date, count(*) as New_Posts from db2info5.bw_entries where est_date > current_date - 3 months and est_date < current_date group by est_date order by est_date asc</textarea>-->
         <textarea id="qv_query" rows="5" cols="">SELECT * FROM `employees` WHERE `employeeNumber` > '1500' LIMIT 50</textarea>
@@ -186,7 +188,7 @@
             <option value="googlebarchart">Google Bar Chart</option>
             <option value="googlelinechart">Google Line Chart</option>
             <option value="googletimelinechart">Google Timeline Chart</option>
-            <option value="googleradarchart">Google Radar Chart</option>
+            <!-- <option value="googleradarchart">Google Radar Chart</option> -->
         </select>
         <h2><a href="javascript:toggle_metadata()">+ Metadata</a></h2>
         <div id="qv_metadata">

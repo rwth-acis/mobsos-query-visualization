@@ -209,7 +209,11 @@ var QV = (function(QV){
          * @param status the HTTP status code
          */
         var error = function(error, status) {
-            alert("Error! Message: " + error + " HTTP Code: " + status);
+            if (status == 401) {
+                alert("Your session timed out, please reload the page to login again.");
+            } else {
+                alert("Error! Message: " + error + " HTTP Code: " + status);
+            }
         };
 
         /**
@@ -365,7 +369,7 @@ var QV = (function(QV){
             getPath: function() {
                 return QVSPATH;
             },
-            
+
             addVisualization: function(key, callback){
                 visualizations[key] = {key: key, cb: callback};
             },
@@ -920,7 +924,7 @@ var QV = (function(QV){
      * @param filter The visualization key
      * @param eleId The (optional) id of a DOM Element
      */
-    QV.getFilterValues = function(database, filter, user, eleId, qv){
+    QV.getFilterValues = function(database, filter, user, eleId, qv, isController, widget_callback){
         if (!eleId) {
             var randomId = QV.HELPER.getRandomId(10,true);
             /* jshint ignore:start */
@@ -931,6 +935,9 @@ var QV = (function(QV){
         var container = document.getElementById(eleId);
         qv.retrieveFilterValuesOfUser(database, filter, user, function(values) {
             console.log(values);
+            if ($("#qv_filter_" + filter).length > 0) {
+              return;
+            }
             var h3 = $('<h3><label for="qv_filter_' + filter +'">' + filter + '</label></h3>');
             var select = $('<select id="qv_filter_' + filter +'"></select>');
             $(container).append(h3);
@@ -939,13 +946,18 @@ var QV = (function(QV){
                 var v = values[i];
                 $('<option value="' + v +'">' + v + '</option>').appendTo(select);
             }
-            select.on("change", function() {
+            if (isController) {
+              widget_callback(database, filter, user, values, select);
+            } else {
+              select.on("change", function() {
                 qv.trigger({filter: {key: filter, value:this.value}, reload: true});
-            });
+              });
+            }
         });
     };
 
-    QV.getFilters = function(key, qv, container, eleId) {
+    QV.getFilters = function(key, qv, container, eleId, isController, widget_callback) {
+      if (eleId != "none") {
         if (typeof eleId !== "string") {
             eleId = "qv_filter_div";
         }
@@ -954,28 +966,31 @@ var QV = (function(QV){
             document.write('<div id="' + eleId + '" ></div>');
             /* jshint ignore:end */
         }
-        qv.retrieveFilterKeysOfQuery(key, function(values) {
-            var filters = {};
-            for (var i = 0, len = values.length; i < len; i++) {
-                var filter = values[i][0];
-                var database = values[i][1];
-                var user = values[i][2];
-                QV.getFilterValues(database, filter, user, eleId, qv);
-                filters[filter] = null;
-            }
-            qv.addVisualization(key, function(event) {
-                if (event.filter) {
-                    filters[event.filter.key] = event.filter.value;
-                }
-                var filterArray = [];
-                for (var x in filters) {
-                    filterArray.push(filters[x]);
-                }
-                if (event.reload === true) {
-                    qv.fromKey(key,container,filterArray);
-                }
-            });
+      }
+      qv.retrieveFilterKeysOfQuery(key, function(values) {
+        var filters = {};
+        for (var i = 0, len = values.length; i < len; i++) {
+          var filter = values[i][0];
+          var database = values[i][1];
+          var user = values[i][2];
+          if (eleId != "none") {
+            QV.getFilterValues(database, filter, user, eleId, qv, isController, widget_callback);
+          }
+          filters[filter] = null;
+        }
+        qv.addVisualization(key, function(event) {
+          if (event.filter) {
+            filters[event.filter.key] = event.filter.value;
+          }
+          var filterArray = [];
+          for (var x in filters) {
+            filterArray.push(filters[x]);
+          }
+          if (event.reload === true) {
+            qv.fromKey(key,container,filterArray);
+          }
         });
+      });
     };
 
     return QV;
