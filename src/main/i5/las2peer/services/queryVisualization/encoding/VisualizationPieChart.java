@@ -124,9 +124,7 @@ public class VisualizationPieChart extends Visualization {
 		acceptedValues.add(Types.INTEGER);
 		acceptedValues.add(Types.SMALLINT);
 
-		for(int i = 1; i < numOfCols; i++){
-			if(!acceptedValues.contains(columnDatatypes[i])) return false;
-		}
+		if(!acceptedValues.contains(columnDatatypes[1])) return false;
 		return true;
 	}
 	
