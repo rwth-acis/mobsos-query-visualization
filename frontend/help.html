@@ -36,7 +36,7 @@ This section deals with how to setup your filters and databases. These settings 
   <li>Logarithmic</li>
   <li>Normalization</li>
 </ul>
-Note, that not every modification can be applied to every result. If the modification function can not be applied, an error message is shown.
+Note that Logarithmic and Normalization requires all columns except the first to contain only numbers.
 </p>
 
 <h3>(6) Selecting an Output Format</h3>
@@ -47,9 +47,16 @@ Note, that not every modification can be applied to every result. If the modific
   <li>Google Bar Chart</li>
   <li>Google Line Chart</li>
   <li>Google Timeline Chart</li>
-  <li>Google Radar Chart</li>
+  <!-- <li>Google Radar Chart</li> -->
 </ul>
-Note, that not every visualization can be applied to every result. If the visualization can not be applied, an error message is shown.
+Note, that not every visualization can be applied to every result. If the visualization can not be applied, an error message is shown. Allowed values for the visualization are as follows:
+<ul>
+    <li>The Google Table accepts all possible results.</li>
+    <li>In other visualizations the first column always gives a Name to a datapoint (Google Timeline Charts takes a DATE instead)</li>
+    <li>All following columns have to contain numbers associotad with the datapoint, One column corresponds to one data series</li>
+    <li>Series can be named by using "select X as 'NAME'" in the query</li>
+    <li>Google Pie Chart only accepts exactly 1 data series</li>
+</ul>
 </p>
 
 <h3>(7) Adding Metadata to the Query (only needed for stored queries)</h3>
