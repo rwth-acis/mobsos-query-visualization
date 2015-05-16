@@ -289,6 +289,13 @@ public class SQLDatabaseManager {
 		return null;
 	}
 
+    /**
+     * Get Settings of a database by its database name
+     */
+	public SQLDatabaseSettings getDatabaseSettings(String databasKey) throws Exception {
+		return userDatabaseMap.get(databasKey);
+	}
+
 	// get a instance of a SQL database (JDBC based)
 	public SQLDatabase getDatabaseInstance(String databaseKey) throws Exception {
 		try {

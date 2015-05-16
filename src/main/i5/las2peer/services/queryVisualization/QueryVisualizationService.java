@@ -600,14 +600,14 @@ public class QueryVisualizationService extends Service {
 				String param = m.group();
 				filterNames.add(param.substring(1, param.length() -1));
 			}
-			String dbName = q.getDatabase();
+			String dbKey = q.getDatabaseKey();
 			long user = q.getUser();
 			
 			SQLDatabaseManager dbManager = databaseManagerMap.get(user);
 			if (dbManager == null) {
 				dbManager = new SQLDatabaseManager(this, storageDatabase);
 			}
-			SQLDatabaseSettings db = dbManager.getDatabaseByName(dbName);
+			SQLDatabaseSettings db = dbManager.getDatabaseSettings(dbKey);
 
 
 			ArrayList<StringPair> filters = new ArrayList<StringPair>();
@@ -995,18 +995,19 @@ public class QueryVisualizationService extends Service {
 			}
 
 			MethodResult result = new MethodResult();
-			Integer[] datatypes = {Types.VARCHAR,Types.VARCHAR,Types.VARCHAR};
+			Integer[] datatypes = {Types.VARCHAR,Types.VARCHAR,Types.VARCHAR,Types.VARCHAR};
 			result.setColumnDatatypes(datatypes);
-			String[] names = {"QueryKeys","DatabaseKeys","Title"};
+			String[] names = {"QueryKeys","DatabaseKeys","DatabaseNames","Title"};
 			result.setColumnNames(names);
 			Iterator<Query> iterator = keyList.iterator();
 
 			while(iterator.hasNext()) {
 				Query q = iterator.next();
 				String queryKey = q.getKey();
-				String databaseKey = q.getDatabase();
+				String databaseKey = q.getDatabaseKey();
+				String databaseName = q.getDatabaseName();
 				String title = q.getTitle();
-				Object[] currentRow = {queryKey,databaseKey,title};
+				Object[] currentRow = {queryKey,databaseKey,databaseName,title};
 
 				result.addRow(currentRow);
 			}
@@ -1238,7 +1239,7 @@ public class QueryVisualizationService extends Service {
 			QueryManager queryManager = queryManagerMap.get(user);
 			database = databaseManager.getDatabaseInstance(databaseKey);
 			query = new Query(getL2pThread().getContext().getMainAgent().getId(), database.getJdbcInfo(),
-					database.getUser(), database.getPassword(), database.getDatabase(), database.getHost(),
+					database.getUser(), database.getPassword(), databaseKey, database.getDatabase(), database.getHost(),
 					database.getPort(), queryStatement, queryParameters, useCache, modificationTypeIndex, visualizationTypeIndex,
 					visualizationParamaters, queryKey);
 			queryManager.storeQuery(query);

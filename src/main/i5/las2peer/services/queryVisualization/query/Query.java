@@ -34,6 +34,7 @@ public class Query implements XmlAble, Serializable {
 	private String password = null;
 	private SQLDatabaseType jdbcInfo;
 	private String databaseName = null;
+	private String databaseKey = null;
 	private String host = null;
 	private int port = -1;
 	private boolean useCache = false;
@@ -46,7 +47,7 @@ public class Query implements XmlAble, Serializable {
 	private int height = 0;
 	
 	
-	public Query(long user, SQLDatabaseType jdbcInfo, String username, String password, String database, String host, int port,
+	public Query(long user, SQLDatabaseType jdbcInfo, String username, String password, String databaseKey, String database, String host, int port,
 			String queryStatement, String[] queryParameters, boolean useCache, int modificationTypeIndex, VisualizationType visualizationTypeIndex, String[] visualizationParameters, String key) {
 				
 		this.user = user;
@@ -56,6 +57,7 @@ public class Query implements XmlAble, Serializable {
 		this.host = host;
 		this.port = port;
 		this.databaseName = database;
+		this.databaseKey = databaseKey;
 		this.queryStatement = queryStatement;
 		this.queryParameters = queryParameters;
 		this.useCache = useCache;
@@ -83,8 +85,11 @@ public class Query implements XmlAble, Serializable {
 	public String getPassword() {
 		return password;
 	}
-	public String getDatabase() {
+	public String getDatabaseName() {
 		return databaseName;
+	}
+	public String getDatabaseKey() {
+		return databaseKey;
 	}
 	public String getHost() {
 		return host;
@@ -160,6 +165,7 @@ public class Query implements XmlAble, Serializable {
 			this.password = elm.getChild(0).getAttribute("password");
 			
 			
+			this.databaseKey = elm.getChild(1).getAttribute("key");
 			this.databaseName = elm.getChild(1).getAttribute("name");
 			this.jdbcInfo = SQLDatabaseType.getSQLDatabaseType(Integer.parseInt(elm.getChild(1).getAttribute("type")));
 			this.host = elm.getChild(1).getAttribute("host");
@@ -190,7 +196,7 @@ public class Query implements XmlAble, Serializable {
 		xmlString += "<Query key=\""+this.getKey()+"\">\n";
 		
 		xmlString += "\t<Credentials username=\""+this.getUsername()+"\" password=\""+this.getPassword()+"\" ></Credentials>\n";
-		xmlString += "\t<Database name=\""+this.getDatabase()+"\" type=\""+this.getJdbcInfo().getCode()+"\" host=\""+this.getHost()+"\" port=\""+this.getPort()+"\"></Database>\n";
+		xmlString += "\t<Database key=\""+this.getDatabaseKey()+"\" name=\""+this.getDatabaseName()+"\" type=\""+this.getJdbcInfo().getCode()+"\" host=\""+this.getHost()+"\" port=\""+this.getPort()+"\"></Database>\n";
 		xmlString += "\t<VisualizationAndModification visualizationTypeIndex=\""+this.getVisualizationTypeIndex()+"\" modificationTypeIndex=\""+this.getModificationTypeIndex()+"\" useCache=\""+this.usesCache()+"\"></VisualizationAndModification>\n";
 		xmlString += "\t<QueryStatement statement=\""+this.getQueryStatement()+"\" ></QueryStatement>\n";
 		//Google Visualizations -> Hardcoded TODO
@@ -217,27 +223,28 @@ public class Query implements XmlAble, Serializable {
 		s.setString(3, username);
 		s.setString(4, password);
 		s.setInt(5, jdbcInfo.getCode());
-		s.setString(6, databaseName);
-		s.setString(7, host);
-		s.setInt(8, port);
-		s.setInt(9, useCache ? 1 : 0);
-		s.setString(10, queryStatement);
-		s.setString(11, qp.toString());
-		s.setInt(12, modificationTypeIndex);
-		s.setString(13, visualizationTypeIndex.toString());
-		s.setString(14, title);
-		s.setInt(15, height);
-		s.setInt(16, width);
+		s.setString(6, databaseKey);
+		s.setString(7, databaseName);
+		s.setString(8, host);
+		s.setInt(9, port);
+		s.setInt(10, useCache ? 1 : 0);
+		s.setString(11, queryStatement);
+		s.setString(12, qp.toString());
+		s.setInt(13, modificationTypeIndex);
+		s.setString(14, visualizationTypeIndex.toString());
+		s.setString(15, title);
+		s.setInt(16, height);
+		s.setInt(17, width);
 	return s;
 	}
 	
 	public static String getReplace() {
 		return "REPLACE INTO `QUERIES` (`KEY`, `USER`, `USERNAME`, `PASSWORD`, `JDBCINFO`,"
-				+ "`DATABASE_NAME`, `HOST`, `PORT`, `USE_CACHE`, `QUERY_STATEMENT`,"
+				+ "`DATABASE_KEY`, `DATABASE_NAME`, `HOST`, `PORT`, `USE_CACHE`, `QUERY_STATEMENT`,"
 				+ "`FILTER_DEFAULTS`,"
 				+ "`MODIFICATION_TYPE`, `VISUALIZATION_TYPE`, `VISUALIZATION_TITLE`,"
 				+ "`VISUALIZATION_HEIGHT`, `VISUALIZATION_WIDTH`) VALUES"
-				+ "(?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?);";
+				+ "(?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?);";
 	}
 	
 	public static Query[] fromResultSet(ResultSet set) {
@@ -250,6 +257,7 @@ public class Query implements XmlAble, Serializable {
 				String password = set.getString("PASSWORD");
 				SQLDatabaseType jdbcInfo = SQLDatabaseType.getSQLDatabaseType(set.getInt("JDBCINFO"));
 				String databaseName = set.getString("DATABASE_NAME");
+				String databaseKey = set.getString("DATABASE_KEY");
 				String host = set.getString("HOST");
 				int port = set.getInt("PORT");
 				boolean useCache = set.getInt("USE_CACHE") == 1;
@@ -265,7 +273,7 @@ public class Query implements XmlAble, Serializable {
 				int visualizationHeight = set.getInt("VISUALIZATION_HEIGHT");
 				int visualizationWidth = set.getInt("VISUALIZATION_WIDTH");
 				String[] s = new String[] {visualizationTitle, ""+visualizationHeight, ""+visualizationWidth};
-				Query q = new Query(user, jdbcInfo, username, password, databaseName, host, port,
+				Query q = new Query(user, jdbcInfo, username, password, databaseKey, databaseName, host, port,
 						queryStatement, queryParameters, useCache, modificationTypeIndex, visualizationTypeIndex, s, key);
 				qs.add(q);
 			}

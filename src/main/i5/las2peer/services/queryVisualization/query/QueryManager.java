@@ -208,7 +208,7 @@ public class QueryManager {
 			return;
 		}
 		for (Query q : userQueryMap.values()) {
-			if (q.getDatabase().equals(db)) {
+			if (q.getDatabaseName().equals(db)) {
 				try {
 					removeQ(q.getKey());
 				} catch (Exception e) {
@@ -274,7 +274,7 @@ public class QueryManager {
 	}
 
 	public SQLDatabaseSettings getDBSettings(Query q) {
-		String databaseName = q.getDatabase();
+		String databaseName = q.getDatabaseName();
         SQLDatabaseManager dbm = service.databaseManagerMap.get(getL2pThread().getContext().getMainAgent().getId());
 		for (SQLDatabaseSettings db : dbm.getDatabaseSettingsList()) {
 			if (databaseName.equals(db.getDatabase())) {
@@ -290,7 +290,7 @@ public class QueryManager {
 		try {
 		    o.put("db", getDBSettings(query).getKey());
 		} catch (Exception e) {
-			throw new DBDoesNotExistException("Database " + query.getDatabase() + " does not exist.");
+			throw new DBDoesNotExistException("Database " + query.getDatabaseKey() + " does not exist.");
 		}
 		o.put("query", query.getQueryStatement());
 		o.put("modtypei", query.getModificationTypeIndex());

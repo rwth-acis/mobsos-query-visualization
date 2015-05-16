@@ -59,7 +59,7 @@ public class SQLDatabase {
 		this.password = query.getPassword();
 		this.host = query.getHost();
 		this.port = query.getPort();
-		this.database = query.getDatabase();
+		this.database = query.getDatabaseName();
 		this.key = query.getKey();
 	}
 	
