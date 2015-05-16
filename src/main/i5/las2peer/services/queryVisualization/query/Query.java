@@ -104,6 +104,9 @@ public class Query implements XmlAble, Serializable {
 		return queryStatement;
 	}
 	public String[] getQueryParameters() {
+		if (queryParameters.length == 1 && queryParameters[0].equals("")) {
+			return null;
+		}
 		return queryParameters;
 	}
 	public String getInsertedQueryStatement(String[] queryParameters) {
