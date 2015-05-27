@@ -129,6 +129,8 @@ var getGeneratedCode = function(data){
     data.sources = l.protocol + "//" + l.hostname + l.port + l.pathname.split("demo.html")[0];
     data.host = demo.getHost();
     data.path = demo.getPath();
+    data.width = parseInt(widthNode.value) || 450;
+    data.height = parseInt(heightNode.value) || 320;
     if (!data.eleId) {
         data.eleId = getRandomId(10, true);
     }
