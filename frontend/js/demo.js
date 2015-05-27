@@ -29,6 +29,7 @@ var widthNode                  = document.getElementById("qv_width");
 var heightNode                 = document.getElementById("qv_height");
 var cacheNode                  = document.getElementById("qv_cache");
 var saveButton                 = document.getElementById("qv_save_button");
+var saveFilterButton          = document.getElementById("qv_save_filter");
 
     //Preview Section Nodes
 var previewNode                = document.getElementById("qv_preview");
@@ -331,6 +332,7 @@ var signinCallback = function(result){
         load_filter_keys();
         load_query_keys();
         save_disable();
+        filter_disable();
     } else {
         // anonymous
     }
@@ -611,6 +613,13 @@ var load_preview = function(){
             ready.preview = true;
             $(previewNode).removeClass("loading");
             save_enable();
+            try {
+                eval("var data_array = " + result.slice(result.search("data.addRows\\(")+13,result.search("]\\);")+1));
+                if (data_array[0].length === 1) {
+                    filter_enable();
+                }
+            } catch (e) {
+            }
         });
     }
 };
@@ -628,6 +637,7 @@ var save_query = function(){
         alert("Query saved");
         load_query_keys();
         save_disable();
+        filter_disable();
     });
 };
 
@@ -842,4 +852,24 @@ var save_enable = function() {
 };
 
 $(queryFormNode).find("textarea,input,select").change(save_disable);
+$(queryFormNode).find("textarea,input,select").change(filter_disable);
 $(saveButton).click(save_query);
+
+var query_to_filter = function() {
+    addFilterFilterKeyNode.value = chartTitleNode.value;
+    addFilterDatabaseNode.selectedIndex = databaseNode.selectedIndex;
+    addFilterQueryNode.value = queryNode.value;
+    show_filter_management();
+};
+
+$(saveFilterButton).click(query_to_filter);
+
+var filter_disable = function() {
+    var sb = $(saveFilterButton);
+    sb.prop("disabled", true);
+};
+
+var filter_enable = function() {
+    var sb = $(saveFilterButton);
+    sb.removeProp("disabled");
+};
