@@ -287,6 +287,9 @@ var load_query_values = function(keys){
 };
 
 var fill_query_values = function(query) {
+    if (!query) {
+        return;
+    }
     for (var i = 0, len = databaseNode.options.length; i < len; i++) {
         if (databaseNode.options[i].text === query.db) {
             databaseNode.selectedIndex = i;
