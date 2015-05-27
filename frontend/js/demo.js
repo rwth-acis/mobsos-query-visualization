@@ -802,9 +802,24 @@ var toggle_metadata = function(){
 };
 
 /**
+ * Show only the filters for currently selected database
+ */
+var show_filters_for_db = function() {
+    var db = databaseNode.options[databaseNode.selectedIndex].value;
+    $(filterNode).find("div").each(function(){
+        if ($(this).hasClass(db + "Filter")) {
+            $(this).show();
+        } else {
+            $(this).hide();
+        }
+    });
+};
+
+/**
  * Show / Hide the filter input fields
  */
 var toggle_filter = function(){
+    show_filters_for_db();
     $('#qv_filter').toggle();
 };
 
@@ -827,10 +842,9 @@ toggle_filter();
 
 var queries_locked = false;
 
-
 $(databaseNode).change(function(){
     fill_query_dropdown(databaseNode.options[databaseNode.selectedIndex].value);
-    $(selectQuery).change();
+    show_filters_for_db();
 });
 
 $(selectQuery).delegate("option", "click", function(){

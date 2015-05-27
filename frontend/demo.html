@@ -63,12 +63,12 @@
         {{! <!--}}<option value="{{key}}">{{name}}</option>{{! -->}}
     </script>
     <script id="qv_filter_template" type="text/html">
-        {{! <!--}}<h3><label for="qv_filter_{{key_lc}}">{{name}}:</label></h3>
+        {{! <!--}}<div class="{{db}}Filter"><h3><label for="qv_filter_{{key_lc}}">{{name}}:</label></h3>
         <select id="qv_filter_{{key_lc}}">
         {{#values}}
             <option value="{{.}}">{{.}}</option>
         {{/values}}
-        </select>{{! -->}}
+        </select></div>{{! -->}}
     </script>
     <script id="qv_query_template" type="text/html">
         {{! <!--}}<h3><label for="qv_query_{{key_lc}}">{{name}}:</label></h3>
