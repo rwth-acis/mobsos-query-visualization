@@ -820,7 +820,7 @@ $(databaseNode).change(function(){
     $(selectQuery).change();
 });
 
-$(selectQuery).change(function(){
+$(selectQuery).delegate("option", "click", function(){
     if (!queries_locked) {
         var selected_key = $(selectQuery).find("option:selected").val();
         var query = query_cache[selected_key];
