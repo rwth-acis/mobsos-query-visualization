@@ -211,6 +211,8 @@ var QV = (function(QV){
         var error = function(error, status) {
             if (status == 401) {
                 alert("Your session timed out, please reload the page to login again.");
+            } else if (status === 0) {
+                console.log("Got no response. Error Message: " + error);
             } else {
                 alert("Error! Message: " + error + " HTTP Code: " + status);
             }
