@@ -75,6 +75,9 @@ var removeQueryQueryNode     = document.getElementById("qv_remove_query");
 
 var demo = new QV.Visualizer();
 
+// Forward declaration
+var save_disable;
+
 /**
  * Stores if the tabs should be locked due to an query error
  * @type {Boolean}
@@ -239,7 +242,9 @@ var load_query_keys = function(){
             queries[query.dbKey][query.key] = query;
             queryKeys.push(query);
         }
-        fill_query_dropdown(databaseNode.options[databaseNode.selectedIndex].value);
+        if (databaseNode.selectedIndex >= 0) {
+            fill_query_dropdown(databaseNode.options[databaseNode.selectedIndex].value);
+        }
         load_query_values(queryKeys);
         queries_locked = false;
     });
@@ -807,7 +812,9 @@ var toggle_metadata = function(){
  * Show only the filters for currently selected database
  */
 var show_filters_for_db = function() {
-    var db = databaseNode.options[databaseNode.selectedIndex].value;
+    if (databaseNode.selectedIndex >= 0) {
+        var db = databaseNode.options[databaseNode.selectedIndex].value;
+    }
     $(filterNode).find("div").each(function(){
         if ($(this).hasClass(db + "Filter")) {
             $(this).show();
