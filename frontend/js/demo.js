@@ -172,7 +172,7 @@ var load_filter_keys = function(){
         filterKeys = [];
         $(removeFilterFilterNode).empty();
         for(i=0; i<numOfKeys; i++){
-            data = {db: keys[i][1], key: keys[i][0]};
+            data = {db: keys[i][1], key: keys[i][0], name: keys[i][0]};
             filterKeys.push(data);
             $(removeFilterFilterNode).append(ich.qv_filter_key_option_template(data));
         }
