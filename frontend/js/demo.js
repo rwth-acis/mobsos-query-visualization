@@ -170,6 +170,7 @@ var load_database_keys = function(){
  * Retrieves the filter keys from backend and fills the corresponding select form fields in Remove Filter Form with the data
  */
 var load_filter_keys = function(){
+    $('#qv_filter').hide();
     demo.retrieveFilterKeys(function(keys){
         var i,
             numOfKeys = keys.length,
@@ -401,7 +402,10 @@ var add_filter_form_submit = function(){
  * Callback for the submission of the Remove Database Form.
  */
 var remove_filter_form_submit = function(){
-    demo.removeFilter(removeFilterFilterNode.options[removeFilterFilterNode.selectedIndex].value,function(){
+    var filter_values = removeFilterFilterNode.options[removeFilterFilterNode.selectedIndex].value.split("|||");
+    var filterKey = filter_values[0];
+    var dbKey = filter_values[1];
+    demo.removeFilter(filterKey, dbKey, function(){
         load_filter_keys();
     });
 };

@@ -523,7 +523,7 @@ var QV = (function(QV){
              * @param filterKey The key of the filter to delete
              * @param callback Callback, called when the filter has been removed successfully. Has one paramter consisting of the filter key of the removed filter
              */
-            removeFilter: function(filterKey,callback){
+            removeFilter: function(filterKey,databaseKey,callback){
                 if(!restClient.loggedIn()) return;
 
                 var queryParams = {
@@ -553,7 +553,7 @@ var QV = (function(QV){
                     }
                 };
 
-                restClient.delete("filter/" + filterKey, null, queryParams, success, error);
+                restClient.delete("filter/" + databaseKey + "/" + filterKey, null, queryParams, success, error);
             },
             /**
              * Removes a query of the set of the configured query of the user currently logged in
