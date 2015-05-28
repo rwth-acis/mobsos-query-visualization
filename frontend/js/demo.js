@@ -224,6 +224,7 @@ var load_query_keys = function(){
             numOfKeys = keys.length,
             data;
         queryKeys = [];
+        queries = {};
         $(removeQueryQueryNode).empty();
         queries_locked = true;
         $(selectQuery).empty();
