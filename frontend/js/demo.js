@@ -851,18 +851,22 @@ toggle_filter();
 
 var queries_locked = false;
 
+
 $(databaseNode).change(function(){
     fill_query_dropdown(databaseNode.options[databaseNode.selectedIndex].value);
     show_filters_for_db();
 });
 
-$(selectQuery).delegate("option", "click", function(){
+var query_changed = function(){
     if (!queries_locked) {
         var selected_key = $(selectQuery).find("option:selected").val();
         var query = query_cache[selected_key];
         fill_query_values(query);
     }
-});
+}
+
+$(selectQuery).change(query_changed);
+$(selectQuery).delegate("option", "click", query_changed);
 
 var save_disable = function() {
     var sb = $(saveButton);
