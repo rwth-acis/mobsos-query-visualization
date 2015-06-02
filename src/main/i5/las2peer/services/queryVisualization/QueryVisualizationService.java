@@ -315,7 +315,7 @@ public class QueryVisualizationService extends Service {
 	public HttpResponse addDatabase( String databaseKey, SQLDatabaseType databaseTypeCode, String username, String password,
 			String database, String host, Integer port, VisualizationType visualizationTypeIndex) {
 		try {
-			if(databaseKey == null || databaseKey.length() < 3) {
+			if(databaseKey == null || databaseKey.length() < 2) {
 				throw new Exception("Databasekey is too short (Use at least 2 characters).");
 			}
 			
