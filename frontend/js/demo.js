@@ -433,7 +433,7 @@ var suggest_default_port = function(){
  * Shows the help text
  */
 var show_help = function(){
-    var helpwindow = window.open("help.html", "Query Visualizer - Help", "width=1200,height=640,resizable=yes");
+    var helpwindow = window.open("help.html", "Query Visualizer - Help", "width=1200,height=640,location=no,resizable=yes,scrollbars=yes");
     helpwindow.focus();
 };
 
