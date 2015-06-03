@@ -15,6 +15,12 @@ form {
     width: 100%;
 }
 
+.btn-success {
+    color: #FFF;
+    background-color: #449D44;
+    border-color: #398439;
+}
+
 textarea,
 select,
 input,
