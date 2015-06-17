@@ -95,7 +95,8 @@ public class VisualizationGoogleTable extends Visualization {
 						case Types.DATE:
 							//TODO: this is wrong, it starts counting the month at 0...								
 							try {
-								resultHTML.append(" new Date(").append(((Date) currentRow[i]).getTime()).append(")");
+								long time = ((Date) currentRow[i]).getTime();
+								resultHTML.append(" new Date(").append(time).append(")");
 							} catch (Exception e) {
 								resultHTML.append(" null");
 							}
@@ -103,7 +104,8 @@ public class VisualizationGoogleTable extends Visualization {
 						case Types.TIME:
 						case Types.TIMESTAMP:
 							try {
-								resultHTML.append(" new Date(").append(((Time) currentRow[i]).getTime()).append(")");
+								long time = ((Date) currentRow[i]).getTime();
+								resultHTML.append(" new Date(").append(time).append(")");
 							} catch (Exception e) {
 								resultHTML.append(" null");
 							}
