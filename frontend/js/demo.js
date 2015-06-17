@@ -29,7 +29,7 @@ var widthNode                  = document.getElementById("qv_width");
 var heightNode                 = document.getElementById("qv_height");
 var cacheNode                  = document.getElementById("qv_cache");
 var saveButton                 = document.getElementById("qv_save_button");
-var saveFilterButton          = document.getElementById("qv_save_filter");
+var saveFilterButton           = document.getElementById("qv_save_filter");
 
     //Preview Section Nodes
 var previewNode                = document.getElementById("qv_preview");
@@ -207,8 +207,22 @@ var load_filter_values = function(keys){
         demo.retrieveFilterValues(keys[i].db, keys[i].key, (function(data){
             return function(filterKeys){
                     for(j=0, numOfFilterKeys = filterKeys.length; j<numOfFilterKeys; j++){
-                        data.values.push(filterKeys[j][0]);
+                        var value = filterKeys[j][0];
+                        if (filterKeys[j].length > 1) {
+                            data.values.push({"value": value, "name": filterKeys[j][1] + " [" + value + "]"});
+                        } else {
+                            data.values.push({"value": value, "name": value});
+                        }
                     }
+                    data.values = data.values.sort(function(a, b) {
+                        if (a.name < b.name) {
+                            return -1;
+                        }
+                        if (a.name > b.name) {
+                            return 1;
+                        }
+                        return 0;
+                    });
                     $(filterNode).append(ich.qv_filter_template(data));
             };
         })(data));
@@ -627,7 +641,7 @@ var load_preview = function(){
             save_enable();
             try {
                 eval("var data_array = " + result.slice(result.search("data.addRows\\(")+13,result.search("]\\);")+1));
-                if (data_array[0].length === 1) {
+                if (data_array[0].length === 1 || data_array[0].length === 2) {
                     filter_enable();
                 }
             } catch (e) {
@@ -868,7 +882,7 @@ var query_changed = function(){
         var query = query_cache[selected_key];
         fill_query_values(query);
     }
-}
+};
 
 $(selectQuery).change(query_changed);
 $(selectQuery).delegate("option", "click", query_changed);
