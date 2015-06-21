@@ -240,16 +240,6 @@ public class QueryVisualizationService extends Service {
 			modificationManager.registerModification(new ModificationLogarithmic());
 			modificationManager.registerModification(new ModificationNormalization());
 
-			if(databaseManager.getDatabaseCount() < 1) {
-
-				// the user has no databases yet - add the example database
-				addDatabase(exKey, SQLDatabaseType.valueOf(exType.toUpperCase()), exUser, exPassword, exDatabase, exHost, exPort, VisualizationType.JSON);
-//				if(!this.databaseManager.addExampleDB()) {
-//					// failed to add the database...
-//					throw new Exception("Failed to add the default database for the user!");
-//				}
-			}
-
 			// get the result cache
 			this.resultCache = MethodResultCache.getInstance(Integer.parseInt(resultTimeout));
 
@@ -506,14 +496,6 @@ public class QueryVisualizationService extends Service {
 			}
 			
 			VisualizationType vtypei = VisualizationType.valueOf(visualizationTypeIndex.toUpperCase());
-
-			if(keyList.isEmpty()) {
-				// in order to encounter the cold-start...
-				// add some examples for the default DB
-				this.addFilter(exKey, "Customers", "SELECT DISTINCT customerNumber FROM `customers`", vtypei);
-
-				keyList = filterManager.getFilterKeyList();
-			}
 
 			MethodResult result = new MethodResult();
 			Integer[] datatypes = {Types.VARCHAR,Types.VARCHAR};
