@@ -1,7 +1,6 @@
 package i5.las2peer.services.queryVisualization.database;
 
 import i5.las2peer.api.Service;
-import i5.las2peer.execution.L2pThread;
 import i5.las2peer.logging.NodeObserver.Event;
 import i5.las2peer.p2p.Node;
 import i5.las2peer.security.Agent;
@@ -81,16 +80,13 @@ public class SQLDatabaseManager {
 	 * get the current l2p thread
 	 * @return the L2pThread we're currently running in
 	 */
-	public final L2pThread getL2pThread () {
-		return service.getL2pThread();
-	}
 	
 	/** 
 	 * get the currently active agent
 	 * @return active agent
 	 */
 	protected Agent getActiveAgent () {
-		return getL2pThread().getContext().getMainAgent();
+		return service.getContext().getMainAgent();
 	}
 	
 	/**
@@ -109,7 +105,7 @@ public class SQLDatabaseManager {
 	 * @return 	the currently active las2peer node
 	 */
 	protected Node getActiveNode() {
-		return getL2pThread().getContext().getLocalNode();
+		return service.getContext().getLocalNode();
 	}
 	
 	/************************** end of service helper methods ************************************/

@@ -1,9 +1,10 @@
 package i5.las2peer.services.queryVisualization.database;
 
 
+import i5.las2peer.logging.L2pLogger;
+import i5.las2peer.logging.NodeObserver.Event;
 import i5.las2peer.persistency.MalformedXMLException;
 import i5.las2peer.persistency.XmlAble;
-import i5.las2peer.security.Context;
 import i5.simpleXML.Element;
 
 import java.io.Serializable;
@@ -92,7 +93,7 @@ public class SQLDatabaseSettings implements XmlAble, Serializable {
 			this.port = Integer.parseInt(elm.getChild(1).getAttribute("port"));
 		}
 		catch(Exception e) {
-			Context.logMessage( this, "SQLDatabaseSettings, setStateFromXML: " + e.getMessage());
+			L2pLogger.logEvent(this, Event.SERVICE_ERROR, "SQLDatabaseSettings, setStateFromXML: " + e.getMessage());
 		}
 	}
 

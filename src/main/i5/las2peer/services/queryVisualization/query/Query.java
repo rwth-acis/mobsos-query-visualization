@@ -1,9 +1,10 @@
 package i5.las2peer.services.queryVisualization.query;
 
 import i5.las2peer.execution.L2pServiceException;
+import i5.las2peer.logging.L2pLogger;
+import i5.las2peer.logging.NodeObserver.Event;
 import i5.las2peer.persistency.MalformedXMLException;
 import i5.las2peer.persistency.XmlAble;
-import i5.las2peer.security.Context;
 import i5.las2peer.services.queryVisualization.database.SQLDatabaseType;
 import i5.las2peer.services.queryVisualization.encoding.VisualizationType;
 import i5.simpleXML.Element;
@@ -189,7 +190,7 @@ public class Query implements XmlAble, Serializable {
 		
 		}
 		catch(Exception e) {
-			Context.logMessage(this, "Query, setStateFromXML: " + e.getMessage());
+			L2pLogger.logEvent(this, Event.SERVICE_ERROR, "Query, setStateFromXML: " + e.getMessage());
 		}
 	}
 

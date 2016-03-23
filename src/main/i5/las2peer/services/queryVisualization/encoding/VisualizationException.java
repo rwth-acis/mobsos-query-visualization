@@ -1,6 +1,7 @@
 package i5.las2peer.services.queryVisualization.encoding;
 
-import i5.las2peer.security.Context;
+import i5.las2peer.logging.L2pLogger;
+import i5.las2peer.logging.NodeObserver.Event;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -89,7 +90,7 @@ public class VisualizationException {
 		catch(Exception exception) {
 			// now, that is really weird...
 			exception.printStackTrace();
-			Context.logError(this, "exceptionToMethodResult"  + exception);
+			L2pLogger.logEvent(this, Event.SERVICE_ERROR, "exceptionToMethodResult"  + exception);
 			Exception ex = new Exception("Converting exception to result failed!");
 
 			//TODO: risk of infinite loops!

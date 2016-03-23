@@ -1,6 +1,7 @@
 package i5.las2peer.services.queryVisualization.encoding;
 
-import i5.las2peer.security.Context;
+import i5.las2peer.logging.L2pLogger;
+import i5.las2peer.logging.NodeObserver.Event;
 
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -74,7 +75,7 @@ public class MethodResult {
 			return this.rowList.iterator();
 		}
 		else {
-			Context.logError(this,"MethodResult: this.rowList == null");
+			L2pLogger.logEvent(this, Event.SERVICE_ERROR, "MethodResult: this.rowList == null");
 			return null;
 		}
 	}
@@ -91,7 +92,7 @@ public class MethodResult {
 			rowList.add(rowValueArray);
 		}
 		else {
-			Context.logError(this,"MethodResult: this.rowList == null");
+			L2pLogger.logEvent(this, Event.SERVICE_ERROR, "MethodResult: this.rowList == null");
 		}
 	}
 	

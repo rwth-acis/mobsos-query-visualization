@@ -1,6 +1,7 @@
 package i5.las2peer.services.queryVisualization.encoding;
 
-import i5.las2peer.security.Context;
+import i5.las2peer.logging.L2pLogger;
+import i5.las2peer.logging.NodeObserver.Event;
 
 import java.util.HashMap;
 
@@ -29,7 +30,7 @@ public class VisualizationManager {
 		if(!_registeredVisualizations.containsKey(type)){
 			_registeredVisualizations.put(type, v);	
 		} else {
-			Context.logMessage(this, "Visualization not registered since its name was already registered!");
+			L2pLogger.logEvent(this, Event.SERVICE_ERROR, "Visualization not registered since its name was already registered!");
 		}
 	}
 

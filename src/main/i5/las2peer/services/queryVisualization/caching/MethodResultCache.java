@@ -2,10 +2,12 @@ package i5.las2peer.services.queryVisualization.caching;
 
 import i5.las2peer.services.queryVisualization.encoding.MethodResult;
 
-import java.util.concurrent.ConcurrentMap;
+//import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
-import com.google.common.collect.MapMaker;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+//import com.google.common.collect.MapMaker;
 
 /**
  * MethodResultCache.java
@@ -16,10 +18,14 @@ import com.google.common.collect.MapMaker;
  */
 public class MethodResultCache {
 	private static MethodResultCache resultCache;
-	private ConcurrentMap<String, MethodResult> resultCacheMap = null;
+	private Cache<String, MethodResult> resultCacheMap = null;
 	
 	protected MethodResultCache(int timeout) {
-		resultCacheMap = new MapMaker().softKeys().softValues().expireAfterWrite(timeout, TimeUnit.MINUTES).makeMap();
+		resultCacheMap = CacheBuilder.newBuilder()
+			    .concurrencyLevel(4) // read docs for more details
+			    .expireAfterWrite(timeout, TimeUnit.MINUTES)
+			    .build();
+		//resultCacheMap = new MapMaker().softKeys().softValues().expireAfterWrite(timeout, TimeUnit.MINUTES).makeMap();
 	}
 	
 	public static MethodResultCache getInstance(int timeout) {
@@ -54,7 +60,7 @@ public class MethodResultCache {
 	 */
 	public synchronized MethodResult get(String key) {
 		try {
-			return resultCacheMap.get(key);
+			return resultCacheMap.get(key, null);
 		}
 		catch(Exception e) {
 			System.out.println("MethodResultCache caused an Exeception: " + e.getMessage());

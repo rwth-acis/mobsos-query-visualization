@@ -77,7 +77,7 @@ public class ServiceTest {
 		node.storeAgent(MockAgentFactory.getAdam());
 		node.launch();
 		
-		ServiceAgent testService = ServiceAgent.generateNewAgent(testServiceClass, "a pass");
+		ServiceAgent testService = ServiceAgent.createServiceAgent(testServiceClass, "a pass");
 		testService.unlockPrivateKey("a pass");
 		
 		node.registerReceiver(testService);
@@ -86,7 +86,7 @@ public class ServiceTest {
 		logStream = new ByteArrayOutputStream ();
 		
 		connector = new WebConnector(true,HTTP_PORT,false,1000);
-		connector.setSocketTimeout(10000);
+		//connector.setSocketTimeout(10000);
 		connector.setLogStream(new PrintStream (logStream));
 		connector.start ( node );
         Thread.sleep(1000); //wait a second for the connector to become ready
@@ -95,8 +95,8 @@ public class ServiceTest {
         connector.updateServiceList();
         //avoid timing errors: wait for the repository manager to get all services before continuing
         testDB.put("db_code", SQLDatabaseType.MYSQL.toString().toLowerCase());
-        testDB.put("username", "qv_user");
-        testDB.put("password", "qv_password");
+        testDB.put("username", "root");
+        testDB.put("password", "");
         testDB.put("database", "QVS");
         testDB.put("dbhost", "localhost");
         testDB.put("port", 3306);

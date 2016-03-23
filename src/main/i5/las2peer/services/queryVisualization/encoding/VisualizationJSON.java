@@ -1,6 +1,7 @@
 package i5.las2peer.services.queryVisualization.encoding;
 
-import i5.las2peer.security.Context;
+import i5.las2peer.logging.L2pLogger;
+import i5.las2peer.logging.NodeObserver.Event;
 
 import java.sql.Date;
 import java.sql.Time;
@@ -139,12 +140,12 @@ public class VisualizationJSON extends Visualization {
 			return jsonString.toString();
 		} 
 		catch (Exception e) {
-			Context.logMessage(this, e.getMessage());
+			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.getMessage().toString());
 			try {
 				return  super.visualizationException.generate(e, "Encoding into JSON format failed.");
 			}
 			catch(Exception ex) {
-				Context.logMessage(this, ex.getMessage());
+				L2pLogger.logEvent(this, Event.SERVICE_ERROR, ex.getMessage().toString());
 				return "Unknown/handled error occurred!";
 			}
 		}

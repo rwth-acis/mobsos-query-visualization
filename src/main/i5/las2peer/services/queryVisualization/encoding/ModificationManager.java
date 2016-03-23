@@ -1,8 +1,10 @@
 package i5.las2peer.services.queryVisualization.encoding;
 
-import i5.las2peer.security.Context;
 
 import java.util.HashMap;
+
+import i5.las2peer.logging.L2pLogger;
+import i5.las2peer.logging.NodeObserver.Event;
 
 /**
  * ModificationManager.java
@@ -28,7 +30,7 @@ public class ModificationManager {
 		if(!_registeredModifications.containsKey(type)){
 			_registeredModifications.put(type, m);	
 		} else {
-			Context.logMessage(this, "Not registered Modificationsince its name was already registered!");
+			L2pLogger.logEvent(this, Event.SERVICE_ERROR, "Not registered Modificationsince its name was already registered!");
 		}
 	}
 

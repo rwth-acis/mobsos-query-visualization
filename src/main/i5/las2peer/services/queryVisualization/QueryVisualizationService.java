@@ -1,26 +1,36 @@
 package i5.las2peer.services.queryVisualization;
 
+import java.io.IOException;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Types;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+
 import i5.las2peer.api.Service;
 import i5.las2peer.execution.L2pServiceException;
+import i5.las2peer.logging.L2pLogger;
+import i5.las2peer.logging.NodeObserver.Event;
 import i5.las2peer.restMapper.HttpResponse;
 import i5.las2peer.restMapper.MediaType;
 import i5.las2peer.restMapper.RESTMapper;
-import i5.las2peer.restMapper.annotations.Consumes;
 import i5.las2peer.restMapper.annotations.ContentParam;
-import i5.las2peer.restMapper.annotations.DELETE;
-import i5.las2peer.restMapper.annotations.GET;
-import i5.las2peer.restMapper.annotations.POST;
-import i5.las2peer.restMapper.annotations.PUT;
-import i5.las2peer.restMapper.annotations.Path;
-import i5.las2peer.restMapper.annotations.PathParam;
-import i5.las2peer.restMapper.annotations.Produces;
-import i5.las2peer.restMapper.annotations.QueryParam;
 import i5.las2peer.restMapper.annotations.Version;
-import i5.las2peer.restMapper.annotations.swagger.ApiInfo;
-import i5.las2peer.restMapper.annotations.swagger.ApiResponse;
-import i5.las2peer.restMapper.annotations.swagger.ApiResponses;
-import i5.las2peer.restMapper.annotations.swagger.ResourceListApi;
-import i5.las2peer.restMapper.annotations.swagger.Summary;
 import i5.las2peer.restMapper.tools.ValidationResult;
 import i5.las2peer.restMapper.tools.XMLCheck;
 import i5.las2peer.security.UserAgent;
@@ -57,18 +67,12 @@ import i5.las2peer.services.queryVisualization.encoding.VisualizationXML;
 import i5.las2peer.services.queryVisualization.query.Query;
 import i5.las2peer.services.queryVisualization.query.QueryManager;
 
-import java.io.IOException;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Types;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
+import io.swagger.annotations.Contact;
+import io.swagger.annotations.Info;
+import io.swagger.annotations.License;
+import io.swagger.annotations.SwaggerDefinition;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import net.minidev.json.JSONValue;
@@ -82,14 +86,23 @@ import net.minidev.json.JSONValue;
  */
 @Path("QVS")
 @Version("0.1")
-@ApiInfo(
-		  title="Query Visualization Service",
-		  description="This service can be used to visualize queries on RDB's",
-		  termsOfServiceUrl="https://github.com/rwth-acis/LAS2peer-Query-Visualization-Service",
-		  contact="renzel@dbis.rwth-aachen.de",
-		  license="MIT",
-		  licenseUrl="https://raw.githubusercontent.com/rwth-acis/LAS2peer-Query-Visualization-Service/master/LICENSE"
-		)
+@SwaggerDefinition(
+		info = @Info(
+				title = "Query Visualization Service",
+				version = "0.1",
+				description = "This service can be used to visualize queries on RDB's",
+				termsOfService = "https://github.com/rwth-acis/LAS2peer-Query-Visualization-Service",
+				contact = @Contact(
+						name = "Dominik Renzel",
+						url = "",
+						email = "renzel@dbis.rwth-aachen.de"
+				),
+				license = @License(
+						name = "MIT",
+						url = "https://raw.githubusercontent.com/rwth-acis/LAS2peer-Query-Visualization-Service/master/LICENSE"
+				)
+		))
+
 public class QueryVisualizationService extends Service {
 
 	/*** configuration ***/
@@ -194,13 +207,13 @@ public class QueryVisualizationService extends Service {
 	}		
 	
 	public void initializeDBConnection() {
-		long user = getActiveAgent().getId();
+		long user = getContext().getMainAgent().getId();
 		if (databaseManagerMap.get(user) != null) {
 			return;
 		}
 		try {
 			if(stDbHost == null || stDbPort < 1 || stDbDatabase == null || stDbUser == null || stDbPassword == null) {
-				logError("Provided invalid parameters (default database) for the service! Please check you service config file!");
+				L2pLogger.logEvent(this, Event.SERVICE_ERROR, "Provided invalid parameters (default database) for the service! Please check you service config file!");
 				throw new Exception("No Database Connection values from config file available!");
 			}
 			if(resultTimeout == null) {
@@ -245,7 +258,7 @@ public class QueryVisualizationService extends Service {
 
 		} 
 		catch(Exception e) {
-			logError(e);
+			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
 		}
 	}
 
@@ -260,7 +273,6 @@ public class QueryVisualizationService extends Service {
 	 */
 	@PUT
 	@Path("database/{key}")
-	@Summary("Adds a database with a specified key")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	@ApiResponses(value={
@@ -281,7 +293,7 @@ public class QueryVisualizationService extends Service {
 			return addDatabase(databaseKey, SQLDatabaseType.valueOf(dbcode.toUpperCase()),
 					username, password, database, dbhost, port, VisualizationType.JSON);
 		} catch (Exception e) {
-			logError(e);
+			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
 			HttpResponse res = new HttpResponse(visualizationException.generate(e, "Received invalid JSON"));
 			res.setStatus(400);
 			return res;
@@ -310,7 +322,8 @@ public class QueryVisualizationService extends Service {
 			}
 			
 			initializeDBConnection();
-			long user = getActiveAgent().getId();
+			
+			long user = getContext().getMainAgent().getId();
 			SQLDatabaseManager databaseManager = databaseManagerMap.get(user);
 
 			SQLDatabaseType sqlDatabaseType = databaseTypeCode;
@@ -358,7 +371,6 @@ public class QueryVisualizationService extends Service {
 	 */
 	@DELETE
 	@Path("database/{key}")
-	@Summary("Removes a database with a specified key")
 	@Produces(MediaType.APPLICATION_JSON)
 	@ApiResponses(value={
 			  @ApiResponse(code = 200, message = "Database removed successfully."),
@@ -371,7 +383,7 @@ public class QueryVisualizationService extends Service {
 			
 			initializeDBConnection();
 
-			long user = getActiveAgent().getId();
+			long user = getContext().getMainAgent().getId();
 			SQLDatabaseManager databaseManager = databaseManagerMap.get(user);
 			QueryManager queryManager = queryManagerMap.get(user);
 			SQLFilterManager filterManager = filterManagerMap.get(user);
@@ -400,7 +412,7 @@ public class QueryVisualizationService extends Service {
 			return res;
 		}
 		catch (Exception e) {
-			logError(e);
+			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
 			HttpResponse res = new HttpResponse(visualizationException.generate(e, null));
 			res.setStatus(400);
 			return res;
@@ -415,17 +427,15 @@ public class QueryVisualizationService extends Service {
 	 */
 	@GET
 	@Path("database")
-	@ResourceListApi(description = "Manage a users databases")
-	@Summary("Gets all database keys for your user")
 	@Produces(MediaType.APPLICATION_JSON)
 	@ApiResponses(value={
 			  @ApiResponse(code = 200, message = "Got Database keys."),
 			  @ApiResponse(code = 400, message = "Retrieving keys failed.")})
 	public HttpResponse getDatabaseKeys(
-			@QueryParam(defaultValue = "JSON", name = "format") String visualizationTypeIndex) {
+			@QueryParam("format") String visualizationTypeIndex) {
 		try {
 			initializeDBConnection();
-			long user = getActiveAgent().getId();
+			long user = getContext().getMainAgent().getId();
 			SQLDatabaseManager databaseManager = databaseManagerMap.get(user);
 			List<String> keyList = databaseManager.getDatabaseKeyList();
 
@@ -456,7 +466,7 @@ public class QueryVisualizationService extends Service {
 			res.setStatus(200);
 			return res;
 		} catch (Exception e) {
-			logError(e);
+			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
 			HttpResponse res = new HttpResponse(visualizationException.generate(e, null));
 			res.setStatus(400);
 			return res;
@@ -471,17 +481,15 @@ public class QueryVisualizationService extends Service {
 	 */
 	@GET
 	@Path("filter")
-	@ResourceListApi(description = "Manage a users filters")
-	@Summary("Gets all filter keys for your user")
 	@Produces(MediaType.APPLICATION_JSON)
 	@ApiResponses(value={
 			  @ApiResponse(code = 200, message = "Got filter keys."),
 			  @ApiResponse(code = 400, message = "Retrieving filter keys failed.")})
-	public HttpResponse getFilterKeys(@QueryParam(defaultValue = "JSON", name = "format") String visualizationTypeIndex) {
+	public HttpResponse getFilterKeys(@QueryParam("format") String visualizationTypeIndex) {
 		try {
 			initializeDBConnection();
 
-			long user = getActiveAgent().getId();
+			long user = getContext().getMainAgent().getId();
 			SQLFilterManager filterManager = filterManagerMap.get(user);
 			if(filterManager == null) {
 				// initialize filter manager
@@ -519,7 +527,7 @@ public class QueryVisualizationService extends Service {
 			return res;
 		}
 		catch (Exception e) {
-			logError(e);
+			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
 			HttpResponse res = new HttpResponse(visualizationException.generate(e, null));
 			res.setStatus(400);
 			return res;
@@ -535,7 +543,6 @@ public class QueryVisualizationService extends Service {
 	 */
 	@GET
 	@Path("filter/{database}/{key}")
-	@Summary("Gets the values for a filter")
 	@Produces(MediaType.APPLICATION_JSON)
 	@ApiResponses(value={
 			  @ApiResponse(code = 200, message = "Got filter values."),
@@ -544,8 +551,8 @@ public class QueryVisualizationService extends Service {
 	public HttpResponse getFilterValuesForCurrentUser(
 			@PathParam("database") String dbKey,
 			@PathParam("key") String filterKey,
-			@QueryParam(name="format", defaultValue = "JSON") String visualizationTypeIndex) {
-		return getFilterValuesOfUser(dbKey, filterKey, getActiveAgent().getId(), visualizationTypeIndex);
+			@QueryParam("format") String visualizationTypeIndex) {
+		return getFilterValuesOfUser(dbKey, filterKey, getContext().getMainAgent().getId(), visualizationTypeIndex);
 	}		
 
 	/**
@@ -557,7 +564,6 @@ public class QueryVisualizationService extends Service {
 	 */
 	@GET
 	@Path("query/{query}/filter")
-	@Summary("Gets the filters for a query")
 	@Produces(MediaType.APPLICATION_JSON)
 	@ApiResponses(value={
 			  @ApiResponse(code = 200, message = "Got filters."),
@@ -566,7 +572,7 @@ public class QueryVisualizationService extends Service {
 	public HttpResponse getFilterValuesForQuery(@PathParam("key") String queryKey) {
 		try {
 			initializeDBConnection();
-			QueryManager queryManager = queryManagerMap.get(getActiveAgent().getId());
+			QueryManager queryManager = queryManagerMap.get(getContext().getMainAgent().getId());
 			Query q = queryManager.getQuery(queryKey);
 			String[] params = q.getQueryParameters();
 			String statement = q.getQueryStatement();
@@ -622,7 +628,7 @@ public class QueryVisualizationService extends Service {
 			res.setStatus(404);
 			return res;
 		} catch (Exception e) {
-			logError(e);
+			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
 			HttpResponse res = new HttpResponse(visualizationException.generate(e, null));
 			res.setStatus(400);
 			return res;
@@ -638,7 +644,6 @@ public class QueryVisualizationService extends Service {
 	 */
 	@GET
 	@Path("filter/{database}/{key}/{user}")
-	@Summary("Gets the values for a filter")
 	@Produces(MediaType.APPLICATION_JSON)
 	@ApiResponses(value={
 			  @ApiResponse(code = 200, message = "Got filter values."),
@@ -648,13 +653,13 @@ public class QueryVisualizationService extends Service {
 			@PathParam("database") String dbKey,
 			@PathParam("key") String filterKey,
 			@PathParam("user") long user,
-			@QueryParam(name="format", defaultValue = "JSON") String visualizationTypeIndex) {
+			@QueryParam("format") String visualizationTypeIndex) {
 		try {
 			VisualizationType vtypei = VisualizationType.valueOf(visualizationTypeIndex.toUpperCase());
 			initializeDBConnection();
 			SQLFilterManager filterManager = filterManagerMap.get(user);
 			if(filterManager == null) {
-				if (((UserAgent)getActiveAgent()).getUserData() == null) {
+				if (((UserAgent)getContext().getMainAgent()).getUserData() == null) {
 					filterManager = new SQLFilterManager(storageDatabase, user);
 //					throw new DoesNotExistException("Anonymous user requested non-existant filter");
 				} else {
@@ -673,7 +678,7 @@ public class QueryVisualizationService extends Service {
 			res.setStatus(404);
 			return res;
 		} catch (Exception e) {
-			logError(e);
+			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
 			HttpResponse res = new HttpResponse(visualizationException.generate(e, null));
 			res.setStatus(400);
 			return res;
@@ -691,7 +696,6 @@ public class QueryVisualizationService extends Service {
 	 */
 	@PUT
 	@Path("filter/{database}/{key}")
-	@Summary("Adds a filter with a specified key")
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
 	@ApiResponses(value={
@@ -707,7 +711,7 @@ public class QueryVisualizationService extends Service {
 			o = (JSONObject) JSONValue.parseWithException(query);
 			return addFilter(dbKey, filterName, stringfromJSON(o, "query"), vtypei);
 		} catch (Exception e) {
-			logError(e);
+			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
 			HttpResponse res = new HttpResponse(visualizationException.generate(e, "Received invalid JSON"));
 			res.setStatus(400);
 			return res;
@@ -718,7 +722,7 @@ public class QueryVisualizationService extends Service {
 		try {
 			initializeDBConnection();
 			//TODO: parameter sanity checks
-			long user = getActiveAgent().getId();
+			long user = getContext().getMainAgent().getId();
 			SQLFilterManager filterManager = filterManagerMap.get(user);
 
 			if(filterManager == null) {
@@ -754,7 +758,7 @@ public class QueryVisualizationService extends Service {
 			return res;
 		}
 		catch (Exception e) {
-			logError(e);
+			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
 			HttpResponse res = new HttpResponse(visualizationException.generate(e, null));
 			res.setStatus(400);
 			return res;
@@ -770,7 +774,6 @@ public class QueryVisualizationService extends Service {
 	 */
 	@DELETE
 	@Path("filter/{database}/{key}")
-	@Summary("Deletes a filter with a specified key")
 	@Produces(MediaType.APPLICATION_JSON)
 	@ApiResponses(value={
 			  @ApiResponse(code = 200, message = "Deleted filter."),
@@ -780,7 +783,7 @@ public class QueryVisualizationService extends Service {
 			@PathParam("key") String filterKey) {
 		try {		
 			initializeDBConnection();
-			long user = getActiveAgent().getId();
+			long user = getContext().getMainAgent().getId();
 			SQLFilterManager filterManager = filterManagerMap.get(user);
 			if(filterManager == null) {
 				// initialize filter manager
@@ -806,7 +809,7 @@ public class QueryVisualizationService extends Service {
 			return res;
 		}
 		catch (Exception e) {
-			logError(e);
+			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
 			HttpResponse res = new HttpResponse(visualizationException.generate(e, null));
 			res.setStatus(400);
 			return res;
@@ -815,14 +818,13 @@ public class QueryVisualizationService extends Service {
 
 	@POST
 	@Path("query/visualize")
-	@Summary("Visualizes a query without saving it")
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
 	@ApiResponses(value={
 			  @ApiResponse(code = 200, message = "Created query."),
 			  @ApiResponse(code = 400, message = "Creating Query failed.")})
 	public HttpResponse visualizeQuery(
-			@QueryParam(defaultValue = "JSON", name = "format") String vtypei,
+			@QueryParam("format") String vtypei,
 			@ContentParam String content) {
 		JSONObject o;
 		try{	
@@ -840,7 +842,7 @@ public class QueryVisualizationService extends Service {
 			setContentType(res, v.ordinal());
 			return res;
 		} catch (Exception e) {
-			logError(e);
+			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
 			HttpResponse res = new HttpResponse(visualizationException.generate(e, "Received invalid JSON"));
 			res.setStatus(400);
 			return res;
@@ -849,14 +851,13 @@ public class QueryVisualizationService extends Service {
 
 	@POST
 	@Path("query")
-	@Summary("Saves a query and returns the ID")
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
 	@ApiResponses(value={
 			  @ApiResponse(code = 201, message = "Created query."),
 			  @ApiResponse(code = 400, message = "Creating Query failed.")})
 	public HttpResponse createQuery(
-			@QueryParam(defaultValue = "JSON", name = "format") String vtypei,
+			@QueryParam("format") String vtypei,
 			@ContentParam String content) {
 		JSONObject o;
 		try{	
@@ -874,7 +875,7 @@ public class QueryVisualizationService extends Service {
 			setContentType(res, v.ordinal());
 			return res;
 		} catch (Exception e) {
-			logError(e);
+			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
 			HttpResponse res = new HttpResponse(visualizationException.generate(e, "Received invalid JSON"));
 			res.setStatus(400);
 			return res;
@@ -945,7 +946,7 @@ public class QueryVisualizationService extends Service {
 				return visualizationException.generate(new Exception(), "Can not convert result into " + visualization.getType().name() + "-format.");
 		}
 		catch(Exception e) {
-			logError(e);
+			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
 			return visualizationException.generate(e, "An Error occured while trying to execute the query!");
 		}
 	}
@@ -958,17 +959,15 @@ public class QueryVisualizationService extends Service {
 	 */
 	@GET
 	@Path("query")
-	@ResourceListApi(description = "Manage a users queries")
-	@Summary("Gets all queries for your user")
 	@Produces(MediaType.APPLICATION_JSON)
 	@ApiResponses(value={
 			  @ApiResponse(code = 200, message = "Got Database queries."),
 			  @ApiResponse(code = 400, message = "Retrieving queries failed.")})
 	public HttpResponse getQueryKeys(
-			@QueryParam(defaultValue = "JSON", name = "format") String visualizationTypeIndex) {
+			@QueryParam("format") String visualizationTypeIndex) {
 		try {
 			initializeDBConnection();
-			long user = getActiveAgent().getId();
+			long user = getContext().getMainAgent().getId();
 			QueryManager queryManager = queryManagerMap.get(user);
 			List<Query> keyList = queryManager.getQueryList();
 
@@ -999,7 +998,7 @@ public class QueryVisualizationService extends Service {
 			res.setStatus(200);
 			return res;
 		} catch (Exception e) {
-			logError(e);
+			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
 			HttpResponse res = new HttpResponse(visualizationException.generate(e, null));
 			res.setStatus(400);
 			return res;
@@ -1015,7 +1014,6 @@ public class QueryVisualizationService extends Service {
 	 */
 	@DELETE
 	@Path("query/{key}")
-	@Summary("Deletes a query with a specified key")
 	@Produces(MediaType.APPLICATION_JSON)
 	@ApiResponses(value={
 			  @ApiResponse(code = 200, message = "Deleted query."),
@@ -1023,7 +1021,7 @@ public class QueryVisualizationService extends Service {
 	public HttpResponse deleteQuery( @PathParam("key") String queryKey) {
 		try {		
 			initializeDBConnection();
-			long user = getActiveAgent().getId();
+			long user = getContext().getMainAgent().getId();
 			QueryManager queryManager = queryManagerMap.get(user);
 			if(queryManager == null) {
 				throw new Exception("Query Manager is null");
@@ -1043,7 +1041,7 @@ public class QueryVisualizationService extends Service {
 			return res;
 		}
 		catch (Exception e) {
-			logError(e);
+			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
 			HttpResponse res = new HttpResponse(visualizationException.generate(e, null));
 			res.setStatus(400);
 			return res;
@@ -1061,20 +1059,19 @@ public class QueryVisualizationService extends Service {
 	 */
 	@GET
 	@Path("query/{key}")
-	@Summary("Visualizes a query with a given key")
 	@Produces(MediaType.APPLICATION_JSON)
 	@ApiResponses(value={
 			  @ApiResponse(code = 200, message = "Visualization created."),
 			  @ApiResponse(code = 400, message = "Creating visualization failed."),
 			  @ApiResponse(code = 404, message = "Didn't find requested query.")})
 	public HttpResponse getQueryValues(@PathParam("key") String key,
-			@QueryParam(name="format", defaultValue = "JSON") String format) {
+			@QueryParam("format") String format) {
 		initializeDBConnection();
 
 		try {
 //			VisualizationType vtypei = VisualizationType.valueOf(format.toUpperCase());
 			initializeDBConnection();
-			long user = getActiveAgent().getId();
+			long user = getContext().getMainAgent().getId();
 			QueryManager queryManager = queryManagerMap.get(user);
 			if(queryManager == null) {
 				// initialize query manager
@@ -1090,20 +1087,20 @@ public class QueryVisualizationService extends Service {
 			res.setStatus(200);
 			return res;
 		} catch (DoesNotExistException e) {
-			logError(e);
+			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
 			HttpResponse res = new HttpResponse("Query " + key + " does not exist.");
 			res.setStatus(400);
 			return res;
 		} catch (DBDoesNotExistException e) {
-			logError(e);
-			long user = getActiveAgent().getId();
+			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
+			long user = getContext().getMainAgent().getId();
 			QueryManager queryManager = queryManagerMap.get(user);
 			queryManager.removeQ(key);
 			HttpResponse res = new HttpResponse(visualizationException.generate(e, null));
 			res.setStatus(400);
 			return res;
 		} catch (Exception e) {
-			logError(e);
+			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
 			HttpResponse res = new HttpResponse(visualizationException.generate(e, null));
 			res.setStatus(400);
 			return res;
@@ -1121,13 +1118,12 @@ public class QueryVisualizationService extends Service {
 	 */
 	@POST
 	@Path("query/{key}/visualize")
-	@Summary("Visualizes a query with a given key and provides filter Values")
 	@ApiResponses(value={
 			  @ApiResponse(code = 200, message = "Visualization generated."),
 			  @ApiResponse(code = 400, message = "Creating visualization failed."),
 			  @ApiResponse(code = 404, message = "Didn't find requested query.")})
 	public HttpResponse visualizeQueryByKeyWithValues(@PathParam("key") String key,
-			@QueryParam(name="format", defaultValue = "") String format,
+			@QueryParam("format") String format,
 			@ContentParam String content) {
 		return visualizeQueryByKey(key, format, content);
 	}
@@ -1143,20 +1139,19 @@ public class QueryVisualizationService extends Service {
 	 */
 	@GET
 	@Path("query/{key}/visualize")
-	@Summary("Visualizes a query with a given key")
 	@ApiResponses(value={
 			  @ApiResponse(code = 200, message = "Visualization created."),
 			  @ApiResponse(code = 400, message = "Creating visualization failed."),
 			  @ApiResponse(code = 404, message = "Didn't find requested query.")})
 	public HttpResponse visualizeQueryByKey(@PathParam("key") String key,
-			@QueryParam(name="format", defaultValue = "") String format,
+			@QueryParam("format") String format,
 			@ContentParam String content) {
 		initializeDBConnection();
 
 		Query query = null;
 		String[] queryParameters = null;
 		try {
-			long user = getActiveAgent().getId();
+			long user = getContext().getMainAgent().getId();
 			try{	
 				JSONObject o = (JSONObject) JSONValue.parseWithException(content);
 				queryParameters = stringArrayfromJSON(o, "queryparams");
@@ -1171,7 +1166,7 @@ public class QueryVisualizationService extends Service {
 				throw new DoesNotExistException("Query does not exist!"); 
 			}
 		} catch(DoesNotExistException e) {
-			logError(e.getMessage());
+			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
 			HttpResponse res = new HttpResponse(
 					"Query " + key + " does not exist");
 			res.setStatus(404);
@@ -1188,7 +1183,7 @@ public class QueryVisualizationService extends Service {
 			res.setStatus(200);
 			return res;
 		} catch(Exception e) {
-			logError(e.getMessage());
+			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
 			HttpResponse res = new HttpResponse(
 					visualizationException.generate(e, "Encountered a Problem while trying to visualize Query!"));
 			res.setStatus(400);
@@ -1216,17 +1211,17 @@ public class QueryVisualizationService extends Service {
 		Query query = null;
 		String queryKey = ""; //If empty, the query generates a new one
 		try {
-			long user = getActiveAgent().getId();
+			long user = getContext().getMainAgent().getId();
 			SQLDatabaseManager databaseManager = databaseManagerMap.get(user);
 			QueryManager queryManager = queryManagerMap.get(user);
 			database = databaseManager.getDatabaseInstance(databaseKey);
-			query = new Query(getL2pThread().getContext().getMainAgent().getId(), database.getJdbcInfo(),
+			query = new Query(getContext().getMainAgent().getId(), database.getJdbcInfo(),
 					database.getUser(), database.getPassword(), databaseKey, database.getDatabase(), database.getHost(),
 					database.getPort(), queryStatement, queryParameters, useCache, modificationTypeIndex, visualizationTypeIndex,
 					visualizationParamaters, queryKey);
 			queryManager.storeQuery(query);
 		} catch (Exception e) {
-			logError(e.getMessage());
+			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
 			return VisualizationException.getInstance().generate(e, "An error occured while trying to save a Query!");
 		}
 
@@ -1337,7 +1332,7 @@ public class QueryVisualizationService extends Service {
 					columnTypes[i-1] = resultSetMetaData.getColumnType(i);
 
 					if(columnNames[i-1] == null) {
-						logMessage("Invalid SQL Datatype for column: " + i + ". Fallback to Object...");
+						//logMessage("Invalid SQL Datatype for column: " + i + ". Fallback to Object...");
 					}
 				}
 				methodResult.setColumnDatatypes(columnTypes);
@@ -1382,7 +1377,7 @@ public class QueryVisualizationService extends Service {
 							currentRow[i-1] = resultSet.getString(i);
 							break;
 						default:
-							logMessage("Unknown SQL Datatype: " + columnTypes[i-1].toString());
+							L2pLogger.logEvent(this, Event.SERVICE_ERROR, "Unknown SQL Datatype: " + columnTypes[i-1].toString());
 							try {
 								currentRow[i-1] = resultSet.getObject(i).toString();
 							} catch (Exception e) {
@@ -1401,10 +1396,10 @@ public class QueryVisualizationService extends Service {
 				}
 			}
 			catch (SQLException e) {
-				logMessage("SQL exception when trying to handle an SQL query result: " + e.getMessage());
+				L2pLogger.logEvent(this, Event.SERVICE_ERROR, "SQL exception when trying to handle an SQL query result: " + e.getMessage());
 			}
 			catch(Exception e) {
-				logMessage("Exception when trying to handle an SQL query result: " + e.getMessage());
+				L2pLogger.logEvent(this, Event.SERVICE_ERROR, "Exception when trying to handle an SQL query result: " + e.getMessage());
 			}
 
 			// since the values are now in the method result the result set can be closed...
@@ -1418,7 +1413,7 @@ public class QueryVisualizationService extends Service {
 			return methodResult;
 		} 
 		catch (Exception e) {
-			logError(e.getMessage());
+			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.getMessage().toString());
 			throw new L2pServiceException("Exception in Transform to Method Result", e);
 		}
 	}
@@ -1438,9 +1433,9 @@ public class QueryVisualizationService extends Service {
 		try{
 			if(databaseKey == null || databaseKey.isEmpty() || databaseKey.equalsIgnoreCase("undefined") || databaseKey.equalsIgnoreCase("MonitoringDefault")) {
 				databaseKey = stDbKey;
-				logMessage("No database key has been provided. Using default DB: " + databaseKey);
+				//logMessage("No database key has been provided. Using default DB: " + databaseKey);
 			}
-			long user = getActiveAgent().getId();
+			long user = getContext().getMainAgent().getId();
 			SQLDatabaseManager databaseManager = databaseManagerMap.get(user);
 
 			if(databaseManager == null) {
@@ -1460,34 +1455,10 @@ public class QueryVisualizationService extends Service {
 			return resultSet;
 		} 
 		catch (Exception e) {
-			logError(e);
+			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
 			System.out.println(e.getMessage());
 			throw new L2pServiceException("Exception in getResultSet", e);
 		}
-	}
-
-	@GET
-	@Path("api-docs")
-	@Produces(MediaType.APPLICATION_JSON)
-	@Summary("retrieve Swagger 1.2 resource listing.")
-	@ApiResponses(value={
-			@ApiResponse(code = 200, message = "Swagger 1.2 compliant resource listing"),
-			@ApiResponse(code = 404, message = "Swagger resource listing not available due to missing annotations."),
-	})
-	public HttpResponse getSwaggerResourceListing(){
-		return RESTMapper.getSwaggerResourceListing(this.getClass());
-	}
-
-	@GET
-	@Path("api-docs/{tlr}")
-	@Produces(MediaType.APPLICATION_JSON)
-	@Summary("retrieve Swagger 1.2 API declaration for given top-level resource.")
-	@ApiResponses(value={
-			@ApiResponse(code = 200, message = "Swagger 1.2 compliant API declaration"),
-			@ApiResponse(code = 404, message = "Swagger API declaration not available due to missing annotations."),
-	})
-	public HttpResponse getSwaggerApiDeclaration(@PathParam("tlr") String tlr){
-		return RESTMapper.getSwaggerApiDeclaration(this.getClass(),tlr, "http://localhost:8080/QVS");
 	}
 
 	/**
@@ -1501,7 +1472,7 @@ public class QueryVisualizationService extends Service {
 	@Path("validate")
 	public HttpResponse validateLogin() {
 		String returnString = "";
-		returnString += "You are " + ((UserAgent) getActiveAgent()).getUserData() + " and your login is valid!";
+		returnString += "You are " + ((UserAgent) getContext().getMainAgent()).getUserData() + " and your login is valid!";
 
 		HttpResponse res = new HttpResponse(returnString);
 		res.setStatus(200);

@@ -1,9 +1,10 @@
 package i5.las2peer.services.queryVisualization.database;
 
 
+import i5.las2peer.logging.L2pLogger;
+import i5.las2peer.logging.NodeObserver.Event;
 import i5.las2peer.persistency.MalformedXMLException;
 import i5.las2peer.persistency.XmlAble;
-import i5.las2peer.security.Context;
 import i5.simpleXML.Element;
 
 import java.io.Serializable;
@@ -62,7 +63,7 @@ public class SQLFilterSettings implements XmlAble, Serializable {
 			
 		}
 		catch(Exception e) {
-			Context.logMessage(this, "SQLFilterSettings, setStateFromXML: " + e.getMessage());
+			L2pLogger.logEvent(this, Event.SERVICE_ERROR, "SQLFilterSettings, setStateFromXML: " + e.getMessage());
 		}
 	}
 
