@@ -10,6 +10,13 @@
         <dependency org="i5" name="las2peer-http-connector" rev="0.1-SNAPSHOT" />
         <dependency org="junit" name="junit" rev="4.12"/>
 		<dependency org="mysql" name="mysql-connector-java" rev="5.1.6" />
+		<dependency org="OracleJDBC" name="OracleJDBC" rev="14" />
+		<dependency org="MicrosoftSQL" name="MicrosoftSQL" rev="4" />
+		<dependency org="org.firebirdsql.jdbc" name="jaybird" rev="2.1.6">
+			<exclude module="jms"/>
+		</dependency>
+		<dependency org="org.postgresql" name="postgresql" rev="9.4.1208.jre7"/>
+		<dependency org="org.apache.derby" name="derbyclient" rev="10.12.1.1"/>
 		<dependency org="org.apache.commons" name="commons-pool2" rev="2.2"/>
 		<dependency org="org.apache.commons" name="commons-dbcp2" rev="2.0"/>
 		<dependency org="net.minidev" name="json-smart" rev="2.2"/>

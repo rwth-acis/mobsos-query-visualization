@@ -19,6 +19,11 @@
 	<classpathentry kind="lib" path="lib/mail-1.4.7.jar"/>
 	<classpathentry kind="lib" path="lib/mysql-connector-java-5.1.6.jar"/>
 	<classpathentry kind="lib" path="lib/xpp3-1.1.4c.jar"/>
+	<classpathentry kind="lib" path="lib/postgresql-9.4.1208.jre7.jar"/>
+	<classpathentry kind="lib" path="lib/MicrosoftSQL-4.jar"/>
+	<classpathentry kind="lib" path="lib/derbyclient-10.12.1.1.jar"/>
+	<classpathentry kind="lib" path="lib/jaybird-2.1.6.jar"/>
+	<classpathentry kind="lib" path="lib/OracleJDBC-14.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/commons-codec-1.10.jar"/>
 	<classpathentry kind="lib" path="lib/commons-lang3-3.3.2.jar"/>
