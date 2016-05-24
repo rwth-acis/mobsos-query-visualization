@@ -5,7 +5,7 @@ import i5.las2peer.logging.NodeObserver.Event;
 
 import java.sql.Types;
 import java.util.HashSet;
-import java.util.Iterator;
+import java.util.ListIterator;
 
 /**
  * VisualizationPieChart.java
@@ -29,7 +29,7 @@ public class VisualizationPieChart extends Visualization {
 			
 			String[] columnNames = methodResult.getColumnNames();
 			Integer[] columnTypes = methodResult.getColumnDatatypes();
-			Iterator<Object[]> iterator = methodResult.getRowIterator();
+			ListIterator<Object[]> iterator = methodResult.getRowIterator();
 			int columnCount = columnTypes.length;
 			
 			String randomNodeId = getRandomId(10,  true);

@@ -3,7 +3,7 @@ package i5.las2peer.services.queryVisualization.encoding;
 import java.math.BigDecimal;
 import java.sql.Types;
 import java.util.HashSet;
-import java.util.Iterator;
+import java.util.ListIterator;
 
 /**
  * ModificationNormalization.java
@@ -32,7 +32,7 @@ public class ModificationNormalization extends Modification {
 		
 		double[] columnMaximums = new double[numOfCols];
 		Object[] row;
-		for( Iterator<Object[]> iterator = methodResult.getRowIterator(); iterator.hasNext();){
+		for( ListIterator<Object[]> iterator = methodResult.getRowIterator(); iterator.hasNext();){
 			row = iterator.next();
 			for (int i = 0; i < numOfCols; i++) {
 				columnMaximums[i] = Math.max(getDoubleValue(oldColumnsTypes[i],row[i]), columnMaximums[i]);
@@ -41,7 +41,7 @@ public class ModificationNormalization extends Modification {
 		
 		Object[] oldRow;
 		Object[] newRow;
-		for( Iterator<Object[]> iterator = methodResult.getRowIterator(); iterator.hasNext();){
+		for( ListIterator<Object[]> iterator = methodResult.getRowIterator(); iterator.hasNext();){
 			oldRow = iterator.next();
 			newRow = new Object[numOfCols];
 			newRow[0] = oldRow[0];

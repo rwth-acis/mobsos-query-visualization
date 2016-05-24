@@ -5,7 +5,7 @@ import i5.las2peer.logging.NodeObserver.Event;
 
 import java.sql.Date;
 import java.sql.Types;
-import java.util.Iterator;
+import java.util.ListIterator;
 
 
 /**
@@ -31,7 +31,7 @@ public class VisualizationGoogleTable extends Visualization {
 			
 			String[] columnNames = methodResult.getColumnNames();
 			Integer[] columnTypes = methodResult.getColumnDatatypes();
-			Iterator<Object[]> iterator = methodResult.getRowIterator();
+			ListIterator<Object[]> iterator = methodResult.getRowIterator();
 			
 			int columnCount = columnTypes.length;
 			
@@ -123,6 +123,9 @@ public class VisualizationGoogleTable extends Visualization {
 							break;
 						default:
 							String value = (String) currentRow[i];
+							value = value.replaceAll("\\\\\"", "\"");
+							value = value.replaceAll("\"", "\\\\\"");
+							
 							resultHTML.append("\"").append(value).append("\"");
 							break;
 					};

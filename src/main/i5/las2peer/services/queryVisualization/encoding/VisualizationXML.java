@@ -4,7 +4,7 @@ import i5.las2peer.logging.L2pLogger;
 import i5.las2peer.logging.NodeObserver.Event;
 
 import java.sql.Types;
-import java.util.Iterator;
+import java.util.ListIterator;
 
 /**
  * VisualizationXML.java
@@ -33,7 +33,7 @@ public class VisualizationXML extends Visualization {
 			
 			String[] columnNames =methodResult.getColumnNames();
 			Integer[] columnTypes = methodResult.getColumnDatatypes();
-			Iterator<Object[]> iterator = methodResult.getRowIterator();
+			ListIterator<Object[]> iterator = methodResult.getRowIterator();
 			int columnCount = columnTypes.length;
 			
 			String xmlRowStart = "\t<param type=\"Array\" class=\"String\" length=\"" + columnCount + "\">\n";

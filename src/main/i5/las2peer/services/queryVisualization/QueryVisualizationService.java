@@ -290,6 +290,7 @@ public class QueryVisualizationService extends Service {
 			String database = stringfromJSON(o, "database");
 			String dbhost = stringfromJSON(o, "dbhost");
 			Integer port = intfromJSON(o, "port");
+			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_1, getContext().getMainAgent(), ""+dbcode);
 			return addDatabase(databaseKey, SQLDatabaseType.valueOf(dbcode.toUpperCase()),
 					username, password, database, dbhost, port, VisualizationType.JSON);
 		} catch (Exception e) {
@@ -352,6 +353,7 @@ public class QueryVisualizationService extends Service {
 					.getVisualization(visualizationTypeIndex)
 					.generate(result, null));
 			res.setStatus(201);
+			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_2, getContext().getMainAgent(), ""+databaseKey);
 			return res;
 		}
 		catch (Exception e) {
@@ -409,6 +411,7 @@ public class QueryVisualizationService extends Service {
 			HttpResponse res = new HttpResponse(
 					visualizationManager.getVisualization(VisualizationType.JSON).generate(result, null));
 			res.setStatus(200);
+			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_3, getContext().getMainAgent(), ""+databaseKey);
 			return res;
 		}
 		catch (Exception e) {
@@ -464,6 +467,7 @@ public class QueryVisualizationService extends Service {
 			String visString = vis.generate(result, null);
 			HttpResponse res = new HttpResponse(visString);
 			res.setStatus(200);
+			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_4, getContext().getMainAgent(), "Get Database Keys");
 			return res;
 		} catch (Exception e) {
 			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
@@ -524,6 +528,7 @@ public class QueryVisualizationService extends Service {
 			HttpResponse res = new HttpResponse(
 					visualizationManager.getVisualization(vtypei).generate(result, null));
 			res.setStatus(200);
+			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_5, getContext().getMainAgent(), "Get Filter.");
 			return res;
 		}
 		catch (Exception e) {
@@ -622,6 +627,7 @@ public class QueryVisualizationService extends Service {
 			HttpResponse res = new HttpResponse(
 					visualizationManager.getVisualization(VisualizationType.JSON).generate(result, null));
 			res.setStatus(200);
+			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_6, getContext().getMainAgent(), "Get Filter for "+queryKey);
 			return res;
 		} catch (DoesNotExistException e) {
 			HttpResponse res = new HttpResponse("Query " + queryKey + " does not exist.");
@@ -672,6 +678,7 @@ public class QueryVisualizationService extends Service {
 			HttpResponse res = new HttpResponse(
 					filterManager.getFilterValues(dbKey, filterKey, vtypei, this));
 			res.setStatus(200);
+			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_7, getContext().getMainAgent(), "Get values for Filter "+filterKey + ", user "+ user);
 			return res;
 		} catch (DoesNotExistException e) {
 			HttpResponse res = new HttpResponse("Filter " + filterKey + " does not exist.");
@@ -755,6 +762,8 @@ public class QueryVisualizationService extends Service {
 			HttpResponse res = new HttpResponse(
 					visualizationManager.getVisualization(visualizationTypeIndex).generate(result, null));
 			res.setStatus(201);
+
+			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_8, getContext().getMainAgent(), "" + user);
 			return res;
 		}
 		catch (Exception e) {
@@ -806,6 +815,8 @@ public class QueryVisualizationService extends Service {
 			HttpResponse res = new HttpResponse(
 					visualizationManager.getVisualization(VisualizationType.JSON).generate(result, null));
 			res.setStatus(200);
+
+			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_9, getContext().getMainAgent(), "" + user);
 			return res;
 		}
 		catch (Exception e) {
@@ -840,6 +851,8 @@ public class QueryVisualizationService extends Service {
 			String height = stringfromJSON(o, "height");
 			HttpResponse res = createQuery(query, queryParameters, dbKey, useCache, modificationTypeIndex, v, title, width, height, false);
 			setContentType(res, v.ordinal());
+
+			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_10, getContext().getMainAgent(), "" + vtypei);
 			return res;
 		} catch (Exception e) {
 			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
@@ -873,6 +886,8 @@ public class QueryVisualizationService extends Service {
 			String height = stringfromJSON(o, "height");
 			HttpResponse res = createQuery(query, queryParameters, dbKey, useCache, modificationTypeIndex, v, title, width, height, true);
 			setContentType(res, v.ordinal());
+
+			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_11, getContext().getMainAgent(), "" + query);
 			return res;
 		} catch (Exception e) {
 			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
@@ -996,6 +1011,8 @@ public class QueryVisualizationService extends Service {
 			HttpResponse res = new HttpResponse(
 					visualizationManager.getVisualization(VisualizationType.valueOf(visualizationTypeIndex.toUpperCase())).generate(result, null));
 			res.setStatus(200);
+
+			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_12, getContext().getMainAgent(), "" + user);
 			return res;
 		} catch (Exception e) {
 			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
@@ -1038,6 +1055,8 @@ public class QueryVisualizationService extends Service {
 			HttpResponse res = new HttpResponse(
 					visualizationManager.getVisualization(VisualizationType.JSON).generate(result, null));
 			res.setStatus(200);
+
+			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_13, getContext().getMainAgent(), "" + user);
 			return res;
 		}
 		catch (Exception e) {
@@ -1085,6 +1104,8 @@ public class QueryVisualizationService extends Service {
 			HttpResponse res = new HttpResponse(o.toJSONString());
 
 			res.setStatus(200);
+
+			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_14, getContext().getMainAgent(), "" + user);
 			return res;
 		} catch (DoesNotExistException e) {
 			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
@@ -1180,6 +1201,8 @@ public class QueryVisualizationService extends Service {
 
 		try {
 			HttpResponse res = new HttpResponse(visualizeQuery(query, queryParameters));
+
+			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_15, getContext().getMainAgent(), "" + query);
 			res.setStatus(200);
 			return res;
 		} catch(Exception e) {
@@ -1225,6 +1248,7 @@ public class QueryVisualizationService extends Service {
 			return VisualizationException.getInstance().generate(e, "An error occured while trying to save a Query!");
 		}
 
+		L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_15, getContext().getMainAgent(), "" + query.getQueryStatement());
 		return query.getKey();
 	}
 
@@ -1240,7 +1264,6 @@ public class QueryVisualizationService extends Service {
 		if(query.usesCache() && queryParameters == null){
 			methodResult = resultCache.get(query.getKey());
 		}
-
 		if(methodResult == null) { //query was not cached or no cached result desired
 			SQLDatabase sqlDatabase = new SQLDatabase(query);
 
@@ -1266,9 +1289,10 @@ public class QueryVisualizationService extends Service {
 		else
 			return visualizationException.generate(new Exception(), "Can not modify result with " + modification.getType().name() + ".");
 
-		if(visualization.check(methodResult, query.getVisualizationParameters()))
+		if(visualization.check(methodResult, query.getVisualizationParameters())){
+			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_16, getContext().getMainAgent(), "");
 			return visualization.generate(methodResult, query.getVisualizationParameters());
-		else
+		}else
 			return visualizationException.generate(new Exception(), "Can not convert result into " + visualization.getType().name() + "-format.");
 
 	}

@@ -3,8 +3,8 @@ package i5.las2peer.services.queryVisualization.encoding;
 import i5.las2peer.logging.L2pLogger;
 import i5.las2peer.logging.NodeObserver.Event;
 
-import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.ListIterator;
 
 
 /**
@@ -70,9 +70,9 @@ public class MethodResult {
 		this.rowLength = 1;
 	}
 	
-	public Iterator<Object[]> getRowIterator() {
+	public ListIterator<Object[]> getRowIterator() {
 		if(this.rowList != null) {
-			return this.rowList.iterator();
+			return this.rowList.listIterator();
 		}
 		else {
 			L2pLogger.logEvent(this, Event.SERVICE_ERROR, "MethodResult: this.rowList == null");
@@ -143,7 +143,7 @@ public class MethodResult {
 			}
 			string += "\n";
 			
-			Iterator<Object[]> rowIterator = this.getRowIterator();
+			ListIterator<Object[]> rowIterator = this.getRowIterator();
 			while(rowIterator.hasNext()) {
 				Object[] currentRow = rowIterator.next();
 				

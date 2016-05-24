@@ -3,7 +3,7 @@ package i5.las2peer.services.queryVisualization.encoding;
 import java.math.BigDecimal;
 import java.sql.Types;
 import java.util.HashSet;
-import java.util.Iterator;
+import java.util.ListIterator;
 
 /**
  * ModificationLogarithmic.java
@@ -40,7 +40,7 @@ public class ModificationLogarithmic extends Modification {
 		Object[] oldRow;
 		Object[] newRow;
 		double value;
-		for( Iterator<Object[]> iterator = methodResult.getRowIterator(); iterator.hasNext();){
+		for( ListIterator<Object[]> iterator = methodResult.getRowIterator(); iterator.hasNext();){
 			oldRow = iterator.next();
 			newRow = new Object[numOfCols];
 			newRow[0] = oldRow[0];

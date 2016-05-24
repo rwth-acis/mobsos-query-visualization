@@ -3,7 +3,7 @@ package i5.las2peer.services.queryVisualization.encoding;
 
 import java.sql.Types;
 import java.util.HashSet;
-import java.util.Iterator;
+import java.util.ListIterator;
 
 import i5.las2peer.logging.L2pLogger;
 import i5.las2peer.logging.NodeObserver.Event;
@@ -38,7 +38,7 @@ public class VisualizationBarChart extends Visualization {
 			
 			String[] columnNames = methodResult.getColumnNames();
 			Integer[] columnTypes = methodResult.getColumnDatatypes();
-			Iterator<Object[]> iterator = methodResult.getRowIterator();
+			ListIterator<Object[]> iterator = methodResult.getRowIterator();
 			
 			int columnCount = columnTypes.length;
 			

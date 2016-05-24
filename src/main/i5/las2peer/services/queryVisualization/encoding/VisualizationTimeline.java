@@ -7,7 +7,7 @@ import java.sql.Date;
 import java.sql.Time;
 import java.sql.Types;
 import java.util.HashSet;
-import java.util.Iterator;
+import java.util.ListIterator;
 
 /**
  * VisualizationTimeline.java
@@ -31,7 +31,7 @@ public class VisualizationTimeline extends Visualization {
 			
 			String[] columnNames = methodResult.getColumnNames();
 			Integer[] columnTypes = methodResult.getColumnDatatypes();
-			Iterator<Object[]> iterator = methodResult.getRowIterator();
+			ListIterator<Object[]> iterator = methodResult.getRowIterator();
 			int columnCount = columnTypes.length;
 			
 			String randomNodeId = getRandomId(10,  true);

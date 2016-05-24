@@ -6,7 +6,7 @@ import i5.las2peer.logging.NodeObserver.Event;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Types;
-import java.util.Iterator;
+import java.util.ListIterator;
 
 
 /**
@@ -30,7 +30,7 @@ public class VisualizationJSON extends Visualization {
 			
 			String[] columnNames = methodResult.getColumnNames();
 			Integer[] columnTypes = methodResult.getColumnDatatypes();
-			Iterator<Object[]> iterator = methodResult.getRowIterator();
+			ListIterator<Object[]> iterator = methodResult.getRowIterator();
 			int columnCount = columnTypes.length;
 			
 			// column names

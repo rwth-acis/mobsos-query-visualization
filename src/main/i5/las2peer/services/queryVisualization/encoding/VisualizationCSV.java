@@ -3,7 +3,7 @@ package i5.las2peer.services.queryVisualization.encoding;
 import i5.las2peer.logging.L2pLogger;
 import i5.las2peer.logging.NodeObserver.Event;
 
-import java.util.Iterator;
+import java.util.ListIterator;
 
 /**
  * VisualizationCSV.java
@@ -33,7 +33,7 @@ public class VisualizationCSV extends Visualization {
 		
 			String[] columnNames =methodResult.getColumnNames();
 			Integer[] columnTypes = methodResult.getColumnDatatypes();
-			Iterator<Object[]> iterator = methodResult.getRowIterator();
+			ListIterator<Object[]> iterator = methodResult.getRowIterator();
 			int columnCount = columnTypes.length;
 			
 			StringBuilder result = new StringBuilder();
