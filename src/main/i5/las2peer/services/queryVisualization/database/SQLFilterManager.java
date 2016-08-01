@@ -105,7 +105,7 @@ public class SQLFilterManager {
 		try {
 			connect();
 			PreparedStatement p = storageDatabase.prepareStatement(
-					"SELECT * FROM QVS.FILTERS WHERE USER = ?;");
+					"SELECT * FROM FILTERS WHERE USER = ?;");
 			p.setLong(1, user);
 			ResultSet set = p.executeQuery();
 			settings = SQLFilterSettings.fromResultSet(set);

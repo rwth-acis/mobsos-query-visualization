@@ -56,7 +56,7 @@ public class SQLDatabaseManager {
 	private boolean initializeUser() {
 		if (connected || connect()) {
 			try {
-				PreparedStatement p = storageDatabase.prepareStatement("SELECT DISTINCT ID FROM QVS.USERS WHERE ID = ?");
+				PreparedStatement p = storageDatabase.prepareStatement("SELECT DISTINCT ID FROM USERS WHERE ID = ?");
 				p.setLong(1, getActiveAgent().getId());
 				ResultSet s = p.executeQuery();
 				if (!s.next()) {
@@ -132,7 +132,7 @@ public class SQLDatabaseManager {
 		try {
 			connect();
 			PreparedStatement p = storageDatabase.prepareStatement(
-					"SELECT * FROM QVS.DATABASE_CONNECTIONS WHERE USER = ?;");
+					"SELECT * FROM DATABASE_CONNECTIONS WHERE USER = ?;");
 			p.setLong(1, getActiveAgent().getId());
 			ResultSet databases = p.executeQuery();
 			settings = SQLDatabaseSettings.fromResultSet(databases);

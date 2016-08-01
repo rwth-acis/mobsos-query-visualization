@@ -85,11 +85,11 @@ import net.minidev.json.JSONValue;
  * 
  */
 @Path("QVS")
-@Version("0.1")
+@Version("1.0")
 @SwaggerDefinition(
 		info = @Info(
 				title = "Query Visualization Service",
-				version = "0.1",
+				version = "1.0",
 				description = "This service can be used to visualize queries on RDB's",
 				termsOfService = "https://github.com/rwth-acis/LAS2peer-Query-Visualization-Service",
 				contact = @Contact(
@@ -1248,7 +1248,7 @@ public class QueryVisualizationService extends Service {
 			return VisualizationException.getInstance().generate(e, "An error occured while trying to save a Query!");
 		}
 
-		L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_15, getContext().getMainAgent(), "" + query.getQueryStatement());
+		L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_17, getContext().getMainAgent(), "" + query.getQueryStatement());
 		return query.getKey();
 	}
 
@@ -1290,7 +1290,7 @@ public class QueryVisualizationService extends Service {
 			return visualizationException.generate(new Exception(), "Can not modify result with " + modification.getType().name() + ".");
 
 		if(visualization.check(methodResult, query.getVisualizationParameters())){
-			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_16, getContext().getMainAgent(), "");
+			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_16, getContext().getMainAgent(), "" + query);
 			return visualization.generate(methodResult, query.getVisualizationParameters());
 		}else
 			return visualizationException.generate(new Exception(), "Can not convert result into " + visualization.getType().name() + "-format.");
@@ -1313,6 +1313,7 @@ public class QueryVisualizationService extends Service {
 			sqlQuery = Query.insertParameters(sqlQuery, queryParameters);
 		}
 		ResultSet resultSet = getResultSet(sqlQuery, databaseKey);
+		L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_18, getContext().getMainAgent(), "" + sqlQuery);
 		return transformToMethodResult(resultSet, cacheKey);
 	}
 

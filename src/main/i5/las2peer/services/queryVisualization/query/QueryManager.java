@@ -111,7 +111,7 @@ public class QueryManager {
 		try {
 			connect();
 			PreparedStatement p = storageDatabase.prepareStatement(
-					"SELECT * FROM QVS.QUERIES WHERE USER = ?;");
+					"SELECT * FROM QUERIES WHERE USER = ?;");
 			p.setLong(1, getL2pThread().getContext().getMainAgent().getId());
 			ResultSet databases = p.executeQuery();
 			settings = Query.fromResultSet(databases);
@@ -162,7 +162,7 @@ public class QueryManager {
 			if (u.getLoginName().equals("anonymous") && u.getUserData() == null) {
                 storageDatabase.connect();
                 PreparedStatement p = storageDatabase.prepareStatement(
-                                "SELECT * FROM QVS.QUERIES WHERE `KEY` = ?;");
+                                "SELECT * FROM QUERIES WHERE `KEY` = ?;");
                 p.setString(1, queryKey);
                 ResultSet databases = p.executeQuery();
                 Query[] settings = Query.fromResultSet(databases);

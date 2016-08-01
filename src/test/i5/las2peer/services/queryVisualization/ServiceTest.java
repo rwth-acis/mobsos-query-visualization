@@ -74,7 +74,9 @@ public class ServiceTest {
 		
 		//start node
 		node = LocalNode.newNode();
-		node.storeAgent(MockAgentFactory.getAdam());
+		testAgent = MockAgentFactory.getAdam();
+		testAgent.unlockPrivateKey(testPass);
+		node.storeAgent(testAgent);
 		node.launch();
 		
 		ServiceAgent testService = ServiceAgent.createServiceAgent(testServiceClass, "a pass");
