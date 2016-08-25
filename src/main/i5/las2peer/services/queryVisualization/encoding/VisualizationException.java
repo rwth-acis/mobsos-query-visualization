@@ -27,6 +27,23 @@ public class VisualizationException {
 		}
 		return _instance;
 	}
+	private static boolean ignoreSQLException(String sqlState) {
+
+	    if (sqlState == null) {
+	        System.out.println("The SQL state is not defined!");
+	        return false;
+	    }
+
+	    // X0Y32: Jar file already exists in schema
+	    if (sqlState.equalsIgnoreCase("X0Y32"))
+	        return true;
+
+	    // 42Y55: Table already exists in schema
+	    if (sqlState.equalsIgnoreCase("42Y55"))
+	        return true;
+
+	    return false;
+	}
 	
 	public String generate(Exception e, String message){
 		try {
@@ -85,6 +102,16 @@ public class VisualizationException {
 			if(e instanceof SQLException){
 				returnResult += "SQL-ErrorCode: " + infoRow[2] +"\n" ;
 			}
+			if (e instanceof SQLException) {
+	            if (ignoreSQLException(((SQLException)e).getSQLState()) == false) {
+	                e.printStackTrace(System.err);
+	                returnResult = "The Query has lead to an error.\nSQLState: " +
+	                    ((SQLException)e).getSQLState();
+	                returnResult +="\nError Code: " +
+	                    ((SQLException)e).getErrorCode();
+	                returnResult += "Message: " + ((SQLException)e).getMessage();
+	            }
+	        }
 			return returnResult;
 		}
 		catch(Exception exception) {

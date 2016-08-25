@@ -1308,7 +1308,7 @@ public class QueryVisualizationService extends Service {
 	 * 
 	 * @return a Method Result
 	 */
-	private MethodResult executeSQLQuery(String sqlQuery, String[] queryParameters, String databaseKey, String cacheKey) throws L2pServiceException {	
+	private MethodResult executeSQLQuery(String sqlQuery, String[] queryParameters, String databaseKey, String cacheKey) throws L2pServiceException,SQLException {	
 		if (queryParameters != null && queryParameters.length > 0) {
 			sqlQuery = Query.insertParameters(sqlQuery, queryParameters);
 		}
@@ -1454,7 +1454,7 @@ public class QueryVisualizationService extends Service {
 	 * @return ResultSet of the database query
 	 * @throws LASException
 	 */
-	private ResultSet getResultSet(String sqlQuery, String databaseKey) throws L2pServiceException {
+	private ResultSet getResultSet(String sqlQuery, String databaseKey) throws L2pServiceException, SQLException {
 		try{
 			if(databaseKey == null || databaseKey.isEmpty() || databaseKey.equalsIgnoreCase("undefined") || databaseKey.equalsIgnoreCase("MonitoringDefault")) {
 				databaseKey = stDbKey;
@@ -1479,6 +1479,9 @@ public class QueryVisualizationService extends Service {
 
 			return resultSet;
 		} 
+		catch (SQLException ex) {
+			throw ex;
+		}
 		catch (Exception e) {
 			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
 			System.out.println(e.getMessage());

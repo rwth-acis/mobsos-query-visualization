@@ -134,7 +134,12 @@ public class SQLDatabase {
 			
 			return resultSet;
 		}
+		catch(SQLException ex){
+			System.out.println(ex.getMessage());
+			throw ex;
+		}
 		catch(Exception e) {
+			System.out.println(e.getMessage());
 			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
 			throw e;
 		}

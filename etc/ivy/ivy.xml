@@ -7,7 +7,6 @@
     <dependencies>
         <dependency org="i5" name="las2peer" rev="0.5-SNAPSHOT" changing="true" />
         <dependency org="i5" name="las2peer-web-connector" rev="0.5-SNAPSHOT" changing="true" />
-        <dependency org="i5" name="las2peer-http-connector" rev="0.1-SNAPSHOT" />
         <dependency org="junit" name="junit" rev="4.12"/>
 		<dependency org="mysql" name="mysql-connector-java" rev="5.1.6" />
 		<dependency org="OracleJDBC" name="OracleJDBC" rev="14" />
