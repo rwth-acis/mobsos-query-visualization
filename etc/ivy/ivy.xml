@@ -1,26 +1,30 @@
 <ivy-module version="2.0">
     <info organisation="i5" module="las2peer-service"/>
+    <configurations defaultconf="bundle">
+        <conf name="bundle" description="Additional dependencies loaded dynamically"/>
+        <conf name="platform" description="Jars needded for the las2peer platform" visibility="private"/>
+    </configurations>
     <publications>
-		<artifact type="pom" ext="pom" conf="default"/>
-		<artifact type="jar" ext="jar" conf="default"/>
+		<artifact type="pom" ext="pom" conf="*"/>
+		<artifact type="jar" ext="jar" conf="*"/>
 	</publications>
     <dependencies>
-        <dependency org="i5" name="las2peer" rev="0.5-SNAPSHOT" changing="true" />
-        <dependency org="i5" name="las2peer-web-connector" rev="0.5-SNAPSHOT" changing="true" />
-        <dependency org="junit" name="junit" rev="4.12"/>
-		<dependency org="mysql" name="mysql-connector-java" rev="5.1.6" />
-		<dependency org="OracleJDBC" name="OracleJDBC" rev="14" />
-		<dependency org="MicrosoftSQL" name="MicrosoftSQL" rev="4" />
-		<dependency org="org.firebirdsql.jdbc" name="jaybird" rev="2.1.6">
+        <dependency org="i5" name="las2peer" rev="0.6-SNAPSHOT" changing="true" conf="platform->*" />
+        <dependency org="i5" name="las2peer-web-connector" rev="0.6-SNAPSHOT" changing="true" conf="platform->*" />
+        <dependency org="junit" name="junit" rev="4.12" conf="platform->*" />
+		<dependency org="mysql" name="mysql-connector-java" rev="5.1.6" conf="platform->*" />
+		<dependency org="OracleJDBC" name="OracleJDBC" rev="14" conf="platform->*" />
+		<dependency org="MicrosoftSQL" name="MicrosoftSQL" rev="4" conf="platform->*" />
+		<dependency org="org.firebirdsql.jdbc" name="jaybird" rev="2.1.6" conf="platform->*" >
 			<exclude module="jms"/>
 		</dependency>
-		<dependency org="org.postgresql" name="postgresql" rev="9.4.1208.jre7"/>
-		<dependency org="org.apache.derby" name="derbyclient" rev="10.12.1.1"/>
-		<dependency org="org.apache.commons" name="commons-pool2" rev="2.2"/>
-		<dependency org="org.apache.commons" name="commons-dbcp2" rev="2.0"/>
-		<dependency org="net.minidev" name="json-smart" rev="2.2"/>
-		<dependency org="com.googlecode.json-simple" name="json-simple" rev="1.1.1"/>
-		<dependency org="com.google.guava" name="guava" rev="19.0"/>
-		<dependency org="org.bouncycastle" name="bcprov-jdk15on" rev="1.54"/>
+		<dependency org="org.postgresql" name="postgresql" rev="9.4.1208.jre7" conf="platform->*" />
+		<dependency org="org.apache.derby" name="derbyclient" rev="10.12.1.1" conf="platform->*" />
+		<dependency org="org.apache.commons" name="commons-pool2" rev="2.2" conf="platform->*" />
+		<dependency org="org.apache.commons" name="commons-dbcp2" rev="2.0" conf="platform->*" />
+		<dependency org="net.minidev" name="json-smart" rev="2.2" conf="platform->*" />
+		<dependency org="com.googlecode.json-simple" name="json-simple" rev="1.1.1" conf="platform->*" />
+		<dependency org="com.google.guava" name="guava" rev="19.0" conf="platform->*" />
+		<dependency org="org.bouncycastle" name="bcprov-jdk15on" rev="1.54" conf="platform->*" />
     </dependencies>
 </ivy-module>
