@@ -22,9 +22,6 @@
 	<classpathentry kind="lib" path="lib/derbyclient-10.12.1.1.jar"/>
 	<classpathentry kind="lib" path="lib/jaybird-2.1.6.jar"/>
 	<classpathentry kind="lib" path="lib/OracleJDBC-14.jar"/>
-	<classpathentry kind="lib" path="lib/las2peer-0.6-SNAPSHOT.jar"/>
-	<classpathentry kind="lib" path="lib/las2peer-rest-mapper-0.6-SNAPSHOT.jar"/>
-	<classpathentry kind="lib" path="lib/las2peer-web-connector-0.6-SNAPSHOT.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/commons-codec-1.10.jar"/>
 	<classpathentry kind="lib" path="lib/commons-lang3-3.3.2.jar"/>
@@ -38,5 +35,8 @@
 	<classpathentry kind="lib" path="lib/json-smart-2.2.jar"/>
 	<classpathentry kind="lib" path="lib/swagger-annotations-1.5.4.jar"/>
 	<classpathentry kind="lib" path="lib/bcprov-jdk15on-1.54.jar"/>
+	<classpathentry kind="lib" path="lib/las2peer-0.6.0.jar"/>
+	<classpathentry kind="lib" path="lib/las2peer-rest-mapper-0.6.0.jar"/>
+	<classpathentry kind="lib" path="lib/las2peer-web-connector-0.6.0.jar"/>
 	<classpathentry kind="output" path="tmp"/>
 </classpath>
