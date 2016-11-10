@@ -7,7 +7,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-import i5.las2peer.execution.L2pThread;
+import i5.las2peer.api.Context;
 import i5.las2peer.logging.NodeObserver.Event;
 import i5.las2peer.p2p.Node;
 import i5.las2peer.security.Agent;
@@ -58,26 +58,12 @@ public class QueryManager {
 	}
 
 	/**
-	 * get the current l2p thread
-	 * 
-	 * @return the L2pThread we're currently running in
-	 */
-	public final L2pThread getL2pThread() {
-		Thread t = Thread.currentThread();
-
-		if (!(t instanceof L2pThread))
-			throw new IllegalStateException("Not executed in a L2pThread environment!");
-
-		return (L2pThread) t;
-	}
-
-	/**
 	 * get the anonymous agent
 	 * 
 	 * @return anonymous agent
 	 */
 	protected Agent getAnonymousAgent() {
-		return getL2pThread().getContext().getLocalNode().getAnonymous();
+		return Context.getCurrent().getLocalNode().getAnonymous();
 	}
 
 	/**
@@ -96,7 +82,7 @@ public class QueryManager {
 	 * @return the currently active las2peer node
 	 */
 	protected Node getActiveNode() {
-		return getL2pThread().getContext().getLocalNode();
+		return Context.getCurrent().getLocalNode();
 	}
 
 	/**************************
@@ -122,7 +108,7 @@ public class QueryManager {
 		try {
 			connect();
 			PreparedStatement p = storageDatabase.prepareStatement("SELECT * FROM QUERIES WHERE USER = ?;");
-			p.setLong(1, getL2pThread().getContext().getMainAgent().getId());
+			p.setLong(1, Context.getCurrent().getMainAgent().getId());
 			ResultSet databases = p.executeQuery();
 			settings = Query.fromResultSet(databases);
 		} catch (Exception e) {
@@ -166,8 +152,7 @@ public class QueryManager {
 	// get a query from the p2p storage
 	public Query getQuery(String queryKey) throws Exception {
 		try {
-
-			UserAgent u = (UserAgent) getL2pThread().getContext().getMainAgent();
+			UserAgent u = (UserAgent) Context.getCurrent().getMainAgent();
 			if (u.getLoginName().equals("anonymous") && u.getUserData() == null) {
 				storageDatabase.connect();
 				PreparedStatement p = storageDatabase.prepareStatement("SELECT * FROM QUERIES WHERE `KEY` = ?;");
@@ -210,7 +195,7 @@ public class QueryManager {
 	public void databaseDeleted(String dbKey) {
 		String db;
 		try {
-			db = service.databaseManagerMap.get(getL2pThread().getContext().getMainAgent().getId()).getDatabaseInstance(dbKey).getDatabase();
+			db = service.databaseManagerMap.get(Context.getCurrent().getMainAgent().getId()).getDatabaseInstance(dbKey).getDatabase();
 		} catch (Exception e1) {
 			return;
 		}
@@ -235,7 +220,7 @@ public class QueryManager {
 			storageDatabase.connect();
 			PreparedStatement s = storageDatabase.prepareStatement("DELETE FROM `QUERIES` WHERE ((`KEY` = ? AND `USER` = ?))");
 			s.setString(1, queryKey);
-			s.setLong(2, getL2pThread().getContext().getMainAgent().getId());
+			s.setLong(2, Context.getCurrent().getMainAgent().getId());
 			s.executeUpdate();
 			storageDatabase.disconnect();
 		} catch (Exception e) {
@@ -283,7 +268,7 @@ public class QueryManager {
 
 	public SQLDatabaseSettings getDBSettings(Query q) {
 		String databaseName = q.getDatabaseName();
-		SQLDatabaseManager dbm = service.databaseManagerMap.get(getL2pThread().getContext().getMainAgent().getId());
+		SQLDatabaseManager dbm = service.databaseManagerMap.get(Context.getCurrent().getMainAgent().getId());
 		for (SQLDatabaseSettings db : dbm.getDatabaseSettingsList()) {
 			if (databaseName.equals(db.getDatabase())) {
 				return db;

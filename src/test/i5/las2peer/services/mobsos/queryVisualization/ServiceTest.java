@@ -6,6 +6,7 @@ import static org.junit.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.util.HashMap;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -13,7 +14,6 @@ import org.junit.Test;
 
 import i5.las2peer.p2p.LocalNode;
 import i5.las2peer.p2p.ServiceNameVersion;
-import i5.las2peer.restMapper.data.Pair;
 import i5.las2peer.security.ServiceAgent;
 import i5.las2peer.security.UserAgent;
 import i5.las2peer.services.mobsos.queryVisualization.database.SQLDatabaseType;
@@ -58,8 +58,7 @@ public class ServiceTest {
 	private static final String testFilterName = "newTestFilter";
 	private static final String filterPath = "filter/";
 
-	@SuppressWarnings("unchecked")
-	Pair<String>[] emptyPairs = (Pair<String>[]) new Pair[0];
+	HashMap<String, String> emptyPairs = new HashMap<String, String>();
 
 	/**
 	 * Called before the tests start.
@@ -91,7 +90,7 @@ public class ServiceTest {
 		// connector.setSocketTimeout(10000);
 		connector.setLogStream(new PrintStream(logStream));
 		connector.start(node);
-		Thread.sleep(1000); // wait a second for the connector to become ready
+		Thread.sleep(2000); // wait a second for the connector to become ready
 		testAgent = MockAgentFactory.getAdam();
 
 		// avoid timing errors: wait for the repository manager to get all

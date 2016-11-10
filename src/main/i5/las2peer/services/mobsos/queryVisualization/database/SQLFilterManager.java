@@ -67,7 +67,8 @@ public class SQLFilterManager {
 	 * @return active agent
 	 */
 	protected Agent getActiveAgent() {
-		return getL2pThread().getContext().getMainAgent();
+		getL2pThread();
+		return L2pThread.getCurrent().getMainAgent();
 	}
 
 	/**
@@ -86,7 +87,8 @@ public class SQLFilterManager {
 	 * @return the currently active las2peer node
 	 */
 	protected Node getActiveNode() {
-		return getL2pThread().getContext().getLocalNode();
+		getL2pThread();
+		return L2pThread.getCurrent().getLocalNode();
 	}
 
 	/**************************

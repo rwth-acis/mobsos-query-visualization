@@ -9,8 +9,8 @@
 		<artifact type="jar" ext="jar" conf="*"/>
 	</publications>
     <dependencies>
-        <dependency org="i5" name="las2peer" rev="0.6.0" changing="true" conf="platform->*" />
-        <dependency org="i5" name="las2peer-web-connector" rev="0.6.0" changing="true" conf="platform->*" />
+        <dependency org="i5" name="las2peer" rev="0.6.2" changing="true" conf="platform->*" />
+        <dependency org="i5" name="las2peer-web-connector" rev="0.6.2" changing="true" conf="platform->*" />
         <dependency org="junit" name="junit" rev="4.12" conf="platform->*" />
 		<dependency org="mysql" name="mysql-connector-java" rev="5.1.6" conf="platform->*" />
 		<dependency org="OracleJDBC" name="OracleJDBC" rev="14" conf="platform->*" />
