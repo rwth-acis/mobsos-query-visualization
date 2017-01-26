@@ -1,4 +1,5 @@
 # MobSOS Query Visualization
+[![Build Status](https://travis-ci.org/rwth-acis/mobsos-query-visualization.svg?branch=master)](https://travis-ci.org/rwth-acis/mobsos-query-visualization) [![codecov](https://codecov.io/gh/rwth-acis/mobsos-query-visualization/branch/master/graph/badge.svg)](https://codecov.io/gh/rwth-acis/mobsos-query-visualization)
 
 MobSOS Query Visualization is a Web service for the interactive exploration and 
 visualization of relational data sets. The exploration basically consists 
