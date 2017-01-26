@@ -7,6 +7,11 @@ import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.regex.Pattern;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.w3c.dom.Document;
+
 import i5.las2peer.execution.L2pServiceException;
 import i5.las2peer.logging.L2pLogger;
 import i5.las2peer.logging.NodeObserver.Event;
@@ -14,7 +19,8 @@ import i5.las2peer.persistency.MalformedXMLException;
 import i5.las2peer.persistency.XmlAble;
 import i5.las2peer.services.mobsos.queryVisualization.database.SQLDatabaseType;
 import i5.las2peer.services.mobsos.queryVisualization.encoding.VisualizationType;
-import i5.simpleXML.Element;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 /**
  * Query.java <br>
@@ -171,34 +177,39 @@ public class Query implements XmlAble, Serializable {
 
 	public void setStateFromXml(String arg0) throws MalformedXMLException {
 		try {
-			Element elm = new Element(arg0);
+			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			Document doc = dBuilder.parse(arg0);
+			int childrenCount = doc.getChildNodes().item(0).getChildNodes().getLength();
+			doc.getDocumentElement().normalize();
+			Element elm = doc.getDocumentElement();
 
-			if (elm.getChildNodeCount() != 5) {
-				throw new Exception("Wrong number of childs! " + elm.getChildNodeCount() + " instead of 5!");
+			if (childrenCount != 5) {
+				throw new Exception("Wrong number of childs! " + childrenCount + " instead of 5!");
 			}
 
 			this.key = elm.getAttribute("key");
 
-			this.username = elm.getChild(0).getAttribute("username");
-			this.password = elm.getChild(0).getAttribute("password");
+			this.username = elm.getAttribute("username");
+			this.password = elm.getAttribute("password");
 
-			this.databaseKey = elm.getChild(1).getAttribute("key");
-			this.databaseName = elm.getChild(1).getAttribute("name");
-			this.jdbcInfo = SQLDatabaseType.getSQLDatabaseType(Integer.parseInt(elm.getChild(1).getAttribute("type")));
-			this.host = elm.getChild(1).getAttribute("host");
-			this.port = Integer.parseInt(elm.getChild(1).getAttribute("port"));
+			this.databaseKey = elm.getAttribute("key");
+			this.databaseName = elm.getAttribute("name");
+			this.jdbcInfo = SQLDatabaseType.getSQLDatabaseType(Integer.parseInt(elm.getAttribute("type")));
+			this.host = elm.getAttribute("host");
+			this.port = Integer.parseInt(elm.getAttribute("port"));
 
-			this.visualizationTypeIndex = VisualizationType.valueOf(elm.getChild(2).getAttribute("visualizationTypeIndex"));
-			this.modificationTypeIndex = Integer.parseInt(elm.getChild(2).getAttribute("modificationTypeIndex"));
-			this.useCache = Boolean.parseBoolean(elm.getChild(2).getAttribute("useCache"));
+			this.visualizationTypeIndex = VisualizationType.valueOf(elm.getAttribute("visualizationTypeIndex"));
+			this.modificationTypeIndex = Integer.parseInt(elm.getAttribute("modificationTypeIndex"));
+			this.useCache = Boolean.parseBoolean(elm.getAttribute("useCache"));
 
-			this.queryStatement = elm.getChild(3).getAttribute("statement");
+			this.queryStatement = elm.getAttribute("statement");
 
 			// Google Visualizations -> Hardcoded TODO
 			if (this.visualizationTypeIndex.ordinal() > 3) {
-				this.title = elm.getChild(4).getAttribute("title");
-				this.height = Integer.parseInt(elm.getChild(4).getAttribute("height"));
-				this.width = Integer.parseInt(elm.getChild(4).getAttribute("width"));
+				this.title = elm.getAttribute("title");
+				this.height = Integer.parseInt(elm.getAttribute("height"));
+				this.width = Integer.parseInt(elm.getAttribute("width"));
 			}
 
 		} catch (Exception e) {
