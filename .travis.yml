@@ -6,6 +6,7 @@ services:
 script: "ant all"
 sudo: false
 before_script:
+  - mysql -u root -e 'CREATE DATABASE QVS;'
   - mysql -u root QVS < db.sql
 after_success:
   - bash <(curl -s https://codecov.io/bash)
