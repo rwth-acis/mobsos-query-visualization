@@ -83,9 +83,6 @@ import net.minidev.json.JSONValue;
  * 
  */
 @ServicePath("QVS")
-@Api
-@SwaggerDefinition(info = @Info(title = "Query Visualization Service", version = "1.0", description = "This service can be used to visualize queries on RDB's", termsOfService = "https://github.com/rwth-acis/LAS2peer-Query-Visualization-Service", contact = @Contact(name = "Dominik Renzel", url = "", email = "renzel@dbis.rwth-aachen.de"), license = @License(name = "MIT", url = "https://raw.githubusercontent.com/rwth-acis/LAS2peer-Query-Visualization-Service/master/LICENSE")))
-
 public class QueryVisualizationService extends RESTService {
 
 	/*** configuration ***/
@@ -602,6 +599,8 @@ public class QueryVisualizationService extends RESTService {
 	// Service methods.
 	// //////////////////////////////////////////////////////////////////////////////////////
 	@Path("/") // this is the root resource
+	@Api
+	@SwaggerDefinition(info = @Info(title = "Query Visualization Service", version = "1.0", description = "This service can be used to visualize queries on RDB's", termsOfService = "https://github.com/rwth-acis/LAS2peer-Query-Visualization-Service", contact = @Contact(name = "Dominik Renzel", url = "", email = "renzel@dbis.rwth-aachen.de"), license = @License(name = "MIT", url = "https://raw.githubusercontent.com/rwth-acis/LAS2peer-Query-Visualization-Service/master/LICENSE")))
 	public static class Resource {
 		private QueryVisualizationService service = (QueryVisualizationService) Context.getCurrent().getService();
 
