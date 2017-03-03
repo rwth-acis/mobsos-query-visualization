@@ -1,4 +1,4 @@
-<project name="LAS2peer-Query-Visualization-Service" default="all" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant">
+<project name="mobsos-query-visualization" default="all" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant">
 
     <property file="etc/ant_configuration/user.properties"/>
     <property file="etc/ant_configuration/service.properties"/>
@@ -97,60 +97,60 @@
 
 
     <!-- Compilation -->
-    <target name="compile_main" depends="init_compile">
-        <javac srcdir="${src.main}"
-            destdir="${tmp.classes}"
-            classpathref="libraries"
-            source="1.8"
-            target="1.8"
-            debug="on"
-            encoding="UTF-8"
-            />
-        <copy todir="${tmp.classes}">
-            <fileset dir="${src.main}">
-                <include name="**/*.xml" />
-            </fileset>
-        </copy>
-    </target>
-
-    <target name="compile_junit" depends="init_compile">
-        <javac srcdir="${src.junit}"
-            destdir="${tmp.junit}"
-            classpath="${tmp.classes}:${lib.junit}"
-            classpathref="libraries"
-            source="1.8"
-            target="1.8"
-            debug="on"
-            encoding="UTF-8"
-            />
-        <copy todir="${tmp.junit}">
-            <fileset dir="${src.junit}">
-                <include name="**/*.xml" />
-            </fileset>
-        </copy>
-    </target>
+	<target name="compile_main" depends="init_compile">
+	        <javac srcdir="${src.main}"
+	            destdir="${tmp.classes}"
+	            classpathref="libraries"
+	            debug="on"
+	            encoding="UTF-8"
+	        	includeantruntime="false"
+	            />
+	        <copy todir="${tmp.classes}">
+	            <fileset dir="${src.main}">
+	                <include name="**/*.xml" />
+	            </fileset>
+	        </copy>
+	    </target>
+	    
+	    <target name="compile_junit" depends="init_compile">
+	        <javac srcdir="${src.junit}"
+	            destdir="${tmp.junit}"
+	            classpath="${tmp.classes}:${lib.junit}"
+	            classpathref="libraries"
+	            debug="on"
+	            encoding="UTF-8"
+	        	includeantruntime="false"
+	            />
+	        <copy todir="${tmp.junit}">
+	            <fileset dir="${src.junit}">
+	                <include name="**/*.xml" />
+	            </fileset>
+	        </copy>
+	    </target>
 
     <target name="compile_all" depends="compile_main, compile_junit" />
 
 
 	<!-- Generate Jars -->
-    <target name="jar" depends="compile_main">
-        <jar jarfile="${export.jars}/${service.name}-${service.version}.jar">
-            <fileset dir="${tmp.classes}" includes="${service.path}/**" />
-            <manifest>
-                <attribute name="Library-Version" value="${service.version}" />
-                <attribute name="Library-SymbolicName" value="${service.name}" />
-            </manifest>
-        </jar>
-        <!-- Add the same Jar to the Service Directory !-->
-        <jar jarfile="${service}/${service.name}-${service.version}.jar">
-            <fileset dir="${tmp.classes}" includes="${service.path}/**" />
-            <manifest>
-                <attribute name="Library-Version" value="${service.version}" />
-                <attribute name="Library-SymbolicName" value="${service.name}" />
-            </manifest>
-        </jar>
-    </target>
+	<target name="jar" depends="compile_main" description="--> jar">
+	        <jar jarfile="${export.jars}/${service.name}-${service.version}.jar">
+	            <fileset dir="${tmp.classes}" includes="${service.path}/**" />
+	            <manifest>
+	                <attribute name="Library-Version" value="${service.version}" />
+	                <attribute name="Library-SymbolicName" value="${service.name}" />
+	            	<attribute name="Import-Library" value="${service.dependencies}" />
+	            </manifest>
+	        </jar>
+	        <!-- Add the same Jar to the Service Directory !-->
+	        <jar jarfile="${service}/${service.name}-${service.version}.jar">
+	            <fileset dir="${tmp.classes}" includes="${service.path}/**" />
+	            <manifest>
+	                <attribute name="Library-Version" value="${service.version}" />
+	                <attribute name="Library-SymbolicName" value="${service.name}" />
+	            	<attribute name="Import-Library" value="${service.dependencies}" />
+	            </manifest>
+	        </jar>
+	    </target>
 
 
 	<!-- Generate Documentation -->
