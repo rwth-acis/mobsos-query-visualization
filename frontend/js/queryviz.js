@@ -246,7 +246,7 @@ var QV = (function(QV){
                 }
                 if(typeof callback == 'function'){
                     if (result === null) {
-                        restClient.post("query", content, qParams, success, error);
+                        restClient.post("query", content, "application/json", "application/json", qParams, success, error);
                     } else {
                         callback(result);
                     }
@@ -268,7 +268,7 @@ var QV = (function(QV){
                 format: visualizationTypeIndex
             };
 
-            restClient.post("query", content, qParams, success, error);
+            restClient.post("query", content, "application/json", "application/json", qParams, success, error);
         };
 
         /**
@@ -298,7 +298,7 @@ var QV = (function(QV){
                 }
                 if(typeof callback == 'function'){
                     if (result === null) {
-                        restClient.post("query", content, qParams, success, error);
+                        restClient.post("query", content, "application/json", "text/html", qParams, success, error);
                     } else {
                         callback(result);
                     }
@@ -320,7 +320,7 @@ var QV = (function(QV){
                 format: visualizationTypeIndex
             };
 
-            restClient.post("query/visualize", content, qParams, success, error);
+            restClient.post("query/visualize", content, "application/json", "text/html", qParams, success, error);
         };
 
         /**
@@ -343,9 +343,9 @@ var QV = (function(QV){
                 if(typeof callback == 'function'){
                     if (result === null) {
                         if(filterValues) {
-                            restClient.post(queryURL, content, null, success, error);
+                            restClient.post(queryURL, content, "application/json", "text/html", null, success, error);
                         } else {
-                            restClient.get(queryURL, content, null, success, error);
+                            restClient.get(queryURL, content, "application/json", "text/html", null, success, error);
                         }
                     } else {
                         callback(result);
@@ -354,9 +354,9 @@ var QV = (function(QV){
             };
 
             if(filterValues) {
-                restClient.post(queryURL, content, null, success, error);
+                restClient.post(queryURL, content, "application/json", "text/html", null, success, error);
             } else {
-                restClient.get(queryURL, content, null, success, error);
+                restClient.get(queryURL, content, "application/json", "text/html", null, success, error);
             }
         };
 
@@ -615,14 +615,14 @@ var QV = (function(QV){
                     }
                     if(typeof callback == 'function'){
                         if (result === null) {
-                            restClient.get("database", null, queryParams, success, error);
+                            restClient.get("database", null,"text/html","application/json", queryParams, success, error);
                         } else {
                             callback(result.slice(2));
                         }
                     }
                 };
 
-                restClient.get("database", null, queryParams, success, error);
+                restClient.get("database", null,"text/html","application/json", queryParams, success, error);
             },
             /**
              * Retrieves the keys of the filters used in a specified query.
@@ -645,14 +645,14 @@ var QV = (function(QV){
                     }
                     if(typeof callback == 'function'){
                         if (result === null) {
-                            restClient.get("query/" + query + "/filter", null, queryParams, success, error);
+                            restClient.get("query/" + query + "/filter", null, "text/html", "application/json", queryParams, success, error);
                         } else {
                             callback(result.slice(2));
                         }
                     }
                 };
 
-                restClient.get("query/" + query + "/filter", null, queryParams, success, error);
+                restClient.get("query/" + query + "/filter", null, "text/html", "application/json", queryParams, success, error);
             },
             /**
              * Retrieves the keys of the filters configured for the user currently logged in
@@ -676,14 +676,14 @@ var QV = (function(QV){
                     }
                     if(typeof callback == 'function'){
                         if (result === null) {
-                            restClient.get("filter", null, queryParams, success, error);
+                            restClient.get("filter", null, "text/html", "application/json", queryParams, success, error);
                         } else {
                             callback(result.slice(2));
                         }
                     }
                 };
 
-                restClient.get("filter", null, queryParams, success, error);
+                restClient.get("filter", null, "text/html", "application/json",queryParams, success, error);
             },
             /**
              * Retrieves the values for a specific filter specified by its key
@@ -761,14 +761,14 @@ var QV = (function(QV){
                     }
                     if(typeof callback == 'function'){
                         if (result === null) {
-                            restClient.get("query", null, queryParams, success, error);
+                            restClient.get("query", null, "text/html","application/json",queryParams, success, error);
                         } else {
                             callback(result.slice(2));
                         }
                     }
                 };
 
-                restClient.get("query", null, queryParams, success, error);
+                restClient.get("query", null,"text/html","application/json", queryParams, success, error);
             },
             /**
              * Retrieves the values for a specific query specified by its key
@@ -796,7 +796,7 @@ var QV = (function(QV){
                     format: QV.VISUALIZATIONTYPE.JSON.STRING
                 };
 
-                restClient.get("query/" + queryKey, null, queryParams, success, error);
+                restClient.get("query/" + queryKey, null, "text/html", "application/json", queryParams, success, error);
             },
             /**
              * Retrieves the visualization for a query and a set of database and modification options
