@@ -5,8 +5,12 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.HashMap;
+import java.util.Properties;
 
 import org.junit.After;
 import org.junit.Before;
@@ -63,28 +67,52 @@ public class ServiceTest {
 
 	@BeforeClass
 	public static void setUpDB() {
-		// avoid timing errors: wait for the repository manager to get all
-		// services before continuing
-		testDB.put("db_code", SQLDatabaseType.MYSQL.toString().toLowerCase());
-		testDB.put("username", "root");
-		testDB.put("password", "");
-		testDB.put("database", "QVS");
-		testDB.put("dbhost", "localhost");
-		testDB.put("port", 3306);
 
-		testFilter.put("query", "SELECT * FROM USERS");
+		Properties prop = new Properties();
+		InputStream input = null;
 
-		testQuery.put("query", "SELECT * FROM `DATABASE_CONNECTIONS` WHERE `KEY` = ?");
-		testQuery.put("dbkey", testDBName);
-		JSONArray qp = new JSONArray();
-		qp.add(testDBName);
-		testQuery.put("queryparams", qp);
-		testQuery.put("cache", true);
-		testQuery.put("modtypei", 0);
-		testQuery.put("title", "testQuery");
-		testQuery.put("width", "100");
-		testQuery.put("height", "100");
-		testQuery.put("save", true);
+		try {
+
+			input = new FileInputStream("etc/i5.las2peer.services.mobsos.queryVisualization.QueryVisualizationService.properties");
+
+			// load a properties file
+			prop.load(input);
+			// avoid timing errors: wait for the repository manager to get all
+			// services before continuing
+			testDB.put("db_code", SQLDatabaseType.MYSQL.toString().toLowerCase());
+			testDB.put("username", prop.getProperty("stDbUser"));
+			testDB.put("password", prop.getProperty("stDbPassword"));
+			testDB.put("database", prop.getProperty("stDbDatabase"));
+			testDB.put("dbhost", prop.getProperty("stDbHost"));
+			testDB.put("port", Integer.parseInt(prop.getProperty("stDbPort")));
+
+			testFilter.put("query", "SELECT * FROM USERS");
+
+			testQuery.put("query", "SELECT * FROM `DATABASE_CONNECTIONS` WHERE `KEY` = ?");
+			testQuery.put("dbkey", testDBName);
+			JSONArray qp = new JSONArray();
+			qp.add(testDBName);
+			testQuery.put("queryparams", qp);
+			testQuery.put("cache", true);
+			testQuery.put("modtypei", 0);
+			testQuery.put("title", "testQuery");
+			testQuery.put("width", "100");
+			testQuery.put("height", "100");
+			testQuery.put("save", true);
+
+		} catch (IOException ex) {
+			System.out.println(ex.getMessage());
+			ex.printStackTrace();
+			fail();
+		} finally {
+			if (input != null) {
+				try {
+					input.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
 	}
 
 	/**
