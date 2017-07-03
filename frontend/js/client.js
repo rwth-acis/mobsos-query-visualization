@@ -45,7 +45,7 @@ function TemplateServiceClient(endpointUrl) {
 * An example function demonstrating a GET request on resource <endpointUrl>/example/validate
 */
 TemplateServiceClient.prototype.getMethod = function(successCallback, errorCallback) {
-	this.get("QVS/validate", {}, successCallback, errorCallback);
+	this.get("QVS/validate", {}, "text/html","text/html",null ,successCallback, errorCallback);
 };
 
 /**
@@ -63,20 +63,20 @@ TemplateServiceClient.prototype.postMethod = function(input, successCallback, er
 *   - successCallback: a callback function invoked in case the request succeeded. Expects three parameters "data", "type" and "status", where "data" represents the content of the response, "type" describes the MIME-type of the response and "status" contains the HTTP return code.
 *   - errorCallback: a callback function invoked in case the request failed. Expects two parameters "error" and "status" representing the error occurred and "status" containing the HTTP error return code.
 */
-TemplateServiceClient.prototype.get = function(path, content, queryParams, successCallback, errorCallback) {
-	this.sendRequest("GET", path, content, queryParams, "application/json", null, successCallback, errorCallback);
+TemplateServiceClient.prototype.get = function(path, content, mime, mtype,queryParams, successCallback, errorCallback) {
+	this.sendRequest("GET", path, content, mime, mtype, queryParams, null, successCallback, errorCallback);
 };
 
-TemplateServiceClient.prototype.post = function(path, content, queryParams, successCallback, errorCallback) {
-	this.sendRequest("POST", path, content, queryParams, "application/json", null, successCallback, errorCallback);
+TemplateServiceClient.prototype.post = function(path, content,mime, mtype, queryParams, successCallback, errorCallback) {
+	this.sendRequest("POST", path, content, mime, mtype, queryParams, null, successCallback, errorCallback);
 };
 
-TemplateServiceClient.prototype.put = function(path, content, queryParams, successCallback, errorCallback) {
-	this.sendRequest("PUT", path, content, queryParams, "application/json", null, successCallback, errorCallback);
+TemplateServiceClient.prototype.put = function(path, content, mime, mtype, queryParams, successCallback, errorCallback) {
+	this.sendRequest("PUT", path, content, mime, mtype, queryParams, null, successCallback, errorCallback);
 };
 
-TemplateServiceClient.prototype.delete = function(path, content, queryParams, successCallback, errorCallback) {
-	this.sendRequest("DELETE", path, content, queryParams, "application/json", null, successCallback, errorCallback);
+TemplateServiceClient.prototype.delete = function(path, content, mime, mtype, queryParams, successCallback, errorCallback) {
+	this.sendRequest("DELETE", path, content, mime, mtype, queryParams, null, successCallback, errorCallback);
 };
 
 /**
@@ -92,10 +92,12 @@ TemplateServiceClient.prototype.delete = function(path, content, queryParams, su
 *   - errorCallback: a callback function invoked in case the request failed. Expects two parameters "error" and "status" representing the error occurred and "status" containing the HTTP error return code.
 *
 */
-TemplateServiceClient.prototype.sendRequest = function(method, relativePath, content, queryParams, mime, customHeaders, successCallback, errorCallback) {
-	var mtype = "text/plain; charset=UTF-8";
-	if(typeof mime !== "undefined") {
-		mtype = mime;
+TemplateServiceClient.prototype.sendRequest = function(method, relativePath, content, mime, mtype, queryParams, customHeaders, successCallback, errorCallback) {
+	if(typeof mtype == "undefined") {
+		mtype = "text/plain; charset=UTF-8";
+	}
+	if(typeof mime == "undefined") {
+		mime = "text/plain; charset=UTF-8";
 	}
 
 	var rurl = this._serviceEndpoint + "/" + relativePath;
@@ -124,7 +126,10 @@ TemplateServiceClient.prototype.sendRequest = function(method, relativePath, con
 	var ajaxObj = {
 		url: rurl,
 		type: method.toUpperCase(),
-		contentType: mtype,
+		contentType: mime,
+		headers: {          
+    		Accept: mtype
+    	},
 		crossDomain: true,
 
 		error: function (xhr, errorType, error) {

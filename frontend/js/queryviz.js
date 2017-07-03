@@ -246,7 +246,7 @@ var QV = (function(QV){
                 }
                 if(typeof callback == 'function'){
                     if (result === null) {
-                        restClient.post("query", content, qParams, success, error);
+                        restClient.post("query", content, "application/json", "application/json", qParams, success, error);
                     } else {
                         callback(result);
                     }
@@ -268,7 +268,7 @@ var QV = (function(QV){
                 format: visualizationTypeIndex
             };
 
-            restClient.post("query", content, qParams, success, error);
+            restClient.post("query", content, "application/json", "application/json", qParams, success, error);
         };
 
         /**
@@ -298,7 +298,7 @@ var QV = (function(QV){
                 }
                 if(typeof callback == 'function'){
                     if (result === null) {
-                        restClient.post("query", content, qParams, success, error);
+                        restClient.post("query", content, "application/json", "text/html", qParams, success, error);
                     } else {
                         callback(result);
                     }
@@ -320,7 +320,7 @@ var QV = (function(QV){
                 format: visualizationTypeIndex
             };
 
-            restClient.post("query/visualize", content, qParams, success, error);
+            restClient.post("query/visualize", content, "application/json", "text/html", qParams, success, error);
         };
 
         /**
@@ -343,9 +343,9 @@ var QV = (function(QV){
                 if(typeof callback == 'function'){
                     if (result === null) {
                         if(filterValues) {
-                            restClient.post(queryURL, content, null, success, error);
+                            restClient.post(queryURL, content, "application/json", "text/html", null, success, error);
                         } else {
-                            restClient.get(queryURL, content, null, success, error);
+                            restClient.get(queryURL, content, "application/json", "text/html", null, success, error);
                         }
                     } else {
                         callback(result);
@@ -354,9 +354,9 @@ var QV = (function(QV){
             };
 
             if(filterValues) {
-                restClient.post(queryURL, content, null, success, error);
+                restClient.post(queryURL, content, "application/json", "text/html", null, success, error);
             } else {
-                restClient.get(queryURL, content, null, success, error);
+                restClient.get(queryURL, content, "application/json", "text/html", null, success, error);
             }
         };
 
@@ -466,7 +466,7 @@ var QV = (function(QV){
                         alert("Database removed!");
                         if(typeof callback == 'function'){
                             if (result === null) {
-                                restClient.delete("database/" + databaseKey, null, queryParams, success, error);
+                                restClient.delete("database/" + databaseKey, null,"text/html","application/json", queryParams, success, error);
                             } else {
                                 callback(result.slice(2));
                             }
@@ -474,7 +474,7 @@ var QV = (function(QV){
                     }
                 };
 
-                restClient.delete("database/" + databaseKey, null, queryParams, success, error);
+                restClient.delete("database/" + databaseKey, null,"text/html","application/json", queryParams, success, error);
             },
             /**
              * Adds a new filter to the set of the configured filters of the user currently logged in
@@ -507,7 +507,7 @@ var QV = (function(QV){
                         alert("Filter added!");
                         if(typeof callback == 'function'){
                             if (result === null) {
-                                restClient.put("filter/" + databaseKey + "/" + filterKey, content, queryParams, success, error);
+                                restClient.put("filter/" + databaseKey + "/" + filterKey, content, "application/json", "application/json",queryParams, success, error);
                             } else {
                                 callback(result.slice(2));
                             }
@@ -517,7 +517,7 @@ var QV = (function(QV){
                     }
                 };
 
-                restClient.put("filter/" + databaseKey + "/" + filterKey, content, queryParams, success, error);
+                restClient.put("filter/" + databaseKey + "/" + filterKey, content, "application/json", "application/json", queryParams, success, error);
             },
             /**
              * Removes a filter of the set of the configured filters of the user currently logged in
@@ -544,7 +544,7 @@ var QV = (function(QV){
                         alert("Filter removed!");
                         if(typeof callback == 'function'){
                             if (result === null) {
-                                restClient.delete("filter/" + filterKey, null, queryParams, success, error);
+                                restClient.delete("filter/" + filterKey, null,"text/html","application/json", queryParams, success, error);
                             } else {
                                 callback(result.slice(2));
                             }
@@ -554,7 +554,7 @@ var QV = (function(QV){
                     }
                 };
 
-                restClient.delete("filter/" + databaseKey + "/" + filterKey, null, queryParams, success, error);
+                restClient.delete("filter/" + databaseKey + "/" + filterKey, null,"text/html","application/json", queryParams, success, error);
             },
             /**
              * Removes a query of the set of the configured query of the user currently logged in
@@ -581,7 +581,7 @@ var QV = (function(QV){
                         alert("Query removed!");
                         if(typeof callback == 'function'){
                             if (result === null) {
-                                restClient.delete("query/" + queryKey, null, queryParams, success, error);
+                                restClient.delete("query/" + queryKey, null,"text/html","application/json", queryParams, success, error);
                             } else {
                                 callback(result.slice(2));
                             }
@@ -591,7 +591,7 @@ var QV = (function(QV){
                     }
                 };
 
-                restClient.delete("query/" + queryKey, null, queryParams, success, error);
+                restClient.delete("query/" + queryKey, null,"text/html","application/json", queryParams, success, error);
             },
             /**
              * Retrieves the keys of the databases configured for the user currently logged in
@@ -615,14 +615,14 @@ var QV = (function(QV){
                     }
                     if(typeof callback == 'function'){
                         if (result === null) {
-                            restClient.get("database", null, queryParams, success, error);
+                            restClient.get("database", null,"text/html","application/json", queryParams, success, error);
                         } else {
                             callback(result.slice(2));
                         }
                     }
                 };
 
-                restClient.get("database", null, queryParams, success, error);
+                restClient.get("database", null,"text/html","application/json", queryParams, success, error);
             },
             /**
              * Retrieves the keys of the filters used in a specified query.
@@ -645,14 +645,14 @@ var QV = (function(QV){
                     }
                     if(typeof callback == 'function'){
                         if (result === null) {
-                            restClient.get("query/" + query + "/filter", null, queryParams, success, error);
+                            restClient.get("query/" + query + "/filter", null, "text/html", "application/json", queryParams, success, error);
                         } else {
                             callback(result.slice(2));
                         }
                     }
                 };
 
-                restClient.get("query/" + query + "/filter", null, queryParams, success, error);
+                restClient.get("query/" + query + "/filter", null, "text/html", "application/json", queryParams, success, error);
             },
             /**
              * Retrieves the keys of the filters configured for the user currently logged in
@@ -676,14 +676,14 @@ var QV = (function(QV){
                     }
                     if(typeof callback == 'function'){
                         if (result === null) {
-                            restClient.get("filter", null, queryParams, success, error);
+                            restClient.get("filter", null, "text/html", "application/json", queryParams, success, error);
                         } else {
                             callback(result.slice(2));
                         }
                     }
                 };
 
-                restClient.get("filter", null, queryParams, success, error);
+                restClient.get("filter", null, "text/html", "application/json",queryParams, success, error);
             },
             /**
              * Retrieves the values for a specific filter specified by its key
@@ -709,7 +709,7 @@ var QV = (function(QV){
                     format: QV.VISUALIZATIONTYPE.JSON.STRING
                 };
 
-                restClient.get("filter/" + dbKey + "/" + filterKey + "/" + user, null, queryParams, success, error);
+                restClient.get("filter/" + dbKey + "/" + filterKey + "/" + user, null, "text/html", "application/json",queryParams, success, error);
             },
             /**
              * Retrieves the values for a specific filter specified by its key
@@ -737,7 +737,7 @@ var QV = (function(QV){
                     format: QV.VISUALIZATIONTYPE.JSON.STRING
                 };
 
-                restClient.get("filter/" + dbKey + "/" + filterKey, null, queryParams, success, error);
+                restClient.get("filter/" + dbKey + "/" + filterKey, null, "text/html", "application/json",queryParams, success, error);
             },
             /**
              * Retrieves the keys of the queries saved for the user currently logged in
@@ -761,14 +761,14 @@ var QV = (function(QV){
                     }
                     if(typeof callback == 'function'){
                         if (result === null) {
-                            restClient.get("query", null, queryParams, success, error);
+                            restClient.get("query", null, "text/html","application/json",queryParams, success, error);
                         } else {
                             callback(result.slice(2));
                         }
                     }
                 };
 
-                restClient.get("query", null, queryParams, success, error);
+                restClient.get("query", null,"text/html","application/json", queryParams, success, error);
             },
             /**
              * Retrieves the values for a specific query specified by its key
@@ -796,7 +796,7 @@ var QV = (function(QV){
                     format: QV.VISUALIZATIONTYPE.JSON.STRING
                 };
 
-                restClient.get("query/" + queryKey, null, queryParams, success, error);
+                restClient.get("query/" + queryKey, null, "text/html", "application/json", queryParams, success, error);
             },
             /**
              * Retrieves the visualization for a query and a set of database and modification options

@@ -83,9 +83,6 @@ import net.minidev.json.JSONValue;
  * 
  */
 @ServicePath("QVS")
-@Api
-@SwaggerDefinition(info = @Info(title = "Query Visualization Service", version = "1.0", description = "This service can be used to visualize queries on RDB's", termsOfService = "https://github.com/rwth-acis/LAS2peer-Query-Visualization-Service", contact = @Contact(name = "Dominik Renzel", url = "", email = "renzel@dbis.rwth-aachen.de"), license = @License(name = "MIT", url = "https://raw.githubusercontent.com/rwth-acis/LAS2peer-Query-Visualization-Service/master/LICENSE")))
-
 public class QueryVisualizationService extends RESTService {
 
 	/*** configuration ***/
@@ -602,6 +599,8 @@ public class QueryVisualizationService extends RESTService {
 	// Service methods.
 	// //////////////////////////////////////////////////////////////////////////////////////
 	@Path("/") // this is the root resource
+	@Api
+	@SwaggerDefinition(info = @Info(title = "Query Visualization Service", version = "1.0", description = "This service can be used to visualize queries on RDB's", termsOfService = "https://github.com/rwth-acis/LAS2peer-Query-Visualization-Service", contact = @Contact(name = "Dominik Renzel", url = "", email = "renzel@dbis.rwth-aachen.de"), license = @License(name = "MIT", url = "https://raw.githubusercontent.com/rwth-acis/LAS2peer-Query-Visualization-Service/master/LICENSE")))
 	public static class Resource {
 		private QueryVisualizationService service = (QueryVisualizationService) Context.getCurrent().getService();
 
@@ -892,7 +891,7 @@ public class QueryVisualizationService extends RESTService {
 		@Path("query/{query}/filter")
 		@Produces(MediaType.APPLICATION_JSON)
 		@ApiResponses(value = { @ApiResponse(code = 200, message = "Got filters."), @ApiResponse(code = 400, message = "Retrieving filter keys failed."), @ApiResponse(code = 204, message = "Filter does not exist.") })
-		public Response getFilterValuesForQuery(@PathParam("key") String queryKey) {
+		public Response getFilterValuesForQuery(@PathParam("query") String queryKey) {
 			try {
 				service.initializeDBConnection();
 				QueryManager queryManager = service.queryManagerMap.get(Context.getCurrent().getMainAgent().getId());
@@ -1116,7 +1115,7 @@ public class QueryVisualizationService extends RESTService {
 
 		@POST
 		@Path("query/visualize")
-		@Produces(MediaType.APPLICATION_JSON)
+		@Produces(MediaType.TEXT_HTML)
 		@Consumes(MediaType.APPLICATION_JSON)
 		@ApiResponses(value = { @ApiResponse(code = 200, message = "Created query."), @ApiResponse(code = 400, message = "Creating Query failed.") })
 		public Response visualizeQuery(@QueryParam("format") @DefaultValue("JSON") String vtypei, String content) {
@@ -1223,7 +1222,7 @@ public class QueryVisualizationService extends RESTService {
 				}
 
 				L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_12, Context.getCurrent().getMainAgent(), "" + user);
-				return Response.status(Status.OK).entity(service.visualizationManager.getVisualization(VisualizationType.valueOf(visualizationTypeIndex.toUpperCase()))).build();
+				return Response.status(Status.OK).entity(service.visualizationManager.getVisualization(VisualizationType.valueOf(visualizationTypeIndex.toUpperCase())).generate(result, null)).build();
 			} catch (Exception e) {
 				L2pLogger.logEvent(service, Event.SERVICE_ERROR, e.toString());
 				return Response.status(Status.BAD_REQUEST).entity(service.visualizationException.generate(e, null)).build();

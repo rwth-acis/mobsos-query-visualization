@@ -5,13 +5,17 @@ import i5.las2peer.logging.L2pLogger;
 import i5.las2peer.logging.NodeObserver.Event;
 import i5.las2peer.persistency.MalformedXMLException;
 import i5.las2peer.persistency.XmlAble;
-import i5.simpleXML.Element;
 
 import java.io.Serializable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.LinkedList;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 /**
  * SQLDatabaseSettings.java
@@ -76,21 +80,26 @@ public class SQLDatabaseSettings implements XmlAble, Serializable {
 
 	public void setStateFromXml(String arg0) throws MalformedXMLException {
 		try {
-			Element elm = new Element(arg0);
+			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			Document doc = dBuilder.parse(arg0);
+			int childrenCount = doc.getChildNodes().item(0).getChildNodes().getLength();
+			doc.getDocumentElement().normalize();
+			Element elm = doc.getDocumentElement();
 	
-			if(elm.getChildNodeCount() != 2) {
-				throw new Exception("Wrong number of children! " + elm.getChildNodeCount() + " instead of 2!");
+			if(childrenCount != 2) {
+				throw new Exception("Wrong number of children! " + childrenCount + " instead of 2!");
 			}
 			
 			this.key = elm.getAttribute("key");
 			
-			this.username = elm.getChild(0).getAttribute("username");
-			this.password = elm.getChild(0).getAttribute("password");
+			this.username = elm.getAttribute("username");
+			this.password = elm.getAttribute("password");
 			
-			this.database = elm.getChild(1).getAttribute("name");
-			this.jdbcInfo = SQLDatabaseType.getSQLDatabaseType(Integer.parseInt(elm.getChild(1).getAttribute("type")));
-			this.host = elm.getChild(1).getAttribute("host");
-			this.port = Integer.parseInt(elm.getChild(1).getAttribute("port"));
+			this.database = elm.getAttribute("name");
+			this.jdbcInfo = SQLDatabaseType.getSQLDatabaseType(Integer.parseInt(elm.getAttribute("type")));
+			this.host = elm.getAttribute("host");
+			this.port = Integer.parseInt(elm.getAttribute("port"));
 		}
 		catch(Exception e) {
 			L2pLogger.logEvent(this, Event.SERVICE_ERROR, "SQLDatabaseSettings, setStateFromXML: " + e.getMessage());

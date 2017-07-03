@@ -1,4 +1,5 @@
 # MobSOS Query Visualization
+[![Build Status](https://travis-ci.org/rwth-acis/mobsos-query-visualization.svg?branch=master)](https://travis-ci.org/rwth-acis/mobsos-query-visualization) [![codecov](https://codecov.io/gh/rwth-acis/mobsos-query-visualization/branch/master/graph/badge.svg)](https://codecov.io/gh/rwth-acis/mobsos-query-visualization) [![Join the chat at https://gitter.im/rwth-acis/mobsos](https://badges.gitter.im/rwth-acis/mobsos.svg)](https://gitter.im/rwth-acis/mobsos?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 MobSOS Query Visualization is a Web service for the interactive exploration and 
 visualization of relational data sets. The exploration basically consists 
@@ -14,13 +15,16 @@ described by meta data such as title or display dimensions.
 
 ## Use
 
-* You can try the service at https://api.learning-layers.eu/mobsos-qv.
+* You can try the service at https://las2peer.dbis.rwth-aachen.de/qv-service/.
 * The wiki of this project features a [tutorial](https://github.com/rwth-acis/LAS2peer-Query-Visualization-Service/wiki/Tutorial) with step-by-step instructions.
-* A short description of the service's browser interface is available as separate [help page](https://api.learning-layers.eu/mobsos-qv/help.html).
+* A short description of the service's browser interface is available as separate [help page](http://las2peer.dbis.rwth-aachen.de/qv-service/help.html).
 
 ## Build
+Execute the following command on your shell:
 
-TODO: add build instructions; should be as simple as doing `ant`.
+```shell
+ant all 
+```
 
 ## Deploy
 

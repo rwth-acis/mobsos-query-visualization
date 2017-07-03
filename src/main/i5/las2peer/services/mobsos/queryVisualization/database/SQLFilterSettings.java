@@ -5,12 +5,17 @@ import i5.las2peer.logging.L2pLogger;
 import i5.las2peer.logging.NodeObserver.Event;
 import i5.las2peer.persistency.MalformedXMLException;
 import i5.las2peer.persistency.XmlAble;
-import i5.simpleXML.Element;
 
 import java.io.Serializable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.LinkedList;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 /**
  * SQLFilterSettings.java
@@ -49,17 +54,22 @@ public class SQLFilterSettings implements XmlAble, Serializable {
 	
 	public void setStateFromXml(String arg0) throws MalformedXMLException {
 		try {
-			Element elm = new Element(arg0);
+			DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			Document doc = dBuilder.parse(arg0);
+			int childrenCount = doc.getChildNodes().item(0).getChildNodes().getLength();
+			doc.getDocumentElement().normalize();
+			Element elm = doc.getDocumentElement();
 			
-			if(elm.getChildNodeCount() != 1) {
-				throw new Exception("Wrong number of children! " + elm.getChildNodeCount() + " instead of 1!");
+			
+			if(childrenCount != 1) {
+				throw new Exception("Wrong number of children! " + childrenCount + " instead of 1!");
 			}
 			
 			this.key = elm.getAttribute("key");
 			
-			Element sqlQueryElement = elm.getChild(0);
-			this.query = sqlQueryElement.getAttribute("query");
-			this.databaseKey = sqlQueryElement.getAttribute("databaseKey");
+			this.query = elm.getAttribute("query");
+			this.databaseKey = elm.getAttribute("databaseKey");
 			
 		}
 		catch(Exception e) {
