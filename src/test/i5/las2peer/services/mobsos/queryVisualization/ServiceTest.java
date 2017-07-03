@@ -8,8 +8,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.HashMap;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import i5.las2peer.p2p.LocalNode;
@@ -43,7 +43,7 @@ public class ServiceTest {
 	private static UserAgent testAgent;
 	private static final String testPass = "adamspass";
 
-	private static final ServiceNameVersion testServiceClass = new ServiceNameVersion(QueryVisualizationService.class.getCanonicalName(), "1.0");
+	private final ServiceNameVersion testServiceClass = new ServiceNameVersion(QueryVisualizationService.class.getCanonicalName(), "1.0");
 
 	private static final String mainPath = "QVS/";
 
@@ -68,8 +68,8 @@ public class ServiceTest {
 	 * 
 	 * @throws Exception
 	 */
-	@BeforeClass
-	public static void startServer() throws Exception {
+	@Before
+	public void startServer() throws Exception {
 
 		// start node
 		node = LocalNode.newNode();
@@ -124,8 +124,8 @@ public class ServiceTest {
 	 * 
 	 * @throws Exception
 	 */
-	@AfterClass
-	public static void shutDownServer() throws Exception {
+	@After
+	public void shutDownServer() throws Exception {
 
 		MiniClient c = new MiniClient();
 		c.setAddressPort(HTTP_ADDRESS, HTTP_PORT);
@@ -158,33 +158,6 @@ public class ServiceTest {
 		c.sendRequest("DELETE", mainPath + filterPath + testFilterName, "");
 		c.sendRequest("DELETE", mainPath + dbPath + testDBName, "");
 		c.sendRequest("DELETE", mainPath + dbPath + testFilterName, "");
-	}
-
-	/**
-	 * 
-	 * Tests the validation method.
-	 * 
-	 */
-	public void testValidateLogin() {
-		MiniClient c = new MiniClient();
-		c.setAddressPort(HTTP_ADDRESS, HTTP_PORT);
-
-		try {
-			c.setLogin(Long.toString(testAgent.getId()), testPass);
-			ClientResponse result = c.sendRequest("GET", mainPath + "validation", "");
-			assertEquals(200, result.getHttpCode());
-			assertTrue(result.getResponse().trim().contains("adam")); // login
-																		// name
-																		// is
-																		// part
-																		// of
-																		// response
-			System.out.println("Result of 'testValidateLogin': " + result.getResponse().trim());
-		} catch (Exception e) {
-			e.printStackTrace();
-			fail("Exception: " + e);
-		}
-
 	}
 
 	/**
