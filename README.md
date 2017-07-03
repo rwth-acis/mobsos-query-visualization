@@ -20,6 +20,20 @@ described by meta data such as title or display dimensions.
 * A short description of the service's browser interface is available as separate [help page](http://las2peer.dbis.rwth-aachen.de/qv-service/help.html).
 
 ## Build
+Before you build the project make sure you have set up a [database](db.sql). 
+Enter the credentials in the [property file](etc/i5.las2peer.services.mobsos.queryVisualization.QueryVisualizationService.properties). 
+The following values are important: 
+
+| Property      | Description                |
+| ------------- | -------------------------- |
+| stDbKey       | Default database key       |
+| stDbHost      | Host for the connection    |
+| stDbPort      | Port of the SQL Server     |
+| stDbDatabase  | Name of the database       |
+| stDbUser      | Login name                 |
+| stDbPassword  | Password                   |
+
+
 Execute the following command on your shell:
 
 ```shell
@@ -28,18 +42,13 @@ ant all
 
 ## Deploy
 
-TODO: needs update
-
 The start_network.bat script uses the L2PNodeLauncher class to start the service. It does also register
-the content of the "startup" directory and it starts the HTTP-connector at port 8080.
+the content of the "startup" directory and it starts the Web-Connector at port 8080.
 
 Steps to take before launching:
 
-1. Add a default database by adding the service configuration file located in the "config" folder.
-
-2. Check the LASHOST variable at the queryviz.js (should be ok if you use the default startup script)
-
-3. Change the address of the "qv_code_template" script (located at the demo.html file) according to your
+1. Check the LASHOST variable at the queryviz.js (should be ok if you use the default startup script)
+2. Change the address of the "qv_code_template" script (located at the demo.html file) according to your
 setup. This is needed for exported queries to work.
 
 ## Background
