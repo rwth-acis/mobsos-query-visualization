@@ -10,6 +10,7 @@ import java.util.HashMap;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import i5.las2peer.p2p.LocalNode;
@@ -60,6 +61,32 @@ public class ServiceTest {
 
 	HashMap<String, String> emptyPairs = new HashMap<String, String>();
 
+	@BeforeClass
+	public static void setUpDB() {
+		// avoid timing errors: wait for the repository manager to get all
+		// services before continuing
+		testDB.put("db_code", SQLDatabaseType.MYSQL.toString().toLowerCase());
+		testDB.put("username", "root");
+		testDB.put("password", "");
+		testDB.put("database", "QVS");
+		testDB.put("dbhost", "localhost");
+		testDB.put("port", 3306);
+
+		testFilter.put("query", "SELECT * FROM USERS");
+
+		testQuery.put("query", "SELECT * FROM `DATABASE_CONNECTIONS` WHERE `KEY` = ?");
+		testQuery.put("dbkey", testDBName);
+		JSONArray qp = new JSONArray();
+		qp.add(testDBName);
+		testQuery.put("queryparams", qp);
+		testQuery.put("cache", true);
+		testQuery.put("modtypei", 0);
+		testQuery.put("title", "testQuery");
+		testQuery.put("width", "100");
+		testQuery.put("height", "100");
+		testQuery.put("save", true);
+	}
+
 	/**
 	 * Called before the tests start.
 	 * 
@@ -87,35 +114,10 @@ public class ServiceTest {
 		logStream = new ByteArrayOutputStream();
 
 		connector = new WebConnector(true, HTTP_PORT, false, 1000);
-		// connector.setSocketTimeout(10000);
 		connector.setLogStream(new PrintStream(logStream));
 		connector.start(node);
-		Thread.sleep(2000); // wait a second for the connector to become ready
+		Thread.sleep(1000); // wait a second for the connector to become ready
 		testAgent = MockAgentFactory.getAdam();
-
-		// avoid timing errors: wait for the repository manager to get all
-		// services before continuing
-		testDB.put("db_code", SQLDatabaseType.MYSQL.toString().toLowerCase());
-		testDB.put("username", "root");
-		testDB.put("password", "");
-		testDB.put("database", "QVS");
-		testDB.put("dbhost", "localhost");
-		testDB.put("port", 3306);
-
-		testFilter.put("query", "SELECT * FROM USERS");
-
-		testQuery.put("query", "SELECT * FROM `DATABASE_CONNECTIONS` WHERE `KEY` = ?");
-		testQuery.put("dbkey", testDBName);
-		JSONArray qp = new JSONArray();
-		qp.add(testDBName);
-		testQuery.put("queryparams", qp);
-		testQuery.put("cache", true);
-		testQuery.put("modtypei", 0);
-		testQuery.put("title", "testQuery");
-		testQuery.put("width", "100");
-		testQuery.put("height", "100");
-		testQuery.put("save", true);
-
 	}
 
 	/**
