@@ -11,6 +11,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import i5.las2peer.execution.L2pServiceException;
 import i5.las2peer.logging.L2pLogger;
@@ -19,8 +20,6 @@ import i5.las2peer.persistency.MalformedXMLException;
 import i5.las2peer.persistency.XmlAble;
 import i5.las2peer.services.mobsos.queryVisualization.database.SQLDatabaseType;
 import i5.las2peer.services.mobsos.queryVisualization.encoding.VisualizationType;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 
 /**
  * Query.java <br>
