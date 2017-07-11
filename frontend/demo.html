@@ -12,9 +12,9 @@
     <script type="text/javascript" src="js/jquery-1.8.0.min.js"></script>
     <script type="text/javascript" src="js/ICanHaz.min.js"></script>
     <script id="qv_code_template" type="text/html">
-    {{! <!--}}<script src="https://api.learning-layers.eu/mobsos-qv/js/jquery-1.11.0.min.js"></script>
-<script src="https://api.learning-layers.eu/mobsos-qv/js/client.js"></script>
-<script src="https://api.learning-layers.eu/mobsos-qv/js/queryviz.js"></script>
+    {{! <!--}}<script src="https://las2peer.dbis.rwth-aachen.de/qv-service/js/jquery-1.11.0.min.js"></script>
+<script src="https://las2peer.dbis.rwth-aachen.de/qv-service/js/client.js"></script>
+<script src="https://las2peer.dbis.rwth-aachen.de/qv-service/js/queryviz.js"></script>
 <div id="{{eleId}}"></div>
 <script>QV.fromKey("{{key}}", "{{eleId}}");</script>{{! -->}}
     </script>
@@ -27,7 +27,7 @@
 <script>QV.fromKey("{{key}}", "{{eleId}}", "{{filterId}}", "{{host}}", "{{path}}");</script>{{! -->}}
     </script>
     <script id="qv_code_template2" type="text/html">
-    {{! <!--}}<html><script type="text/javascript" src="http://api.learning-layers.eu/mobsos-qv/js/queryviz.js"></script>
+    {{! <!--}}<html><script type="text/javascript" src="https://las2peer.dbis.rwth-aachen.de/qv-service/js/queryviz.js"></script>
 <script type="text/javascript">
     QV.fromKey("{{key}}");
     </script></html>{{! -->}}
@@ -46,12 +46,12 @@
     <Content type="html">
         <![CDATA[
     <script src="http://dbis.rwth-aachen.de/gadgets/query-visualization/JavaScript/openapp.js"></script>
-    <script src="https://api.learning-layers.eu/mobsos-qv/js/jquery-1.11.0.min.js"></script>
-    <script src="https://api.learning-layers.eu/mobsos-qv/js/client.js"></script>
-    <script src="http://insecure.gord.in/queryviz.js"></script>
+    <script src="https://las2peer.dbis.rwth-aachen.de/qv-service/js/jquery-1.11.0.min.js"></script>
+    <script src="https://las2peer.dbis.rwth-aachen.de/qv-service/js/client.js"></script>
+    <script src="https://las2peer.dbis.rwth-aachen.de/qv-service/js/queryviz.js"></script>
     <script src="https://rawgit.com/Gordin/Logexchange/master/js/Gadgets.js"></script>
     <div id="viewer"></div>
-    <script src="http://insecure.gord.in/qvsviewer.js"></script>
+    <script src="https://las2peer.dbis.rwth-aachen.de/qv-service/js/qvsviewer.js"></script>
     <script>var qv = gadget_init("{{key}}", "{{host}}", "{{path}}");</script>
         ]]>
     </Content>
