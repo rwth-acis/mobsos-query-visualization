@@ -429,7 +429,7 @@ var QV = (function(QV){
                         alert("Database added!");
                         if(typeof callback == 'function'){
                             if (result === null) {
-                                restClient.put("database/" + databaseKey, content, queryParams, success, error);
+                                restClient.put("database/" + databaseKey, content, "application/json","application/json", queryParams, success, error);
                             } else {
                                 callback(result.slice(2));
                             }
@@ -439,7 +439,7 @@ var QV = (function(QV){
                     }
                 };
 
-                restClient.put("database/" + databaseKey, content, queryParams, success, error);
+                restClient.put("database/" + databaseKey, content, "application/json","application/json", queryParams, success, error);
             },
             /**
              * Removes a database of the set of the configured databases of the user currently logged in
