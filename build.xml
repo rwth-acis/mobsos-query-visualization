@@ -271,6 +271,7 @@ agent-${service.class}.xml;${service.password}
     <!-- General Cleanup -->
 	<target name="clean_before_build">
         <delete dir="${export}"/>
+        <delete dir="${lib}"/>
 		<delete file="${service}/${service.name}-${service.version}.jar"/>
 	</target>
 
@@ -281,12 +282,13 @@ agent-${service.class}.xml;${service.password}
 
     <target name="clean_deps">
         <delete dir="${lib}"/>
+        <delete dir="node-storage"/>
     </target>
 
     <target name="clean_all" depends="clean_after_build, clean_before_build, clean_deps">
 		<delete dir="${log}"/>
     </target>
 
-    <target name="all" depends="clean_before_build, generate_configs, junit, java_doc, clean_after_build" />
+    <target name="all" depends="clean_before_build, clean_deps, generate_configs, junit, java_doc, clean_after_build" />
 
 </project>
