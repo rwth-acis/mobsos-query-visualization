@@ -15,17 +15,17 @@
 		<dependency org="mysql" name="mysql-connector-java" rev="5.1.6" conf="platform->*" />
 		<dependency org="OracleJDBC" name="OracleJDBC" rev="14" conf="platform->*" />
 		<dependency org="MicrosoftSQL" name="MicrosoftSQL" rev="4" conf="platform->*" />
-		<dependency org="org.firebirdsql.jdbc" name="jaybird" rev="2.1.6" conf="platform->*" >
+		<dependency org="org.firebirdsql.jdbc" name="jaybird" rev="2.2.5" conf="platform->*" >
 			<exclude module="jms"/>
 		</dependency>
-		<dependency org="org.postgresql" name="postgresql" rev="9.4.1208.jre7" conf="platform->*" />
+		<dependency org="org.postgresql" name="postgresql" rev="42.0.0.jre7" conf="platform->*" />
 		<dependency org="org.apache.derby" name="derbyclient" rev="10.12.1.1" conf="platform->*" />
-		<dependency org="org.apache.commons" name="commons-pool2" rev="2.2" conf="platform->*" />
-		<dependency org="org.apache.commons" name="commons-dbcp2" rev="2.0" conf="platform->*" />
+		<dependency org="org.apache.commons" name="commons-pool2" rev="2.4.2" conf="platform->*" />
+		<dependency org="org.apache.commons" name="commons-dbcp2" rev="2.1.1" conf="platform->*" />
 		<dependency org="net.minidev" name="json-smart" rev="2.2" conf="platform->*" />
 		<dependency org="com.googlecode.json-simple" name="json-simple" rev="1.1.1" conf="platform->*" />
 		<dependency org="com.google.guava" name="guava" rev="19.0" conf="platform->*" />
 		<dependency org="org.bouncycastle" name="bcprov-jdk15on" rev="1.54" conf="platform->*" />
-		<dependency org="org.jacoco" name="org.jacoco.ant" rev="0.7.2.201409121644" conf="platform->default" />
+		<dependency org="org.jacoco" name="org.jacoco.ant" rev="0.7.9" conf="platform->default" />
     </dependencies>
 </ivy-module>
