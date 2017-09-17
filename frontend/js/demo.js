@@ -316,7 +316,7 @@ var fill_query_values = function(query) {
     }
     for (var i = 0, len = databaseNode.options.length; i < len; i++) {
         if (databaseNode.options[i].text === query.db) {
-            databaseNode.selectedIndex = i;
+            //databaseNode.selectedIndex = i;
             break;
         }
     }
@@ -873,6 +873,7 @@ var queries_locked = false;
 
 $(databaseNode).change(function(){
     fill_query_dropdown(databaseNode.options[databaseNode.selectedIndex].value);
+    load_query_keys();
     show_filters_for_db();
 });
 
@@ -885,7 +886,7 @@ var query_changed = function(){
 };
 
 $(selectQuery).change(query_changed);
-$(selectQuery).delegate("option", "click", query_changed);
+$(selectQuery).click(query_changed);
 
 var save_disable = function() {
     var sb = $(saveButton);

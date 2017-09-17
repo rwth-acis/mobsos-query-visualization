@@ -905,7 +905,7 @@ public class QueryVisualizationService extends RESTService {
 				// the
 				// query parameters
 				int parameterCount = params == null ? 0 : params.length;
-				Pattern placeholderPattern = Pattern.compile("\\$.*?\\$");
+				Pattern placeholderPattern = Pattern.compile("\\$\\$.*?\\$\\$}");
 				Matcher m = placeholderPattern.matcher(statement);
 				for (int i = 0; i < parameterCount; i++) {
 					m.find();
