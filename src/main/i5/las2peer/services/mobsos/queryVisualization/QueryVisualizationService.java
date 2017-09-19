@@ -536,6 +536,10 @@ public class QueryVisualizationService extends RESTService {
 	 * @return Result a visualization of the query
 	 */
 	private String visualizeQuery(Query query, String[] queryParameters) throws Exception {
+		return visualizeQuery(query, queryParameters, "");
+	}
+
+	private String visualizeQuery(Query query, String[] queryParameters, String format) throws Exception {
 		MethodResult methodResult = null;
 		if (query.usesCache() && queryParameters == null) {
 			methodResult = resultCache.get(query.getKey());
@@ -566,8 +570,11 @@ public class QueryVisualizationService extends RESTService {
 
 		Modification modification = modificationManager
 				.getModification(ModificationType.fromInt(query.getModificationTypeIndex()));
-		Visualization visualization = visualizationManager.getVisualization(query.getVisualizationTypeIndex());
 
+		Visualization visualization = visualizationManager.getVisualization(query.getVisualizationTypeIndex());
+		if (format.length() > 0) {
+			visualization = visualizationManager.getVisualization(VisualizationType.valueOf(format));
+		}
 		if (modification.check(methodResult))
 			methodResult = modification.apply(methodResult);
 		else
@@ -580,7 +587,6 @@ public class QueryVisualizationService extends RESTService {
 		} else
 			return visualizationException.generate(new Exception(),
 					"Can not convert result into " + visualization.getType().name() + "-format.");
-
 	}
 
 	@Override
@@ -1518,7 +1524,8 @@ public class QueryVisualizationService extends RESTService {
 
 			try {
 				L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_15, Context.getCurrent().getMainAgent(), "" + query);
-				return Response.status(Status.OK).entity(service.visualizeQuery(query, queryParameters)).build();
+				return Response.status(Status.OK)
+						.entity(service.visualizeQuery(query, queryParameters, format.toUpperCase())).build();
 			} catch (Exception e) {
 				L2pLogger.logEvent(service, Event.SERVICE_ERROR, e.toString());
 				return Response.status(Status.BAD_REQUEST).entity(service.visualizationException.generate(e,
