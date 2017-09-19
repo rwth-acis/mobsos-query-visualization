@@ -4,5 +4,5 @@
 	# it starts a LAS2peer node providing the service 'i5.las2peer.services.mobsos.queryVisualization.QueryVisualizationService' of this project
 	# pls execute it from the root folder of your deployment, e. g. ./bin/start_network.sh
 
-	java -cp "lib/*" i5.las2peer.tools.L2pNodeLauncher -p 9011 uploadStartupDirectory startService\(\'i5.las2peer.services.mobsos.queryVisualization.QueryVisualizationService@0.6.7.1\',\'someNewPass\'\) startWebConnector interactive
+	java -cp "lib/*" i5.las2peer.tools.L2pNodeLauncher -p 9011 uploadStartupDirectory startService\(\'i5.las2peer.services.mobsos.queryVisualization.QueryVisualizationService@0.6.7\',\'someNewPass\'\) startWebConnector interactive
 	

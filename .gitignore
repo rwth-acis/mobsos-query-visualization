@@ -15,3 +15,4 @@ restMapping.xml
 .DS_Store
 .DS_Store?
 /bin/
+/bin/*
