@@ -27,5 +27,7 @@
 		<dependency org="com.google.guava" name="guava" rev="19.0" conf="platform->*" />
 		<dependency org="org.bouncycastle" name="bcprov-jdk15on" rev="1.54" conf="platform->*" />
 		<dependency org="org.jacoco" name="org.jacoco.ant" rev="0.7.9" conf="platform->default" />
+		
+		<dependency org="com.github.xuwei-k" name="html2image" rev="0.1.0" conf="platform->default" />
     </dependencies>
 </ivy-module>

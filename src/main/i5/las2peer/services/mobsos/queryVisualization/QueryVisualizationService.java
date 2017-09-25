@@ -1,5 +1,7 @@
 package i5.las2peer.services.mobsos.queryVisualization;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -11,6 +13,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.imageio.ImageIO;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
@@ -21,10 +24,13 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 
+import gui.ava.html.image.generator.HtmlImageGenerator;
 import i5.las2peer.api.Context;
 import i5.las2peer.execution.L2pServiceException;
 import i5.las2peer.logging.L2pLogger;
@@ -34,6 +40,9 @@ import i5.las2peer.restMapper.annotations.ServicePath;
 import i5.las2peer.security.UserAgent;
 import i5.las2peer.services.mobsos.queryVisualization.caching.MethodResultCache;
 import i5.las2peer.services.mobsos.queryVisualization.dal.QVDatabase;
+import i5.las2peer.services.mobsos.queryVisualization.dal.QVQuery;
+import i5.las2peer.services.mobsos.queryVisualization.dal.QVQueryInformation;
+import i5.las2peer.services.mobsos.queryVisualization.dal.QVQueryparameter;
 import i5.las2peer.services.mobsos.queryVisualization.database.DBDoesNotExistException;
 import i5.las2peer.services.mobsos.queryVisualization.database.DoesNotExistException;
 import i5.las2peer.services.mobsos.queryVisualization.database.SQLDatabase;
@@ -76,7 +85,6 @@ import io.swagger.annotations.License;
 import io.swagger.annotations.SwaggerDefinition;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
-import net.minidev.json.JSONValue;
 
 /**
  * LAS2peer Service
@@ -535,9 +543,6 @@ public class QueryVisualizationService extends RESTService {
 	 * 
 	 * @return Result a visualization of the query
 	 */
-	private String visualizeQuery(Query query, String[] queryParameters) throws Exception {
-		return visualizeQuery(query, queryParameters, "");
-	}
 
 	private String visualizeQuery(Query query, String[] queryParameters, String format) throws Exception {
 		MethodResult methodResult = null;
@@ -572,7 +577,7 @@ public class QueryVisualizationService extends RESTService {
 				.getModification(ModificationType.fromInt(query.getModificationTypeIndex()));
 
 		Visualization visualization = visualizationManager.getVisualization(query.getVisualizationTypeIndex());
-		if (format.length() > 0) {
+		if (format.length() > 0 && !format.equals("PNG")) {
 			visualization = visualizationManager.getVisualization(VisualizationType.valueOf(format));
 		}
 		if (modification.check(methodResult))
@@ -637,7 +642,12 @@ public class QueryVisualizationService extends RESTService {
 						@ApiResponse(
 								code = 400,
 								message = "Database data invalid.") })
-		public Response addDatabase(@PathParam("key") String databaseKey, QVDatabase db) {
+		public Response addDatabase(@ApiParam(
+				value = "Key of the database.",
+				required = true) @PathParam("key") String databaseKey,
+				@ApiParam(
+						value = "Database information.",
+						required = true) QVDatabase db) {
 			try {
 				L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_1, Context.getCurrent().getMainAgent(),
 						"" + db.getDb_code());
@@ -732,7 +742,9 @@ public class QueryVisualizationService extends RESTService {
 						@ApiResponse(
 								code = 404,
 								message = "Database not found.") })
-		public Response removeDatabase(@PathParam("key") String databaseKey) {
+		public Response removeDatabase(@ApiParam(
+				value = "Key of the database.",
+				required = true) @PathParam("key") String databaseKey) {
 			try {
 				if (databaseKey.equalsIgnoreCase("MonitoringDefault")) {
 					databaseKey = service.stDbKey;
@@ -848,14 +860,21 @@ public class QueryVisualizationService extends RESTService {
 		@GET
 		@Path("filter")
 		@Produces(MediaType.APPLICATION_JSON)
+		@ApiOperation(
+				value = "This method returns a list/table of all filters the user has configured.",
+				notes = "Array containing filter keys and database keys")
 		@ApiResponses(
 				value = { @ApiResponse(
 						code = 200,
-						message = "Got filter keys."),
+						message = "Got filter keys.",
+						response = String[].class,
+						responseContainer = "List"),
 						@ApiResponse(
 								code = 400,
 								message = "Retrieving filter keys failed.") })
-		public Response getFilterKeys(@QueryParam("format") @DefaultValue("JSON") String visualizationTypeIndex) {
+		public Response getFilterKeys(@ApiParam(
+				value = "Visualization type.",
+				required = true) @QueryParam("format") @DefaultValue("JSON") String visualizationTypeIndex) {
 			try {
 				service.initializeDBConnection();
 
@@ -910,19 +929,28 @@ public class QueryVisualizationService extends RESTService {
 		@GET
 		@Path("filter/{database}/{key}")
 		@Produces(MediaType.APPLICATION_JSON)
+		@ApiOperation(
+				value = "Retrieves the values for a specific filter of the current user.")
 		@ApiResponses(
 				value = { @ApiResponse(
 						code = 200,
-						message = "Got filter values."),
+						message = "Got filter values.",
+						response = String[].class,
+						responseContainer = "List"),
 						@ApiResponse(
 								code = 400,
 								message = "Retrieving filter keys failed."),
 						@ApiResponse(
-								code = 204,
+								code = 404,
 								message = "Filter does not exist.") })
-		public Response getFilterValuesForCurrentUser(@PathParam("database") String dbKey,
-				@PathParam("key") String filterKey,
-				@QueryParam("format") @DefaultValue("JSON") String visualizationTypeIndex) {
+		public Response getFilterValuesForCurrentUser(@ApiParam(
+				value = "Key of the database.",
+				required = true) @PathParam("database") String dbKey,
+				@ApiParam(
+						value = "Key of the filter.",
+						required = true) @PathParam("key") String filterKey,
+				@ApiParam(
+						value = "Visualization type.") @QueryParam("format") @DefaultValue("JSON") String visualizationTypeIndex) {
 			return getFilterValuesOfUser(dbKey, filterKey, Context.getCurrent().getMainAgent().getId(),
 					visualizationTypeIndex);
 		}
@@ -936,17 +964,23 @@ public class QueryVisualizationService extends RESTService {
 		@GET
 		@Path("query/{query}/filter")
 		@Produces(MediaType.APPLICATION_JSON)
+		@ApiOperation(
+				value = "Retrieves the filter keys for a specific query by ID.")
 		@ApiResponses(
 				value = { @ApiResponse(
 						code = 200,
 						message = "Got filters."),
 						@ApiResponse(
 								code = 400,
-								message = "Retrieving filter keys failed."),
+								message = "Retrieving filter keys failed.",
+								response = String[].class,
+								responseContainer = "List"),
 						@ApiResponse(
 								code = 204,
 								message = "Filter does not exist.") })
-		public Response getFilterValuesForQuery(@PathParam("query") String queryKey) {
+		public Response getFilterValuesForQuery(@ApiParam(
+				value = "Key of the query",
+				required = true) @PathParam("query") String queryKey) {
 			try {
 				service.initializeDBConnection();
 				QueryManager queryManager = service.queryManagerMap.get(Context.getCurrent().getMainAgent().getId());
@@ -1021,19 +1055,32 @@ public class QueryVisualizationService extends RESTService {
 		@GET
 		@Path("filter/{database}/{key}/{user}")
 		@Produces(MediaType.APPLICATION_JSON)
+		@ApiOperation(
+				value = "Retrieves the values for a specific filter of a chosen user.")
 		@ApiResponses(
 				value = { @ApiResponse(
 						code = 200,
-						message = "Got filter values."),
+						message = "Got filter values.",
+						response = String[].class,
+						responseContainer = "List"),
 						@ApiResponse(
 								code = 400,
 								message = "Retrieving filter keys failed."),
 						@ApiResponse(
 								code = 204,
 								message = "Filter does not exist.") })
-		public Response getFilterValuesOfUser(@PathParam("database") String dbKey, @PathParam("key") String filterKey,
-				@PathParam("user") long user,
-				@QueryParam("format") @DefaultValue("JSON") String visualizationTypeIndex) {
+
+		public Response getFilterValuesOfUser(@ApiParam(
+				value = "Key of the database.",
+				required = true) @PathParam("database") String dbKey,
+				@ApiParam(
+						value = "Key of the filter.",
+						required = true) @PathParam("key") String filterKey,
+				@ApiParam(
+						value = "Agent id of the user.",
+						required = true) @PathParam("user") long user,
+				@ApiParam(
+						value = "Visualization type.") @QueryParam("format") @DefaultValue("JSON") String visualizationTypeIndex) {
 			try {
 				VisualizationType vtypei = VisualizationType.valueOf(visualizationTypeIndex.toUpperCase());
 				service.initializeDBConnection();
@@ -1069,7 +1116,7 @@ public class QueryVisualizationService extends RESTService {
 		 * 
 		 * @param dbKey key of the database for which the filter has been configured
 		 * @param filterName the Key that should be used for this filter
-		 * @param query encoding of the returned message
+		 * @param query SQL query
 		 * 
 		 * @return success or error message, if possible in the requested encoding/format
 		 */
@@ -1077,20 +1124,29 @@ public class QueryVisualizationService extends RESTService {
 		@Path("filter/{database}/{key}")
 		@Produces(MediaType.APPLICATION_JSON)
 		@Consumes(MediaType.APPLICATION_JSON)
+		@ApiOperation(
+				value = "Adds a filter to the user's settings/profile.")
 		@ApiResponses(
 				value = { @ApiResponse(
 						code = 201,
-						message = "Added filter."),
+						message = "Added filter.",
+						response = String[].class,
+						responseContainer = "List"),
 						@ApiResponse(
 								code = 400,
 								message = "Adding filter failed.") })
-		public Response addFilter(@PathParam("database") String dbKey, @PathParam("key") String filterName,
-				String query) {
-			JSONObject o;
+		public Response addFilter(@ApiParam(
+				value = "Key of the database.",
+				required = true) @PathParam("database") String dbKey,
+				@ApiParam(
+						value = "Key that should be used for the filter",
+						required = true) @PathParam("key") String filterName,
+				@ApiParam(
+						value = "JSON containing the query.",
+						required = true) QVQuery query) {
 			try {
 				VisualizationType vtypei = VisualizationType.JSON;
-				o = (JSONObject) JSONValue.parseWithException(query);
-				return addFilter(dbKey, filterName, stringfromJSON(o, "query"), vtypei);
+				return addFilter(dbKey, filterName, query.getQuery(), vtypei);
 			} catch (Exception e) {
 				L2pLogger.logEvent(service, Event.SERVICE_ERROR, e.toString());
 				return Response.status(Status.BAD_REQUEST)
@@ -1156,14 +1212,23 @@ public class QueryVisualizationService extends RESTService {
 		@DELETE
 		@Path("filter/{database}/{key}")
 		@Produces(MediaType.APPLICATION_JSON)
+		@ApiOperation(
+				value = "Deletes a filter from the user's settings/profile.")
 		@ApiResponses(
 				value = { @ApiResponse(
 						code = 200,
-						message = "Deleted filter."),
+						message = "Deleted filter.",
+						response = String[].class,
+						responseContainer = "List"),
 						@ApiResponse(
 								code = 400,
 								message = "Deleting filter failed.") })
-		public Response deleteFilter(@PathParam("database") String dbKey, @PathParam("key") String filterKey) {
+		public Response deleteFilter(@ApiParam(
+				value = "Key of the database.",
+				required = true) @PathParam("database") String dbKey,
+				@ApiParam(
+						value = "Key of the filter.",
+						required = true) @PathParam("key") String filterKey) {
 			try {
 				service.initializeDBConnection();
 				long user = Context.getCurrent().getMainAgent().getId();
@@ -1197,30 +1262,28 @@ public class QueryVisualizationService extends RESTService {
 
 		@POST
 		@Path("query/visualize")
-		@Produces(MediaType.TEXT_HTML)
+		@Produces({ MediaType.TEXT_HTML, "image/png" })
 		@Consumes(MediaType.APPLICATION_JSON)
+		@ApiOperation(
+				value = "Executes a query and returns the chosen visualization.")
 		@ApiResponses(
 				value = { @ApiResponse(
 						code = 200,
-						message = "Created query."),
+						message = "Created query.",
+						response = String.class),
 						@ApiResponse(
 								code = 400,
 								message = "Creating Query failed.") })
-		public Response visualizeQuery(@QueryParam("format") @DefaultValue("JSON") String vtypei, String content) {
-			JSONObject o;
+		public Response visualizeQuery(@ApiParam(
+				value = "Visualization type.") @QueryParam("format") @DefaultValue("JSON") String vtypei,
+				@ApiParam(
+						value = "Query information.",
+						required = true) QVQueryInformation content) {
 			try {
 				VisualizationType v = VisualizationType.valueOf(vtypei.toUpperCase());
-				o = (JSONObject) JSONValue.parseWithException(content);
-				String query = stringfromJSON(o, "query");
-				String dbKey = stringfromJSON(o, "dbkey");
-				String[] queryParameters = stringArrayfromJSON(o, "queryparams");
-				boolean useCache = boolfromJSON(o, "cache");
-				Integer modificationTypeIndex = intfromJSON(o, "modtypei");
-				String title = stringfromJSON(o, "title");
-				String width = stringfromJSON(o, "width");
-				String height = stringfromJSON(o, "height");
-				Response res = createQuery(query, queryParameters, dbKey, useCache, modificationTypeIndex, v, title,
-						width, height, false);
+				Response res = createQuery(content.getQuery(), content.getQueryparams(), content.getDbkey(),
+						content.isCache(), content.getModtypei(), v, content.getTitle(), content.getWidth(),
+						content.getHeight(), false);
 
 				L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_10, Context.getCurrent().getMainAgent(), "" + vtypei);
 				return res;
@@ -1235,30 +1298,29 @@ public class QueryVisualizationService extends RESTService {
 		@Path("query")
 		@Produces(MediaType.APPLICATION_JSON)
 		@Consumes(MediaType.APPLICATION_JSON)
+		@ApiOperation(
+				value = "Executes a query.")
 		@ApiResponses(
 				value = { @ApiResponse(
 						code = 201,
-						message = "Created query."),
+						message = "Created query.",
+						response = String[].class,
+						responseContainer = "List"),
 						@ApiResponse(
 								code = 400,
 								message = "Creating Query failed.") })
-		public Response createQuery(@QueryParam("format") @DefaultValue("JSON") String vtypei, String content) {
-			JSONObject o;
+		public Response createQuery(@ApiParam(
+				value = "Visualization type.") @QueryParam("format") @DefaultValue("JSON") String vtypei,
+				@ApiParam(
+						value = "Query information.") QVQueryInformation content) {
 			try {
 				VisualizationType v = VisualizationType.valueOf(vtypei.toUpperCase());
-				o = (JSONObject) JSONValue.parseWithException(content);
-				String query = stringfromJSON(o, "query");
-				String dbKey = stringfromJSON(o, "dbkey");
-				String[] queryParameters = stringArrayfromJSON(o, "queryparams");
-				boolean useCache = boolfromJSON(o, "cache");
-				Integer modificationTypeIndex = intfromJSON(o, "modtypei");
-				String title = stringfromJSON(o, "title");
-				String width = stringfromJSON(o, "width");
-				String height = stringfromJSON(o, "height");
-				Response res = createQuery(query, queryParameters, dbKey, useCache, modificationTypeIndex, v, title,
-						width, height, true);
+				Response res = createQuery(content.getQuery(), content.getQueryparams(), content.getDbkey(),
+						content.isCache(), content.getModtypei(), v, content.getTitle(), content.getWidth(),
+						content.getHeight(), true);
 
-				L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_11, Context.getCurrent().getMainAgent(), "" + query);
+				L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_11, Context.getCurrent().getMainAgent(),
+						"" + content.getQuery());
 				return res;
 			} catch (Exception e) {
 				L2pLogger.logEvent(service, Event.SERVICE_ERROR, e.toString());
@@ -1289,14 +1351,19 @@ public class QueryVisualizationService extends RESTService {
 		@GET
 		@Path("query")
 		@Produces(MediaType.APPLICATION_JSON)
+		@ApiOperation(
+				value = "Returns a list/table of the keys of all available/configured databases of the user.")
 		@ApiResponses(
 				value = { @ApiResponse(
 						code = 200,
-						message = "Got Database queries."),
+						message = "Got Database queries.",
+						response = String[].class,
+						responseContainer = "List"),
 						@ApiResponse(
 								code = 400,
 								message = "Retrieving queries failed.") })
-		public Response getQueryKeys(@QueryParam("format") @DefaultValue("JSON") String visualizationTypeIndex) {
+		public Response getQueryKeys(@ApiParam(
+				value = "Visualization type.") @QueryParam("format") @DefaultValue("JSON") String visualizationTypeIndex) {
 			try {
 				service.initializeDBConnection();
 				long user = Context.getCurrent().getMainAgent().getId();
@@ -1341,20 +1408,25 @@ public class QueryVisualizationService extends RESTService {
 		/**
 		 * Deletes a filter from the user's settings/profile.
 		 * 
-		 * @param queryKey the key of the filter
+		 * @param queryKey the key of the query
 		 * @return success or error message, if possible in the requested encoding/format
 		 */
 		@DELETE
 		@Path("query/{key}")
 		@Produces(MediaType.APPLICATION_JSON)
+		@ApiOperation(
+				value = "Deletes a filter from the user's settings/profile.")
 		@ApiResponses(
 				value = { @ApiResponse(
 						code = 200,
-						message = "Deleted query."),
+						message = "Deleted query.",
+						response = String[].class,
+						responseContainer = "List"),
 						@ApiResponse(
 								code = 400,
 								message = "Deleting query failed.") })
-		public Response deleteQuery(@PathParam("key") String queryKey) {
+		public Response deleteQuery(@ApiParam(
+				value = "Key of the query.") @PathParam("key") String queryKey) {
 			try {
 				service.initializeDBConnection();
 				long user = Context.getCurrent().getMainAgent().getId();
@@ -1394,18 +1466,24 @@ public class QueryVisualizationService extends RESTService {
 		@GET
 		@Path("query/{key}")
 		@Produces(MediaType.APPLICATION_JSON)
+		@ApiOperation(
+				value = "Executes a stored query on the specified database.")
 		@ApiResponses(
 				value = { @ApiResponse(
 						code = 200,
-						message = "Visualization created."),
+						message = "Visualization created.",
+						response = String[].class,
+						responseContainer = "List"),
 						@ApiResponse(
 								code = 400,
 								message = "Creating visualization failed."),
 						@ApiResponse(
 								code = 404,
 								message = "Didn't find requested query.") })
-		public Response getQueryValues(@PathParam("key") String key,
-				@QueryParam("format") @DefaultValue("JSON") String format) {
+		public Response getQueryValues(@ApiParam(
+				value = "Key of the query.") @PathParam("key") String key,
+				@ApiParam(
+						value = "Visualization type.") @QueryParam("format") @DefaultValue("JSON") String format) {
 			service.initializeDBConnection();
 
 			try {
@@ -1456,6 +1534,8 @@ public class QueryVisualizationService extends RESTService {
 		@POST
 		@Consumes(MediaType.APPLICATION_JSON)
 		@Path("query/{key}/visualize")
+		@ApiOperation(
+				value = "Executes a stored query on the specified database.")
 		@ApiResponses(
 				value = { @ApiResponse(
 						code = 200,
@@ -1466,8 +1546,12 @@ public class QueryVisualizationService extends RESTService {
 						@ApiResponse(
 								code = 404,
 								message = "Didn't find requested query.") })
-		public Response visualizeQueryByKeyWithValues(@PathParam("key") String key,
-				@QueryParam("format") @DefaultValue("") String format, String content) {
+		public Response visualizeQueryByKeyWithValues(@ApiParam(
+				value = "Key of the query") @PathParam("key") String key,
+				@ApiParam(
+						value = "Visualization type.") @QueryParam("format") @DefaultValue("") String format,
+				@ApiParam(
+						value = "List of query parameters.") QVQueryparameter content) {
 			return visualizeQueryByKey(key, format, content);
 		}
 
@@ -1483,6 +1567,8 @@ public class QueryVisualizationService extends RESTService {
 		@GET
 		@Consumes(MediaType.APPLICATION_JSON)
 		@Path("query/{key}/visualize")
+		@ApiOperation(
+				value = "Executes a stored query on the specified database.")
 		@ApiResponses(
 				value = { @ApiResponse(
 						code = 200,
@@ -1493,8 +1579,12 @@ public class QueryVisualizationService extends RESTService {
 						@ApiResponse(
 								code = 404,
 								message = "Didn't find requested query.") })
-		public Response visualizeQueryByKey(@PathParam("key") String key,
-				@QueryParam("format") @DefaultValue("") String format, String content) {
+		public Response visualizeQueryByKey(@ApiParam(
+				value = "Key of the query.") @PathParam("key") String key,
+				@ApiParam(
+						value = "Visualization type.") @QueryParam("format") @DefaultValue("") String format,
+				@ApiParam(
+						value = "List of the query parameters.") QVQueryparameter content) {
 			service.initializeDBConnection();
 
 			Query query = null;
@@ -1502,8 +1592,7 @@ public class QueryVisualizationService extends RESTService {
 			try {
 				long user = Context.getCurrent().getMainAgent().getId();
 				try {
-					JSONObject o = (JSONObject) JSONValue.parseWithException(content);
-					queryParameters = stringArrayfromJSON(o, "queryparams");
+					queryParameters = content.getQueryparams();
 				} catch (Exception e) {
 					// Use default filters
 					queryParameters = null;
@@ -1524,8 +1613,19 @@ public class QueryVisualizationService extends RESTService {
 
 			try {
 				L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_15, Context.getCurrent().getMainAgent(), "" + query);
-				return Response.status(Status.OK)
-						.entity(service.visualizeQuery(query, queryParameters, format.toUpperCase())).build();
+				String res = service.visualizeQuery(query, queryParameters, format.toUpperCase());
+				if (format.equals("PNG")) {
+					HtmlImageGenerator imageGenerator = new HtmlImageGenerator();
+					imageGenerator.loadHtml(res);
+					BufferedImage image = imageGenerator.getBufferedImage();
+					ByteArrayOutputStream baos = new ByteArrayOutputStream();
+					ImageIO.write(image, "png", baos);
+					byte[] imageData = baos.toByteArray();
+					ResponseBuilder responseBuilder = Response.ok(imageData);
+					responseBuilder.header(HttpHeaders.CONTENT_TYPE, "image/png");
+					return responseBuilder.build();
+				}
+				return Response.status(Status.OK).entity(res).build();
 			} catch (Exception e) {
 				L2pLogger.logEvent(service, Event.SERVICE_ERROR, e.toString());
 				return Response.status(Status.BAD_REQUEST).entity(service.visualizationException.generate(e,
@@ -1542,6 +1642,8 @@ public class QueryVisualizationService extends RESTService {
 		 */
 		@GET
 		@Path("validate")
+		@ApiOperation(
+				value = "Validates a user login.")
 		public Response validateLogin() {
 			String returnString = "";
 			returnString += "You are " + ((UserAgent) Context.getCurrent().getMainAgent()).getUserData()
