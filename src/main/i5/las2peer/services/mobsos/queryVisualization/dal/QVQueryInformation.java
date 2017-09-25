@@ -23,6 +23,16 @@ public class QVQueryInformation implements Serializable {
 	private String[] queryparams;
 	@NotNull
 	private String title;
+	@NotNull
+	private boolean save;
+
+	public boolean isSave() {
+		return save;
+	}
+
+	public void setSave(boolean save) {
+		this.save = save;
+	}
 
 	public boolean isCache() {
 		return cache;

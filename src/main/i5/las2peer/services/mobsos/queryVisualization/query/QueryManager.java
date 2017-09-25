@@ -2,6 +2,7 @@ package i5.las2peer.services.mobsos.queryVisualization.query;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -69,8 +70,7 @@ public class QueryManager {
 	/**
 	 * write a log message
 	 * 
-	 * @param message
-	 *            Message that will be logged
+	 * @param message Message that will be logged
 	 */
 	protected void logMessage(String message) {
 		getActiveNode().observerNotice(Event.SERVICE_MESSAGE, this.getClass().getName() + ": " + message);
@@ -92,10 +92,8 @@ public class QueryManager {
 	/**
 	 * Constructor
 	 * 
-	 * @param service
-	 *            instance of the qv service
-	 * @param dbm
-	 *            Database
+	 * @param service instance of the qv service
+	 * @param dbm Database
 	 */
 	public QueryManager(QueryVisualizationService service, SQLDatabase dbm) {
 		storageDatabase = dbm;
@@ -181,7 +179,8 @@ public class QueryManager {
 						keyListString += " " + iterator.next();
 					}
 
-					throw new Exception("The requested Query is not known! (Requested:" + queryKey + ", Available: " + keyListString + ")");
+					throw new Exception("The requested Query is not known! (Requested:" + queryKey + ", Available: "
+							+ keyListString + ")");
 				}
 			}
 			return query;
@@ -195,7 +194,8 @@ public class QueryManager {
 	public void databaseDeleted(String dbKey) {
 		String db;
 		try {
-			db = service.databaseManagerMap.get(Context.getCurrent().getMainAgent().getId()).getDatabaseInstance(dbKey).getDatabase();
+			db = service.databaseManagerMap.get(Context.getCurrent().getMainAgent().getId()).getDatabaseInstance(dbKey)
+					.getDatabase();
 		} catch (Exception e1) {
 			return;
 		}
@@ -212,13 +212,13 @@ public class QueryManager {
 	/**
 	 * Remove given database from the database
 	 * 
-	 * @param queryKey
-	 *            Key of the query which will be removed
+	 * @param queryKey Key of the query which will be removed
 	 */
 	public void removeQ(String queryKey) {
 		try {
 			storageDatabase.connect();
-			PreparedStatement s = storageDatabase.prepareStatement("DELETE FROM `QUERIES` WHERE ((`KEY` = ? AND `USER` = ?))");
+			PreparedStatement s = storageDatabase
+					.prepareStatement("DELETE FROM `QUERIES` WHERE ((`KEY` = ? AND `USER` = ?))");
 			s.setString(1, queryKey);
 			s.setLong(2, Context.getCurrent().getMainAgent().getId());
 			s.executeUpdate();
@@ -257,7 +257,7 @@ public class QueryManager {
 			while (iterator.hasNext()) {
 				settingsList.add(iterator.next());
 			}
-
+			settingsList.sort(new QueryComparator());
 			return settingsList;
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -292,5 +292,11 @@ public class QueryManager {
 		o.put("width", query.getWidth());
 		o.put("height", query.getHeight());
 		return o;
+	}
+
+	class QueryComparator implements Comparator<Query> {
+		public int compare(Query q1, Query q2) {
+			return q1.getTitle().compareTo(q2.getTitle());
+		}
 	}
 }
