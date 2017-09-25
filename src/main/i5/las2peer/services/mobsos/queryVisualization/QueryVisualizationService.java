@@ -83,7 +83,6 @@ import io.swagger.annotations.Contact;
 import io.swagger.annotations.Info;
 import io.swagger.annotations.License;
 import io.swagger.annotations.SwaggerDefinition;
-import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 
 /**
@@ -137,39 +136,6 @@ public class QueryVisualizationService extends RESTService {
 	public VisualizationManager visualizationManager = null;
 	public VisualizationException visualizationException = null;
 	public ModificationManager modificationManager = null;
-
-	private static String stringfromJSON(JSONObject obj, String key) throws SQLException {
-		String s = (String) obj.get(key);
-		if (s == null) {
-			throw new SQLException("Key " + key + " is missing in JSON");
-		}
-		return s;
-	}
-
-	private static String[] stringArrayfromJSON(JSONObject obj, String key) throws SQLException {
-		JSONArray ja = (JSONArray) obj.get(key);
-		if (ja == null) {
-			throw new SQLException("Key " + key + " is missing in JSON");
-		}
-		String[] s = ja.toArray(new String[0]);
-		return s;
-	}
-
-	private static int intfromJSON(JSONObject obj, String key) {
-		return (int) obj.get(key);
-	}
-
-	private static boolean boolfromJSON(JSONObject obj, String key) {
-		try {
-			return (boolean) obj.get(key);
-		} catch (Exception e) {
-			String b = (String) obj.get(key);
-			if (b.equals("1")) {
-				return true;
-			}
-			return (boolean) Boolean.parseBoolean(b);
-		}
-	}
 
 	public QueryVisualizationService() {
 		// read and set properties values
