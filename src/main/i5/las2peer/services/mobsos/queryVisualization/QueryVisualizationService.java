@@ -390,8 +390,10 @@ public class QueryVisualizationService extends RESTService {
 							currentRow[i - 1] = resultSet.getDate(i);
 							break;
 						case Types.TIME:
-						case Types.TIMESTAMP:
 							currentRow[i - 1] = resultSet.getTime(i);
+							break;
+						case Types.TIMESTAMP:
+							currentRow[i - 1] = resultSet.getTimestamp(i);
 							break;
 						case Types.BIGINT:
 							currentRow[i - 1] = resultSet.getLong(i);
