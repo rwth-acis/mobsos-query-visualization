@@ -249,9 +249,12 @@ public class Query implements XmlAble, Serializable {
 			qp.append(param);
 			qp.append(qpDelim);
 		}
-		if (qp.length() > 0) {
-			qp.delete(qp.length() - 5, qp.length());
+
+		// Cut off last qpDelim
+		if (queryParameters.length > 0) {
+			qp.delete(qp.length() - qpDelim.length(), qp.length());
 		}
+
 		s.setString(1, key);
 		s.setLong(2, user);
 		s.setString(3, username);

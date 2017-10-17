@@ -48,7 +48,8 @@ public class ServiceTest {
 	private static UserAgent testAgent;
 	private static final String testPass = "adamspass";
 
-	private final ServiceNameVersion testServiceClass = new ServiceNameVersion(QueryVisualizationService.class.getCanonicalName(), "1.0");
+	private final ServiceNameVersion testServiceClass = new ServiceNameVersion(
+			QueryVisualizationService.class.getCanonicalName(), "1.0");
 
 	private static final String mainPath = "QVS/";
 
@@ -73,7 +74,8 @@ public class ServiceTest {
 
 		try {
 
-			input = new FileInputStream("etc/i5.las2peer.services.mobsos.queryVisualization.QueryVisualizationService.properties");
+			input = new FileInputStream(
+					"etc/i5.las2peer.services.mobsos.queryVisualization.QueryVisualizationService.properties");
 
 			// load a properties file
 			prop.load(input);
@@ -118,8 +120,7 @@ public class ServiceTest {
 	/**
 	 * Called before the tests start.
 	 * 
-	 * Sets up the node and initializes connector and users that can be used
-	 * throughout the tests.
+	 * Sets up the node and initializes connector and users that can be used throughout the tests.
 	 * 
 	 * @throws Exception
 	 */
@@ -149,8 +150,7 @@ public class ServiceTest {
 	}
 
 	/**
-	 * Called after the tests have finished. Shuts down the server and prints
-	 * out the connector log file for reference.
+	 * Called after the tests have finished. Shuts down the server and prints out the connector log file for reference.
 	 * 
 	 * @throws Exception
 	 */
@@ -192,8 +192,7 @@ public class ServiceTest {
 
 	/**
 	 * 
-	 * Test the example method that consumes one path parameter which we give
-	 * the value "testInput" in this test.
+	 * Test the example method that consumes one path parameter which we give the value "testInput" in this test.
 	 * 
 	 */
 	public void testExampleMethod() {
@@ -231,7 +230,8 @@ public class ServiceTest {
 
 		try {
 			c.setLogin(Long.toString(testAgent.getId()), testPass);
-			c.sendRequest("PUT", mainPath + dbPath + testDBName, testDB.toJSONString(), "application/json", "application/json", emptyPairs);
+			c.sendRequest("PUT", mainPath + dbPath + testDBName, testDB.toJSONString(), "application/json",
+					"application/json", emptyPairs);
 			ClientResponse result = c.sendRequest("GET", mainPath + dbPath, ""); // Remove
 																					// DB
 																					// first
@@ -264,10 +264,12 @@ public class ServiceTest {
 			c.setLogin(Long.toString(testAgent.getId()), testPass);
 			cleanUp(c);
 
-			ClientResponse result = c.sendRequest("PUT", mainPath + dbPath + testDBName, testFilter.toJSONString(), "application/json", "application/json", emptyPairs);
+			ClientResponse result = c.sendRequest("PUT", mainPath + dbPath + testDBName, testFilter.toJSONString(),
+					"application/json", "application/json", emptyPairs);
 			assertEquals(400, result.getHttpCode());
 
-			result = c.sendRequest("PUT", mainPath + dbPath + testDBName, testDB.toJSONString(), "application/json", "application/json", emptyPairs);
+			result = c.sendRequest("PUT", mainPath + dbPath + testDBName, testDB.toJSONString(), "application/json",
+					"application/json", emptyPairs);
 			cleanUp(c);
 			assertEquals(201, result.getHttpCode());
 			JSONArray expected = new JSONArray();
@@ -300,7 +302,8 @@ public class ServiceTest {
 			ClientResponse result = c.sendRequest("DELETE", mainPath + dbPath + "asohusnaoue", "");
 			assertEquals(404, result.getHttpCode());
 
-			c.sendRequest("PUT", mainPath + dbPath + testDBName, testDB.toJSONString(), "application/json", "application/json", emptyPairs);
+			c.sendRequest("PUT", mainPath + dbPath + testDBName, testDB.toJSONString(), "application/json",
+					"application/json", emptyPairs);
 			result = c.sendRequest("DELETE", mainPath + dbPath + testDBName, "");
 			assertEquals(200, result.getHttpCode());
 			JSONArray expected = new JSONArray();
@@ -335,8 +338,10 @@ public class ServiceTest {
 			assertEquals(200, result.getHttpCode());
 
 			// Add a filter
-			result = c.sendRequest("PUT", mainPath + dbPath + testDBName, testDB.toJSONString(), "application/json", "application/json", emptyPairs);
-			result = c.sendRequest("PUT", mainPath + filterPath + testDBName + "/" + testFilterName, testFilter.toJSONString(), "application/json", "application/json", emptyPairs);
+			result = c.sendRequest("PUT", mainPath + dbPath + testDBName, testDB.toJSONString(), "application/json",
+					"application/json", emptyPairs);
+			result = c.sendRequest("PUT", mainPath + filterPath + testDBName + "/" + testFilterName,
+					testFilter.toJSONString(), "application/json", "application/json", emptyPairs);
 
 			result = c.sendRequest("GET", mainPath + filterPath, "");
 			assertEquals(200, result.getHttpCode());
@@ -381,16 +386,20 @@ public class ServiceTest {
 			c.setLogin(Long.toString(testAgent.getId()), testPass);
 			cleanUp(c);
 
-			ClientResponse result = c.sendRequest("PUT", mainPath + filterPath + testDBName + "/" + testFilterName, testDB.toJSONString(), "application/json", "application/json", emptyPairs);
+			ClientResponse result = c.sendRequest("PUT", mainPath + filterPath + testDBName + "/" + testFilterName,
+					testDB.toJSONString(), "application/json", "application/json", emptyPairs);
 			assertEquals(400, result.getHttpCode());
 
-			result = c.sendRequest("PUT", mainPath + filterPath + testDBName + "/" + testFilterName, testFilter.toJSONString(), "application/json", "application/json", emptyPairs);
+			result = c.sendRequest("PUT", mainPath + filterPath + testDBName + "/" + testFilterName,
+					testFilter.toJSONString(), "application/json", "application/json", emptyPairs);
 			assertEquals(400, result.getHttpCode()); // testDB does not exist
 														// yet!
 
-			result = c.sendRequest("PUT", mainPath + dbPath + testDBName, testDB.toJSONString(), "application/json", "application/json", emptyPairs);
+			result = c.sendRequest("PUT", mainPath + dbPath + testDBName, testDB.toJSONString(), "application/json",
+					"application/json", emptyPairs);
 			assertEquals(201, result.getHttpCode());
-			result = c.sendRequest("PUT", mainPath + filterPath + testDBName + "/" + testFilterName, testFilter.toJSONString(), "application/json", "application/json", emptyPairs);
+			result = c.sendRequest("PUT", mainPath + filterPath + testDBName + "/" + testFilterName,
+					testFilter.toJSONString(), "application/json", "application/json", emptyPairs);
 			assertEquals(201, result.getHttpCode()); // testDB exists now!
 			JSONArray expected = new JSONArray();
 			for (String s : new String[] { "AddedFilter", "string", testFilterName }) {
@@ -422,8 +431,12 @@ public class ServiceTest {
 			ClientResponse result = c.sendRequest("DELETE", mainPath + filterPath + "/asohusnaoue", "");
 			assertEquals(404, result.getHttpCode());
 
-			result = c.sendRequest("PUT", mainPath + dbPath + testDBName, testDB.toJSONString(), "application/json", "application/json", emptyPairs);
-			result = c.sendRequest("PUT", mainPath + filterPath + testDBName + "/" + testFilterName, testFilter.toJSONString(), "application/json", "application/json", emptyPairs);
+			result = c.sendRequest("PUT", mainPath + dbPath + testDBName, testDB.toJSONString(), "application/json",
+					"application/json", emptyPairs);
+			assertEquals(201, result.getHttpCode());
+			result = c.sendRequest("PUT", mainPath + filterPath + testDBName + "/" + testFilterName,
+					testFilter.toJSONString(), "application/json", "application/json", emptyPairs);
+			assertEquals(201, result.getHttpCode());
 			result = c.sendRequest("DELETE", mainPath + filterPath + testDBName + "/" + testFilterName, "");
 			assertEquals(200, result.getHttpCode());
 			JSONArray expected = new JSONArray();
@@ -454,17 +467,21 @@ public class ServiceTest {
 			cleanUp(c);
 
 			// Not a valid Query
-			ClientResponse result = c.sendRequest("POST", mainPath + queryPath, testDB.toJSONString(), "application/json", "application/json", emptyPairs);
+			ClientResponse result = c.sendRequest("POST", mainPath + queryPath, testDB.toJSONString(),
+					"application/json", "application/json", emptyPairs);
 			assertEquals(400, result.getHttpCode());
 
 			// Database does not exist yet
-			result = c.sendRequest("POST", mainPath + queryPath, testQuery.toJSONString(), "application/json", "*/*", emptyPairs);
+			result = c.sendRequest("POST", mainPath + queryPath, testQuery.toJSONString(), "application/json", "*/*",
+					emptyPairs);
 			assertEquals(400, result.getHttpCode());
 
 			// Now create database first
-			result = c.sendRequest("PUT", mainPath + dbPath + testDBName, testDB.toJSONString(), "application/json", "application/json", emptyPairs);
+			result = c.sendRequest("PUT", mainPath + dbPath + testDBName, testDB.toJSONString(), "application/json",
+					"application/json", emptyPairs);
 			assertEquals(201, result.getHttpCode());
-			result = c.sendRequest("POST", mainPath + queryPath, testQuery.toJSONString(), "application/json", "*/*", emptyPairs);
+			result = c.sendRequest("POST", mainPath + queryPath, testQuery.toJSONString(), "application/json", "*/*",
+					emptyPairs);
 			assertEquals(201, result.getHttpCode());
 			Integer key = 0;
 			try {
