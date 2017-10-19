@@ -45,6 +45,9 @@ var exportXMLNode              = document.getElementById("qv_export_xml");
 var exportXMLWrapperNode       = document.getElementById("qv_export_xml_wrapper");
 var exportJSONNode             = document.getElementById("qv_export_json");
 var exportJSONWrapperNode      = document.getElementById("qv_export_json_wrapper");
+var exportURLNode             = document.getElementById("qv_export_url");
+var exportURLNodeLink         = document.getElementById("qv_save_export_url_link");
+var exportURLWrapperNode      = document.getElementById("qv_export_url_wrapper");
 var saveHtmlLinkNode           = document.getElementById("qv_save_html_link");
 var saveWidgetLinkNode         = document.getElementById("qv_save_widget_link");
 var saveExportHTMLLinkNode     = document.getElementById("qv_save_export_html_link");
@@ -776,7 +779,7 @@ var load_export_xml = function(){
             $(exportXMLWrapperNode).addClass("loading");
             demo.retrieve(form_data.query,form_data.queryParams,form_data.databaseKey,form_data.modificationTypeIndex,QV.VISUALIZATIONTYPE.XML.STRING,form_data.visualizationOptions,null,function(data){
                 ready.export_xml = true;
-                var serialized = new XMLSerializer().serializeToString(data);
+                var serialized = new XMLSerializer().serializeToString($.parseXML((data)));
                 exportXMLNode.value = serialized.replace(/(\r\n|\r|\n)/g, '\r\n').replace(/\r\n$/,"");
                 saveExportXMLLinkNode.href='data:text/plain;base64,' + btoa(serialized);
                 $(exportXMLWrapperNode).children().show();
@@ -804,6 +807,27 @@ var load_export_json = function(){
                 $(exportJSONWrapperNode).children().show();
                 $(exportJSONWrapperNode).removeClass("loading");
             });
+        }
+    }
+};
+
+/**
+ * Shows the Export As URL Tab
+ */
+var load_export_url = function(){
+    if(!locked){
+        toggle_tabs(1,2);
+        toggle_tabs(3,5);
+        if(ready.export_url === undefined){
+            $(exportURLWrapperNode).children().hide();
+            $(exportURLWrapperNode).addClass("loading");
+            //demo.retrieve(form_data.query,form_data.queryParams,form_data.databaseKey,form_data.modificationTypeIndex,QV.VISUALIZATIONTYPE.JSON.STRING,form_data.visualizationOptions,null,function(data){
+                ready.export_url = true;
+                exportURLNode.value = demo.getHost()+demo.getPath()+"query/"+$(selectQuery).find("option:selected").val()+"/visualize";//serialized.replace(/(\r\n|\r|\n)/g, '\r\n').replace(/\r\n$/,"");
+                $(exportURLNodeLink).attr("href", demo.getHost()+demo.getPath()+"query/"+$(selectQuery).find("option:selected").val()+"/visualize");
+                $(exportURLWrapperNode).children().show();
+                $(exportURLWrapperNode).removeClass("loading");
+            //});
         }
     }
 };

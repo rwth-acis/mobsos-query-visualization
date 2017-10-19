@@ -244,6 +244,7 @@
                 <li><a href="javascript:load_export_csv()">CSV</a></li>
                 <li><a href="javascript:load_export_xml()">XML</a></li>
                 <li><a href="javascript:load_export_json()">JSON</a></li>
+                <li><a href="javascript:load_export_url()">URL</a></li>
             </ul>
             <div class="tabpane tabs3">
                 <div id="qv_export_html_wrapper">
@@ -267,6 +268,12 @@
                 <div id="qv_export_json_wrapper">
                     <textarea id="qv_export_json" rows="20" cols="200" style="white-space: nowrap;" readonly="readonly"></textarea>
                     <a download="data.json"  id='qv_save_export_json_link'><button>Save</button></a>
+                </div>
+            </div>
+            <div class="tabpane tabs3">
+                <div id="qv_export_url_wrapper">
+                    <textarea id="qv_export_url" rows="2" cols="200" style="white-space: nowrap;" readonly="readonly"></textarea>
+                    <a href="" id='qv_save_export_url_link' target="_blank"><button>Open</button></a>
                 </div>
             </div>
         </div>

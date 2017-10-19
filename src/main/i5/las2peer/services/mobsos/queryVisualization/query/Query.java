@@ -23,9 +23,8 @@ import i5.las2peer.services.mobsos.queryVisualization.encoding.VisualizationType
 
 /**
  * Query.java <br>
- * A stored Query. It provides all data needed to to execute it again, including
- * credentials to the database and visualization information. Since this is a
- * dataclass, no functionality is implemented here.
+ * A stored Query. It provides all data needed to to execute it again, including credentials to the database and
+ * visualization information. Since this is a dataclass, no functionality is implemented here.
  */
 public class Query implements XmlAble, Serializable {
 
@@ -50,7 +49,10 @@ public class Query implements XmlAble, Serializable {
 	private int width = 0;
 	private int height = 0;
 
-	public Query(long user, SQLDatabaseType jdbcInfo, String username, String password, String databaseKey, String database, String host, int port, String queryStatement, String[] queryParameters, boolean useCache, int modificationTypeIndex, VisualizationType visualizationTypeIndex, String[] visualizationParameters, String key) {
+	public Query(long user, SQLDatabaseType jdbcInfo, String username, String password, String databaseKey,
+			String database, String host, int port, String queryStatement, String[] queryParameters, boolean useCache,
+			int modificationTypeIndex, VisualizationType visualizationTypeIndex, String[] visualizationParameters,
+			String key) {
 
 		this.user = user;
 		this.jdbcInfo = jdbcInfo;
@@ -221,13 +223,19 @@ public class Query implements XmlAble, Serializable {
 		String xmlString = "";
 		xmlString += "<Query key=\"" + this.getKey() + "\">\n";
 
-		xmlString += "\t<Credentials username=\"" + this.getUsername() + "\" password=\"" + this.getPassword() + "\" ></Credentials>\n";
-		xmlString += "\t<Database key=\"" + this.getDatabaseKey() + "\" name=\"" + this.getDatabaseName() + "\" type=\"" + this.getJdbcInfo().getCode() + "\" host=\"" + this.getHost() + "\" port=\"" + this.getPort() + "\"></Database>\n";
-		xmlString += "\t<VisualizationAndModification visualizationTypeIndex=\"" + this.getVisualizationTypeIndex() + "\" modificationTypeIndex=\"" + this.getModificationTypeIndex() + "\" useCache=\"" + this.usesCache() + "\"></VisualizationAndModification>\n";
+		xmlString += "\t<Credentials username=\"" + this.getUsername() + "\" password=\"" + this.getPassword()
+				+ "\" ></Credentials>\n";
+		xmlString += "\t<Database key=\"" + this.getDatabaseKey() + "\" name=\"" + this.getDatabaseName() + "\" type=\""
+				+ this.getJdbcInfo().getCode() + "\" host=\"" + this.getHost() + "\" port=\"" + this.getPort()
+				+ "\"></Database>\n";
+		xmlString += "\t<VisualizationAndModification visualizationTypeIndex=\"" + this.getVisualizationTypeIndex()
+				+ "\" modificationTypeIndex=\"" + this.getModificationTypeIndex() + "\" useCache=\"" + this.usesCache()
+				+ "\"></VisualizationAndModification>\n";
 		xmlString += "\t<QueryStatement statement=\"" + this.getQueryStatement() + "\" ></QueryStatement>\n";
 		// Google Visualizations -> Hardcoded TODO
 		if (this.visualizationTypeIndex.ordinal() > 3) {
-			xmlString += "\t<VisualizationParameters title=\"" + this.title + "\" height=\"" + this.height + "\" width=\"" + this.width + "\"></VisualizationParameters>\n";
+			xmlString += "\t<VisualizationParameters title=\"" + this.title + "\" height=\"" + this.height
+					+ "\" width=\"" + this.width + "\"></VisualizationParameters>\n";
 		}
 
 		xmlString += "</Query>";
@@ -241,9 +249,12 @@ public class Query implements XmlAble, Serializable {
 			qp.append(param);
 			qp.append(qpDelim);
 		}
-		if (qp.length() > 0) {
-			qp.delete(qp.length() - 5, qp.length());
+
+		// Cut off last qpDelim
+		if (queryParameters.length > 0) {
+			qp.delete(qp.length() - qpDelim.length(), qp.length());
 		}
+
 		s.setString(1, key);
 		s.setLong(2, user);
 		s.setString(3, username);
@@ -265,7 +276,11 @@ public class Query implements XmlAble, Serializable {
 	}
 
 	public static String getReplace() {
-		return "REPLACE INTO `QUERIES` (`KEY`, `USER`, `USERNAME`, `PASSWORD`, `JDBCINFO`," + "`DATABASE_KEY`, `DATABASE_NAME`, `HOST`, `PORT`, `USE_CACHE`, `QUERY_STATEMENT`," + "`FILTER_DEFAULTS`," + "`MODIFICATION_TYPE`, `VISUALIZATION_TYPE`, `VISUALIZATION_TITLE`," + "`VISUALIZATION_HEIGHT`, `VISUALIZATION_WIDTH`) VALUES" + "(?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?);";
+		return "REPLACE INTO `QUERIES` (`KEY`, `USER`, `USERNAME`, `PASSWORD`, `JDBCINFO`,"
+				+ "`DATABASE_KEY`, `DATABASE_NAME`, `HOST`, `PORT`, `USE_CACHE`, `QUERY_STATEMENT`,"
+				+ "`FILTER_DEFAULTS`," + "`MODIFICATION_TYPE`, `VISUALIZATION_TYPE`, `VISUALIZATION_TITLE`,"
+				+ "`VISUALIZATION_HEIGHT`, `VISUALIZATION_WIDTH`) VALUES"
+				+ "(?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?,	?);";
 	}
 
 	public static Query[] fromResultSet(ResultSet set) {
@@ -289,12 +304,15 @@ public class Query implements XmlAble, Serializable {
 					queryParameters = qp.split(qpDelim);
 				}
 				int modificationTypeIndex = set.getInt("MODIFICATION_TYPE");
-				VisualizationType visualizationTypeIndex = VisualizationType.valueOf(set.getString("VISUALIZATION_TYPE"));
+				VisualizationType visualizationTypeIndex = VisualizationType
+						.valueOf(set.getString("VISUALIZATION_TYPE"));
 				String visualizationTitle = set.getString("VISUALIZATION_TITLE");
 				int visualizationHeight = set.getInt("VISUALIZATION_HEIGHT");
 				int visualizationWidth = set.getInt("VISUALIZATION_WIDTH");
 				String[] s = new String[] { visualizationTitle, "" + visualizationHeight, "" + visualizationWidth };
-				Query q = new Query(user, jdbcInfo, username, password, databaseKey, databaseName, host, port, queryStatement, queryParameters, useCache, modificationTypeIndex, visualizationTypeIndex, s, key);
+				Query q = new Query(user, jdbcInfo, username, password, databaseKey, databaseName, host, port,
+						queryStatement, queryParameters, useCache, modificationTypeIndex, visualizationTypeIndex, s,
+						key);
 				qs.add(q);
 			}
 			return qs.toArray(new Query[] {});
@@ -307,14 +325,11 @@ public class Query implements XmlAble, Serializable {
 	/**
 	 * Inserts the query parameters and returns the "ready to use" query.
 	 * 
-	 * @param query
-	 *            a query with placeholders
-	 * @param queryParameters
-	 *            the corresponding query parameters
+	 * @param query a query with placeholders
+	 * @param queryParameters the corresponding query parameters
 	 * 
 	 * @return the query with the inserted query parameters
-	 * @throws L2pServiceException
-	 *             las2peer exception
+	 * @throws L2pServiceException las2peer exception
 	 * 
 	 */
 	public static String insertParameters(String query, String[] queryParameters) throws L2pServiceException {
