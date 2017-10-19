@@ -2,6 +2,7 @@ package i5.las2peer.services.mobsos.queryVisualization;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -241,61 +242,6 @@ public class QueryVisualizationService extends RESTService {
 				return saveQuery(query, queryParameters, databaseKey, useCache, modificationTypeIndex,
 						visualizationTypeIndex, visualizationParameters);
 			}
-			methodResult = executeSQLQuery(query, queryParameters, databaseKey, cacheKey);
-			Modification modification = modificationManager
-					.getModification(ModificationType.fromInt(modificationTypeIndex));
-			Visualization visualization = visualizationManager.getVisualization(visualizationTypeIndex);
-
-			if (modification.check(methodResult))
-				methodResult = modification.apply(methodResult);
-			else
-				return visualizationException.generate(new Exception(),
-						"Can not modify result with " + modification.getType().name() + ".");
-
-			if (visualization.check(methodResult, visualizationParameters))
-				return visualization.generate(methodResult, visualizationParameters);
-			else
-				return visualizationException.generate(new Exception(),
-						"Can not convert result into " + visualization.getType().name() + "-format.");
-		} catch (Exception e) {
-			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
-			return visualizationException.generate(e, "An Error occured while trying to execute the query!");
-		}
-	}
-
-	/**
-	 * 
-	 * Executes a sql query on the specified database. Warning: only a very simple checking mechanism for escape
-	 * characters is implemented. Only queries from trusted sources should be executed!
-	 * 
-	 * @param sqlQuery the query (has to be "ready to execute")
-	 * @param databaseKey the key of the database which is to be queried
-	 * @param cacheKey the key which should be used to cache the query result (if empty, result is not cached)
-	 * 
-	 * @return a Method Result
-	 */
-	private MethodResult executeSQLQuery(String sqlQuery, String[] queryParameters, String databaseKey, String cacheKey)
-			throws L2pServiceException, SQLException {
-		if (queryParameters != null && queryParameters.length > 0) {
-			sqlQuery = Query.insertParameters(sqlQuery, queryParameters);
-		}
-		ResultSet resultSet = getResultSet(sqlQuery, databaseKey);
-		L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_18, Context.getCurrent().getMainAgent(), "" + sqlQuery);
-		return transformToMethodResult(resultSet, cacheKey);
-	}
-
-	/**
-	 * Execute an sql-query and returns the corresponding result set. <br>
-	 * The actual database access is done here (by calling sqlDatabase.executeQuery).
-	 * 
-	 * @param sqlQuery the query
-	 * @param databaseKey the key of the database
-	 * 
-	 * @return ResultSet of the database query
-	 * @throws LASException
-	 */
-	private ResultSet getResultSet(String sqlQuery, String databaseKey) throws L2pServiceException, SQLException {
-		try {
 			if (databaseKey == null || databaseKey.isEmpty() || databaseKey.equalsIgnoreCase("undefined")
 					|| databaseKey.equalsIgnoreCase("MonitoringDefault")) {
 				databaseKey = stDbKey;
@@ -314,8 +260,68 @@ public class QueryVisualizationService extends RESTService {
 			if (sqlDatabase == null) {
 				throw new Exception("Failed to get an instance of the desired database!");
 			}
+			Connection c = sqlDatabase.getConnection();
+			methodResult = executeSQLQuery(c, sqlDatabase, query, queryParameters, databaseKey, cacheKey);
+			Modification modification = modificationManager
+					.getModification(ModificationType.fromInt(modificationTypeIndex));
+			Visualization visualization = visualizationManager.getVisualization(visualizationTypeIndex);
+			if (modification.check(methodResult))
+				methodResult = modification.apply(methodResult);
+			else {
+				c.close();
+				return visualizationException.generate(new Exception(),
+						"Can not modify result with " + modification.getType().name() + ".");
+			}
+			if (visualization.check(methodResult, visualizationParameters)) {
+				String v = visualization.generate(methodResult, visualizationParameters);
+				c.close();
+				return v;
+			} else {
+				c.close();
+				return visualizationException.generate(new Exception(),
+						"Can not convert result into " + visualization.getType().name() + "-format.");
+			}
+		} catch (Exception e) {
+			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
+			return visualizationException.generate(e, "An Error occured while trying to execute the query!");
+		}
+	}
 
-			ResultSet resultSet = sqlDatabase.executeQuery(sqlQuery);
+	/**
+	 * 
+	 * Executes a sql query on the specified database. Warning: only a very simple checking mechanism for escape
+	 * characters is implemented. Only queries from trusted sources should be executed!
+	 * 
+	 * @param sqlQuery the query (has to be "ready to execute")
+	 * @param databaseKey the key of the database which is to be queried
+	 * @param cacheKey the key which should be used to cache the query result (if empty, result is not cached)
+	 * 
+	 * @return a Method Result
+	 */
+	private MethodResult executeSQLQuery(Connection con, SQLDatabase sqlDatabase, String sqlQuery,
+			String[] queryParameters, String databaseKey, String cacheKey) throws L2pServiceException, SQLException {
+		if (queryParameters != null && queryParameters.length > 0) {
+			sqlQuery = Query.insertParameters(sqlQuery, queryParameters);
+		}
+		ResultSet resultSet = getResultSet(con, sqlDatabase, sqlQuery, databaseKey);
+		L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_18, Context.getCurrent().getMainAgent(), "" + sqlQuery);
+		return transformToMethodResult(resultSet, cacheKey);
+	}
+
+	/**
+	 * Execute an sql-query and returns the corresponding result set. <br>
+	 * The actual database access is done here (by calling sqlDatabase.executeQuery).
+	 * 
+	 * @param sqlQuery the query
+	 * @param databaseKey the key of the database
+	 * 
+	 * @return ResultSet of the database query
+	 * @throws LASException
+	 */
+	private ResultSet getResultSet(Connection con, SQLDatabase sqlDatabase, String sqlQuery, String databaseKey)
+			throws L2pServiceException, SQLException {
+		try {
+			ResultSet resultSet = sqlDatabase.executeQuery(con, sqlQuery);
 			if (resultSet == null) {
 				throw new Exception("Failed to get an result set from the desired database!");
 			}
@@ -514,6 +520,7 @@ public class QueryVisualizationService extends RESTService {
 
 	private String visualizeQuery(Query query, String[] queryParameters, String format) throws Exception {
 		MethodResult methodResult = null;
+		Connection c = null;
 		if (query.usesCache() && queryParameters == null) {
 			methodResult = resultCache.get(query.getKey());
 		}
@@ -521,10 +528,10 @@ public class QueryVisualizationService extends RESTService {
 									// result
 									// desired
 			SQLDatabase sqlDatabase = new SQLDatabase(query);
-
-			sqlDatabase.connect();
-			ResultSet resultSet = sqlDatabase.executeQuery(query.getInsertedQueryStatement(queryParameters));
+			c = sqlDatabase.getConnection();
+			ResultSet resultSet = sqlDatabase.executeQuery(c, query.getInsertedQueryStatement(queryParameters));
 			if (resultSet == null) {
+				c.close();
 				return visualizationException.generate(new Exception(),
 						"Failed to get a result set from the desired database!");
 			}
@@ -538,7 +545,6 @@ public class QueryVisualizationService extends RESTService {
 				// this
 				// query
 			}
-			sqlDatabase.disconnect();
 		}
 
 		Modification modification = modificationManager
@@ -550,16 +556,22 @@ public class QueryVisualizationService extends RESTService {
 		}
 		if (modification.check(methodResult))
 			methodResult = modification.apply(methodResult);
-		else
+		else {
+			c.close();
 			return visualizationException.generate(new Exception(),
 					"Can not modify result with " + modification.getType().name() + ".");
+		}
 
 		if (visualization.check(methodResult, query.getVisualizationParameters())) {
 			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_16, Context.getCurrent().getMainAgent(), "" + query);
-			return visualization.generate(methodResult, query.getVisualizationParameters());
-		} else
+			String v = visualization.generate(methodResult, query.getVisualizationParameters());
+			c.close();
+			return v;
+		} else {
+			c.close();
 			return visualizationException.generate(new Exception(),
 					"Can not convert result into " + visualization.getType().name() + "-format.");
+		}
 	}
 
 	@Override

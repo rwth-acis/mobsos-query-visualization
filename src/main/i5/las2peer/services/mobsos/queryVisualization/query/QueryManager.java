@@ -1,5 +1,6 @@
 package i5.las2peer.services.mobsos.queryVisualization.query;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.Comparator;
@@ -32,31 +33,7 @@ public class QueryManager {
 	private SQLDatabase storageDatabase = null;
 	private QueryVisualizationService service = null;
 
-	private boolean connected = false;
-
 	/*************** "service" helper methods *************************/
-
-	private boolean connect() {
-		try {
-			storageDatabase.connect();
-			connected = true;
-		} catch (Exception e) {
-			e.printStackTrace();
-			return false;
-		}
-		return true;
-	}
-
-	private void disconnect(boolean wasConnected) {
-		if (!wasConnected && connected) {
-			storageDatabase.disconnect();
-			connected = false;
-		}
-	}
-
-	private void disconnect() {
-		disconnect(false);
-	}
 
 	/**
 	 * get the anonymous agent
@@ -104,15 +81,14 @@ public class QueryManager {
 		Query[] settings = null;
 
 		try {
-			connect();
-			PreparedStatement p = storageDatabase.prepareStatement("SELECT * FROM QUERIES WHERE USER = ?;");
+			Connection c = storageDatabase.getConnection();
+			PreparedStatement p = c.prepareStatement("SELECT * FROM QUERIES WHERE USER = ?;");
 			p.setLong(1, Context.getCurrent().getMainAgent().getId());
 			ResultSet databases = p.executeQuery();
 			settings = Query.fromResultSet(databases);
+			c.close();
 		} catch (Exception e) {
 			logMessage("Failed to get the users' SQL settings. " + e.getMessage());
-		} finally {
-			disconnect();
 		}
 
 		for (Query setting : settings)
@@ -131,13 +107,14 @@ public class QueryManager {
 					break;
 				}
 			}
-			storageDatabase.connect();
-			PreparedStatement p = storageDatabase.prepareStatement(Query.getReplace());
+
+			Connection c = storageDatabase.getConnection();
+			PreparedStatement p = c.prepareStatement(Query.getReplace());
 			query.prepareStatement(p);
 			p.executeUpdate();
-			storageDatabase.disconnect();
 			userQueryMap.put(query.getKey(), query);
 			logMessage("stored query: " + query.getKey());
+			c.close();
 			return true;
 		} catch (Exception e) {
 			logMessage("Error storing query! " + e);
@@ -152,12 +129,13 @@ public class QueryManager {
 		try {
 			UserAgent u = (UserAgent) Context.getCurrent().getMainAgent();
 			if (u.getLoginName().equals("anonymous") && u.getUserData() == null) {
-				storageDatabase.connect();
-				PreparedStatement p = storageDatabase.prepareStatement("SELECT * FROM QUERIES WHERE `KEY` = ?;");
+
+				Connection c = storageDatabase.getConnection();
+				PreparedStatement p = c.prepareStatement("SELECT * FROM QUERIES WHERE `KEY` = ?;");
 				p.setString(1, queryKey);
 				ResultSet databases = p.executeQuery();
 				Query[] settings = Query.fromResultSet(databases);
-				storageDatabase.disconnect();
+				c.close();
 				if (settings.length > 0) {
 					return settings[0];
 				}
@@ -216,13 +194,13 @@ public class QueryManager {
 	 */
 	public void removeQ(String queryKey) {
 		try {
-			storageDatabase.connect();
-			PreparedStatement s = storageDatabase
-					.prepareStatement("DELETE FROM `QUERIES` WHERE ((`KEY` = ? AND `USER` = ?))");
+
+			Connection c = storageDatabase.getConnection();
+			PreparedStatement s = c.prepareStatement("DELETE FROM `QUERIES` WHERE ((`KEY` = ? AND `USER` = ?))");
 			s.setString(1, queryKey);
 			s.setLong(2, Context.getCurrent().getMainAgent().getId());
 			s.executeUpdate();
-			storageDatabase.disconnect();
+			c.close();
 		} catch (Exception e) {
 			logMessage("Error removing the Query! " + e);
 			System.out.println("QV critical:");
