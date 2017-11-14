@@ -5,8 +5,8 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.ListIterator;
 
-import i5.las2peer.logging.L2pLogger;
-import i5.las2peer.logging.NodeObserver.Event;
+import i5.las2peer.api.Context;
+import i5.las2peer.api.logging.MonitoringEvent;
 
 /**
  * VisualizationGoogleTable.java <br>
@@ -19,6 +19,7 @@ public class VisualizationGoogleTable extends Visualization {
 		super(VisualizationType.GOOGLETABLE);
 	}
 
+	@Override
 	public String generate(MethodResult methodResult, String[] visualizationParameters) {
 
 		StringBuilder resultHTML = new StringBuilder();
@@ -79,7 +80,6 @@ public class VisualizationGoogleTable extends Visualization {
 					// do nothing, just treat it as string
 					break;
 				}
-				;
 				resultHTML.append("data.addColumn('" + columnTypeString + "', '" + columnNames[i] + "');\n");
 			}
 			resultHTML.append("data.addRows([\n");
@@ -90,8 +90,9 @@ public class VisualizationGoogleTable extends Visualization {
 
 				Object[] currentRow = iterator.next();
 				for (int i = 0; i < columnCount; i++) {
-					if (i > 0)
+					if (i > 0) {
 						resultHTML.append(", ");
+					}
 					switch (columnTypes[i]) {
 					case Types.DATE:
 						// TODO: this is wrong, it starts counting the month at 0...
@@ -131,7 +132,6 @@ public class VisualizationGoogleTable extends Visualization {
 						resultHTML.append("\"").append(value).append("\"");
 						break;
 					}
-					;
 				}
 				if (iterator.hasNext()) {
 					resultHTML.append("],\n");
@@ -150,11 +150,11 @@ public class VisualizationGoogleTable extends Visualization {
 
 			return resultHTML.toString();
 		} catch (Exception e) {
-			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.getMessage().toString());
+			Context.get().monitorEvent(this, MonitoringEvent.SERVICE_ERROR, e.getMessage().toString());
 			try {
 				return super.visualizationException.generate(e, "Encoding into Google Table Chart failed.");
 			} catch (Exception ex) {
-				L2pLogger.logEvent(this, Event.SERVICE_ERROR, ex.getMessage().toString());
+				Context.get().monitorEvent(this, MonitoringEvent.SERVICE_ERROR, ex.getMessage().toString());
 				return "Unknown/handled error occurred!";
 			}
 		}
@@ -169,16 +169,19 @@ public class VisualizationGoogleTable extends Visualization {
 			length--;
 		}
 
-		for (int i = 0; i < length; i++)
+		for (int i = 0; i < length; i++) {
 			text += possible.charAt((int) Math.floor(Math.random() * possible.length()));
+		}
 
 		return text;
 
 	}
 
+	@Override
 	public boolean check(MethodResult methodResult, String[] visualizationParameters) {
-		if (visualizationParameters == null || visualizationParameters.length != 3)
+		if (visualizationParameters == null || visualizationParameters.length != 3) {
 			return false;
+		}
 		return true;
 	}
 

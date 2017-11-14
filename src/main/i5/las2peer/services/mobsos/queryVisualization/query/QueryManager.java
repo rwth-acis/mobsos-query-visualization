@@ -10,10 +10,8 @@ import java.util.LinkedList;
 import java.util.List;
 
 import i5.las2peer.api.Context;
-import i5.las2peer.logging.NodeObserver.Event;
-import i5.las2peer.p2p.Node;
-import i5.las2peer.security.Agent;
-import i5.las2peer.security.UserAgent;
+import i5.las2peer.api.logging.MonitoringEvent;
+import i5.las2peer.api.security.UserAgent;
 import i5.las2peer.services.mobsos.queryVisualization.QueryVisualizationService;
 import i5.las2peer.services.mobsos.queryVisualization.database.DBDoesNotExistException;
 import i5.las2peer.services.mobsos.queryVisualization.database.SQLDatabase;
@@ -29,20 +27,11 @@ import net.minidev.json.JSONObject;
  */
 public class QueryManager {
 
-	private HashMap<String, Query> userQueryMap = new HashMap<String, Query>();
+	private HashMap<String, Query> userQueryMap = new HashMap<>();
 	private SQLDatabase storageDatabase = null;
 	private QueryVisualizationService service = null;
 
 	/*************** "service" helper methods *************************/
-
-	/**
-	 * get the anonymous agent
-	 * 
-	 * @return anonymous agent
-	 */
-	protected Agent getAnonymousAgent() {
-		return Context.getCurrent().getLocalNode().getAnonymous();
-	}
 
 	/**
 	 * write a log message
@@ -50,16 +39,7 @@ public class QueryManager {
 	 * @param message Message that will be logged
 	 */
 	protected void logMessage(String message) {
-		getActiveNode().observerNotice(Event.SERVICE_MESSAGE, this.getClass().getName() + ": " + message);
-	}
-
-	/**
-	 * get the currently active l2p node (from the current thread context)
-	 * 
-	 * @return the currently active las2peer node
-	 */
-	protected Node getActiveNode() {
-		return Context.getCurrent().getLocalNode();
+		Context.get().monitorEvent(MonitoringEvent.SERVICE_MESSAGE, this.getClass().getName() + ": " + message);
 	}
 
 	/**************************
@@ -83,7 +63,7 @@ public class QueryManager {
 		try {
 			Connection c = storageDatabase.getConnection();
 			PreparedStatement p = c.prepareStatement("SELECT * FROM QUERIES WHERE USER = ?;");
-			p.setLong(1, Context.getCurrent().getMainAgent().getId());
+			p.setString(1, Context.get().getMainAgent().getIdentifier());
 			ResultSet databases = p.executeQuery();
 			settings = Query.fromResultSet(databases);
 			c.close();
@@ -91,8 +71,9 @@ public class QueryManager {
 			logMessage("Failed to get the users' SQL settings. " + e.getMessage());
 		}
 
-		for (Query setting : settings)
+		for (Query setting : settings) {
 			userQueryMap.put(setting.getKey(), setting);
+		}
 	}
 
 	// add a query to the p2p storage
@@ -127,8 +108,8 @@ public class QueryManager {
 	// get a query from the p2p storage
 	public Query getQuery(String queryKey) throws Exception {
 		try {
-			UserAgent u = (UserAgent) Context.getCurrent().getMainAgent();
-			if (u.getLoginName().equals("anonymous") && u.getUserData() == null) {
+			UserAgent u = (UserAgent) Context.get().getMainAgent();
+			if (u.getLoginName().equals("anonymous")) {
 
 				Connection c = storageDatabase.getConnection();
 				PreparedStatement p = c.prepareStatement("SELECT * FROM QUERIES WHERE `KEY` = ?;");
@@ -172,7 +153,7 @@ public class QueryManager {
 	public void databaseDeleted(String dbKey) {
 		String db;
 		try {
-			db = service.databaseManagerMap.get(Context.getCurrent().getMainAgent().getId()).getDatabaseInstance(dbKey)
+			db = service.databaseManagerMap.get(Context.get().getMainAgent().getIdentifier()).getDatabaseInstance(dbKey)
 					.getDatabase();
 		} catch (Exception e1) {
 			return;
@@ -198,7 +179,7 @@ public class QueryManager {
 			Connection c = storageDatabase.getConnection();
 			PreparedStatement s = c.prepareStatement("DELETE FROM `QUERIES` WHERE ((`KEY` = ? AND `USER` = ?))");
 			s.setString(1, queryKey);
-			s.setLong(2, Context.getCurrent().getMainAgent().getId());
+			s.setString(2, Context.get().getMainAgent().getIdentifier());
 			s.executeUpdate();
 			c.close();
 		} catch (Exception e) {
@@ -213,7 +194,7 @@ public class QueryManager {
 	// get a list of the names of all queries of the user
 	public List<String> getQueryKeyList() {
 		try {
-			LinkedList<String> keyList = new LinkedList<String>();
+			LinkedList<String> keyList = new LinkedList<>();
 			Iterator<String> iterator = this.userQueryMap.keySet().iterator();
 			while (iterator.hasNext()) {
 				keyList.add(iterator.next());
@@ -230,7 +211,7 @@ public class QueryManager {
 	// returns a list of all database settings elements
 	public List<Query> getQueryList() {
 		try {
-			LinkedList<Query> settingsList = new LinkedList<Query>();
+			LinkedList<Query> settingsList = new LinkedList<>();
 			Iterator<Query> iterator = this.userQueryMap.values().iterator();
 			while (iterator.hasNext()) {
 				settingsList.add(iterator.next());
@@ -246,7 +227,7 @@ public class QueryManager {
 
 	public SQLDatabaseSettings getDBSettings(Query q) {
 		String databaseName = q.getDatabaseName();
-		SQLDatabaseManager dbm = service.databaseManagerMap.get(Context.getCurrent().getMainAgent().getId());
+		SQLDatabaseManager dbm = service.databaseManagerMap.get(Context.get().getMainAgent().getIdentifier());
 		for (SQLDatabaseSettings db : dbm.getDatabaseSettingsList()) {
 			if (databaseName.equals(db.getDatabase())) {
 				return db;
@@ -273,6 +254,7 @@ public class QueryManager {
 	}
 
 	class QueryComparator implements Comparator<Query> {
+		@Override
 		public int compare(Query q1, Query q2) {
 			return q1.getTitle().compareTo(q2.getTitle());
 		}

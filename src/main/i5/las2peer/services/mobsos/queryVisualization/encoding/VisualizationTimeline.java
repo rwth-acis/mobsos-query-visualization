@@ -6,8 +6,8 @@ import java.sql.Types;
 import java.util.HashSet;
 import java.util.ListIterator;
 
-import i5.las2peer.logging.L2pLogger;
-import i5.las2peer.logging.NodeObserver.Event;
+import i5.las2peer.api.Context;
+import i5.las2peer.api.logging.MonitoringEvent;
 
 /**
  * VisualizationTimeline.java <br>
@@ -20,6 +20,7 @@ public class VisualizationTimeline extends Visualization {
 		super(VisualizationType.GOOGLETIMELINECHART);
 	}
 
+	@Override
 	public String generate(MethodResult methodResult, String[] visualizationParameters) {
 		StringBuilder resultHTML = new StringBuilder();
 
@@ -80,7 +81,6 @@ public class VisualizationTimeline extends Visualization {
 					// do nothing, just treat it as string
 					break;
 				}
-				;
 				resultHTML.append("data.addColumn('").append(columnTypeString).append("', '").append(columnNames[i])
 						.append("');\n");
 			}
@@ -92,8 +92,9 @@ public class VisualizationTimeline extends Visualization {
 
 				Object[] currentRow = iterator.next();
 				for (int i = 0; i < columnCount; i++) {
-					if (i > 0)
+					if (i > 0) {
 						resultHTML.append(", ");
+					}
 					switch (columnTypes[i]) {
 					case Types.DATE:
 						// TODO: this is wrong, it starts counting the month at 0...
@@ -119,7 +120,6 @@ public class VisualizationTimeline extends Visualization {
 						resultHTML.append("\"").append(value).append("\"");
 						break;
 					}
-					;
 				}
 				if (iterator.hasNext()) {
 					resultHTML.append("],\n");
@@ -141,11 +141,11 @@ public class VisualizationTimeline extends Visualization {
 
 			return resultHTML.toString();
 		} catch (Exception e) {
-			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.getMessage().toString());
+			Context.get().monitorEvent(this, MonitoringEvent.SERVICE_ERROR, e.getMessage().toString());
 			try {
 				return super.visualizationException.generate(e, "Encoding into Timeline Chart failed.");
 			} catch (Exception ex) {
-				L2pLogger.logEvent(this, Event.SERVICE_ERROR, ex.getMessage().toString());
+				Context.get().monitorEvent(this, MonitoringEvent.SERVICE_ERROR, ex.getMessage().toString());
 				return "Unknown/handled error occurred!";
 			}
 		}
@@ -160,26 +160,32 @@ public class VisualizationTimeline extends Visualization {
 			length--;
 		}
 
-		for (int i = 0; i < length; i++)
+		for (int i = 0; i < length; i++) {
 			text += possible.charAt((int) Math.floor(Math.random() * possible.length()));
+		}
 
 		return text;
 
 	}
 
+	@Override
 	public boolean check(MethodResult methodResult, String[] visualizationParameters) {
 		Integer[] columnDatatypes = methodResult.getColumnDatatypes();
 		int numOfCols = columnDatatypes.length;
 
-		if (numOfCols < 2)
+		if (numOfCols < 2) {
 			return false;
-		if (visualizationParameters == null || visualizationParameters.length != 3)
+		}
+		if (visualizationParameters == null || visualizationParameters.length != 3) {
 			return false;
-		if (!methodResult.getRowIterator().hasNext())
+		}
+		if (!methodResult.getRowIterator().hasNext()) {
 			return false; // needs at least one column
-		if (!columnDatatypes[0].equals(Types.DATE))
+		}
+		if (!columnDatatypes[0].equals(Types.DATE)) {
 			return false;
-		HashSet<Integer> acceptedValues = new HashSet<Integer>();
+		}
+		HashSet<Integer> acceptedValues = new HashSet<>();
 		acceptedValues.add(Types.BIGINT);
 		acceptedValues.add(Types.DECIMAL);
 		acceptedValues.add(Types.DOUBLE);
@@ -188,8 +194,9 @@ public class VisualizationTimeline extends Visualization {
 		acceptedValues.add(Types.SMALLINT);
 
 		for (int i = 1; i < numOfCols; i++) {
-			if (!acceptedValues.contains(columnDatatypes[i]))
+			if (!acceptedValues.contains(columnDatatypes[i])) {
 				return false;
+			}
 		}
 		return true;
 	}

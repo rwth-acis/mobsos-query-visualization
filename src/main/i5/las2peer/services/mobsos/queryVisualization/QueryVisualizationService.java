@@ -33,12 +33,13 @@ import javax.ws.rs.core.Response.Status;
 
 import gui.ava.html.image.generator.HtmlImageGenerator;
 import i5.las2peer.api.Context;
-import i5.las2peer.execution.L2pServiceException;
-import i5.las2peer.logging.L2pLogger;
-import i5.las2peer.logging.NodeObserver.Event;
+import i5.las2peer.api.ManualDeployment;
+import i5.las2peer.api.ServiceException;
+import i5.las2peer.api.logging.MonitoringEvent;
+import i5.las2peer.api.security.AnonymousAgent;
+import i5.las2peer.api.security.UserAgent;
 import i5.las2peer.restMapper.RESTService;
 import i5.las2peer.restMapper.annotations.ServicePath;
-import i5.las2peer.security.UserAgent;
 import i5.las2peer.services.mobsos.queryVisualization.caching.MethodResultCache;
 import i5.las2peer.services.mobsos.queryVisualization.dal.QVDatabase;
 import i5.las2peer.services.mobsos.queryVisualization.dal.QVQuery;
@@ -92,15 +93,14 @@ import net.minidev.json.JSONObject;
  * This is a template for a very basic LAS2peer service that uses the LAS2peer Web-Connector for RESTful access to it.
  * 
  */
-@ServicePath("QVS")
+@ManualDeployment
+@ServicePath("/QVS")
 public class QueryVisualizationService extends RESTService {
 
 	/*** configuration ***/
 	public static final String DEFAULT_DATABASE_KEY = "storage";
 	public static final String DEFAULT_HOST = "This value should be replaced automatically by configuration file!";
-	public static final int DEFAULT_PORT = 0; // This value should be replaced
-												// automatically by
-												// configuration file!
+	public static final int DEFAULT_PORT = 0;
 	public static final String DEFAULT_DATABASE = "This value should be replaced automatically by configuration file!";
 	public static final String DEFAULT_USER = "This value should be replaced automatically by configuration file!";
 	public static final String DEFAULT_PASSWORD = "This value should be replaced automatically by configuration file!";
@@ -111,7 +111,7 @@ public class QueryVisualizationService extends RESTService {
 
 	protected String stDbKey = DEFAULT_DATABASE_KEY;
 	protected String stDbHost = DEFAULT_HOST;
-	protected int stDbPort = DEFAULT_PORT;
+	protected int stDbPort = DEFAULT_PORT; // This value should be replaced automatically by configuration file!
 	protected String stDbDatabase = DEFAULT_DATABASE;
 	protected String stDbUser = DEFAULT_USER;
 	protected String stDbPassword = DEFAULT_PASSWORD;
@@ -129,9 +129,9 @@ public class QueryVisualizationService extends RESTService {
 	public SQLDatabaseSettings databaseSettings = null;
 	public SQLDatabase storageDatabase = null;
 
-	public HashMap<Long, SQLDatabaseManager> databaseManagerMap = new HashMap<Long, SQLDatabaseManager>();
-	public HashMap<Long, SQLFilterManager> filterManagerMap = new HashMap<Long, SQLFilterManager>();
-	public HashMap<Long, QueryManager> queryManagerMap = new HashMap<Long, QueryManager>();
+	public HashMap<String, SQLDatabaseManager> databaseManagerMap = new HashMap<>();
+	public HashMap<String, SQLFilterManager> filterManagerMap = new HashMap<>();
+	public HashMap<String, QueryManager> queryManagerMap = new HashMap<>();
 
 	public MethodResultCache resultCache = null;
 	public VisualizationManager visualizationManager = null;
@@ -140,19 +140,19 @@ public class QueryVisualizationService extends RESTService {
 
 	public QueryVisualizationService() {
 		// read and set properties values
-		// IF THE SERVICE CLASS NAME IS CHANGED, THE PROPERTIES FILE NAME NEED
-		// TO BE CHANGED TOO!
+		// IF THE SERVICE CLASS NAME IS CHANGED,
+		// THE PROPERTIES FILE NAME NEED TO BE CHANGED TOO!
 		setFieldValues();
 	}
 
 	public void initializeDBConnection() {
-		long user = Context.getCurrent().getMainAgent().getId();
+		String user = Context.get().getMainAgent().getIdentifier();
 		if (databaseManagerMap.get(user) != null) {
 			return;
 		}
 		try {
 			if (stDbHost == null || stDbPort < 1 || stDbDatabase == null || stDbUser == null || stDbPassword == null) {
-				L2pLogger.logEvent(this, Event.SERVICE_ERROR,
+				Context.get().monitorEvent(this, MonitoringEvent.SERVICE_ERROR,
 						"Provided invalid parameters (default database) for the service! Please check you service config file!");
 				throw new Exception("No Database Connection values from config file available!");
 			}
@@ -197,7 +197,7 @@ public class QueryVisualizationService extends RESTService {
 			this.resultCache = MethodResultCache.getInstance(Integer.parseInt(resultTimeout));
 
 		} catch (Exception e) {
-			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
+			Context.get().monitorEvent(this, MonitoringEvent.SERVICE_ERROR, e.toString());
 		}
 	}
 
@@ -245,11 +245,9 @@ public class QueryVisualizationService extends RESTService {
 			if (databaseKey == null || databaseKey.isEmpty() || databaseKey.equalsIgnoreCase("undefined")
 					|| databaseKey.equalsIgnoreCase("MonitoringDefault")) {
 				databaseKey = stDbKey;
-				// logMessage("No database key has been provided. Using
-				// default
-				// DB: " + databaseKey);
+				// logMessage("No database key has been provided. Using default DB: " + databaseKey);
 			}
-			long user = Context.getCurrent().getMainAgent().getId();
+			String user = Context.get().getMainAgent().getIdentifier();
 			SQLDatabaseManager databaseManager = databaseManagerMap.get(user);
 
 			if (databaseManager == null) {
@@ -265,9 +263,9 @@ public class QueryVisualizationService extends RESTService {
 			Modification modification = modificationManager
 					.getModification(ModificationType.fromInt(modificationTypeIndex));
 			Visualization visualization = visualizationManager.getVisualization(visualizationTypeIndex);
-			if (modification.check(methodResult))
+			if (modification.check(methodResult)) {
 				methodResult = modification.apply(methodResult);
-			else {
+			} else {
 				c.close();
 				return visualizationException.generate(new Exception(),
 						"Can not modify result with " + modification.getType().name() + ".");
@@ -282,7 +280,7 @@ public class QueryVisualizationService extends RESTService {
 						"Can not convert result into " + visualization.getType().name() + "-format.");
 			}
 		} catch (Exception e) {
-			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
+			Context.get().monitorEvent(this, MonitoringEvent.SERVICE_ERROR, e.toString());
 			return visualizationException.generate(e, "An Error occured while trying to execute the query!");
 		}
 	}
@@ -299,12 +297,12 @@ public class QueryVisualizationService extends RESTService {
 	 * @return a Method Result
 	 */
 	private MethodResult executeSQLQuery(Connection con, SQLDatabase sqlDatabase, String sqlQuery,
-			String[] queryParameters, String databaseKey, String cacheKey) throws L2pServiceException, SQLException {
+			String[] queryParameters, String databaseKey, String cacheKey) throws ServiceException, SQLException {
 		if (queryParameters != null && queryParameters.length > 0) {
 			sqlQuery = Query.insertParameters(sqlQuery, queryParameters);
 		}
 		ResultSet resultSet = getResultSet(con, sqlDatabase, sqlQuery, databaseKey);
-		L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_18, Context.getCurrent().getMainAgent(), "" + sqlQuery);
+		Context.get().monitorEvent(this, MonitoringEvent.SERVICE_CUSTOM_MESSAGE_18, "" + sqlQuery, true);
 		return transformToMethodResult(resultSet, cacheKey);
 	}
 
@@ -316,10 +314,11 @@ public class QueryVisualizationService extends RESTService {
 	 * @param databaseKey the key of the database
 	 * 
 	 * @return ResultSet of the database query
-	 * @throws LASException
+	 * @throws ServiceException
+	 * @throws SQLException
 	 */
 	private ResultSet getResultSet(Connection con, SQLDatabase sqlDatabase, String sqlQuery, String databaseKey)
-			throws L2pServiceException, SQLException {
+			throws ServiceException, SQLException {
 		try {
 			ResultSet resultSet = sqlDatabase.executeQuery(con, sqlQuery);
 			if (resultSet == null) {
@@ -330,9 +329,9 @@ public class QueryVisualizationService extends RESTService {
 		} catch (SQLException ex) {
 			throw ex;
 		} catch (Exception e) {
-			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
+			Context.get().monitorEvent(this, MonitoringEvent.SERVICE_ERROR, e.toString());
 			System.out.println(e.getMessage());
-			throw new L2pServiceException("Exception in getResultSet", e);
+			throw new ServiceException("Exception in getResultSet", e);
 		}
 	}
 
@@ -345,9 +344,9 @@ public class QueryVisualizationService extends RESTService {
 	 * 
 	 * @return a Method Result
 	 * 
-	 * @throws L2pServiceException
+	 * @throws ServiceException
 	 */
-	private MethodResult transformToMethodResult(ResultSet resultSet, String cacheKey) throws L2pServiceException {
+	private MethodResult transformToMethodResult(ResultSet resultSet, String cacheKey) throws ServiceException {
 		try {
 			MethodResult methodResult = new MethodResult();
 
@@ -376,9 +375,7 @@ public class QueryVisualizationService extends RESTService {
 					columnTypes[i - 1] = resultSetMetaData.getColumnType(i);
 
 					if (columnNames[i - 1] == null) {
-						// logMessage("Invalid SQL Datatype for column: " +
-						// i +
-						// ". Fallback to Object...");
+						// logMessage("Invalid SQL Datatype for column: " + i + ". Fallback to Object...");
 					}
 				}
 				methodResult.setColumnDatatypes(columnTypes);
@@ -425,7 +422,7 @@ public class QueryVisualizationService extends RESTService {
 							currentRow[i - 1] = resultSet.getString(i);
 							break;
 						default:
-							L2pLogger.logEvent(this, Event.SERVICE_ERROR,
+							Context.get().monitorEvent(this, MonitoringEvent.SERVICE_ERROR,
 									"Unknown SQL Datatype: " + columnTypes[i - 1].toString());
 							try {
 								currentRow[i - 1] = resultSet.getObject(i).toString();
@@ -434,12 +431,9 @@ public class QueryVisualizationService extends RESTService {
 							}
 							break;
 						}
-						;
 
-						// Note: this is a little DANGEROUS because it does
-						// not
-						// match the
-						// column datatype. BUT: toString() works on it
+						// Note: this is a little DANGEROUS because it does not match the column datatype. BUT:
+						// toString() works on it
 						if (currentRow[i - 1] == null) {
 							currentRow[i - 1] = "";
 						}
@@ -447,16 +441,14 @@ public class QueryVisualizationService extends RESTService {
 					methodResult.addRow(currentRow);
 				}
 			} catch (SQLException e) {
-				L2pLogger.logEvent(this, Event.SERVICE_ERROR,
+				Context.get().monitorEvent(this, MonitoringEvent.SERVICE_ERROR,
 						"SQL exception when trying to handle an SQL query result: " + e.getMessage());
 			} catch (Exception e) {
-				L2pLogger.logEvent(this, Event.SERVICE_ERROR,
+				Context.get().monitorEvent(this, MonitoringEvent.SERVICE_ERROR,
 						"Exception when trying to handle an SQL query result: " + e.getMessage());
 			}
 
-			// since the values are now in the method result the result set
-			// can
-			// be closed...
+			// since the values are now in the method result the result set can be closed...
 			resultSet.close();
 
 			// Caching
@@ -466,8 +458,8 @@ public class QueryVisualizationService extends RESTService {
 
 			return methodResult;
 		} catch (Exception e) {
-			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.getMessage().toString());
-			throw new L2pServiceException("Exception in Transform to Method Result", e);
+			Context.get().monitorEvent(this, MonitoringEvent.SERVICE_ERROR, e.getMessage().toString());
+			throw new ServiceException("Exception in Transform to Method Result", e);
 		}
 	}
 
@@ -491,22 +483,22 @@ public class QueryVisualizationService extends RESTService {
 		Query query = null;
 		String queryKey = ""; // If empty, the query generates a new one
 		try {
-			long user = Context.getCurrent().getMainAgent().getId();
+			String user = Context.get().getMainAgent().getIdentifier();
 			SQLDatabaseManager databaseManager = databaseManagerMap.get(user);
 			QueryManager queryManager = queryManagerMap.get(user);
 			database = databaseManager.getDatabaseInstance(databaseKey);
-			query = new Query(Context.getCurrent().getMainAgent().getId(), database.getJdbcInfo(), database.getUser(),
-					database.getPassword(), databaseKey, database.getDatabase(), database.getHost(), database.getPort(),
-					queryStatement, queryParameters, useCache, modificationTypeIndex, visualizationTypeIndex,
-					visualizationParamaters, queryKey);
+			query = new Query(Context.getCurrent().getMainAgent().getIdentifier(), database.getJdbcInfo(),
+					database.getUser(), database.getPassword(), databaseKey, database.getDatabase(), database.getHost(),
+					database.getPort(), queryStatement, queryParameters, useCache, modificationTypeIndex,
+					visualizationTypeIndex, visualizationParamaters, queryKey);
 			queryManager.storeQuery(query);
 		} catch (Exception e) {
-			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
+			Context.get().monitorEvent(this, MonitoringEvent.SERVICE_ERROR, e.toString());
 			return VisualizationException.getInstance().generate(e, "An error occured while trying to save a Query!");
 		}
 
-		L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_17, Context.getCurrent().getMainAgent(),
-				"" + query.getQueryStatement());
+		Context.get().monitorEvent(this, MonitoringEvent.SERVICE_CUSTOM_MESSAGE_17, "" + query.getQueryStatement(),
+				true);
 		return query.getKey();
 	}
 
@@ -524,9 +516,7 @@ public class QueryVisualizationService extends RESTService {
 		if (query.usesCache() && queryParameters == null) {
 			methodResult = resultCache.get(query.getKey());
 		}
-		if (methodResult == null) { // query was not cached or no cached
-									// result
-									// desired
+		if (methodResult == null) { // query was not cached or no cached result desired
 			SQLDatabase sqlDatabase = new SQLDatabase(query);
 			c = sqlDatabase.getConnection();
 			ResultSet resultSet = sqlDatabase.executeQuery(c, query.getInsertedQueryStatement(queryParameters));
@@ -539,11 +529,7 @@ public class QueryVisualizationService extends RESTService {
 				methodResult = transformToMethodResult(resultSet, query.getKey());
 			} else {
 				methodResult = transformToMethodResult(resultSet, ""); // No
-				// caching
-				// desired
-				// by
-				// this
-				// query
+				// caching desired by this query
 			}
 		}
 
@@ -554,16 +540,16 @@ public class QueryVisualizationService extends RESTService {
 		if (format.length() > 0 && !format.equals("PNG")) {
 			visualization = visualizationManager.getVisualization(VisualizationType.valueOf(format));
 		}
-		if (modification.check(methodResult))
+		if (modification.check(methodResult)) {
 			methodResult = modification.apply(methodResult);
-		else {
+		} else {
 			c.close();
 			return visualizationException.generate(new Exception(),
 					"Can not modify result with " + modification.getType().name() + ".");
 		}
 
 		if (visualization.check(methodResult, query.getVisualizationParameters())) {
-			L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_16, Context.getCurrent().getMainAgent(), "" + query);
+			Context.get().monitorEvent(this, MonitoringEvent.SERVICE_CUSTOM_MESSAGE_16, "" + query, true);
 			String v = visualization.generate(methodResult, query.getVisualizationParameters());
 			c.close();
 			return v;
@@ -583,11 +569,11 @@ public class QueryVisualizationService extends RESTService {
 	// Service methods.
 	// //////////////////////////////////////////////////////////////////////////////////////
 	@Api(
-			value = "/")
+			value = "QVS")
 	@SwaggerDefinition(
 			info = @Info(
 					title = "Query Visualization Service",
-					version = "0.6.7",
+					version = "0.7.2",
 					description = "This service can be used to visualize queries on RDB's",
 					termsOfService = "http://las2peer.dbis.rwth-aachen.de/qv-service",
 					contact = @Contact(
@@ -610,7 +596,7 @@ public class QueryVisualizationService extends RESTService {
 		 * @return success or error message, if possible in the requested encoding/format
 		 */
 		@PUT
-		@Path("database/{key}")
+		@Path("/database/{key}")
 		@Consumes(MediaType.APPLICATION_JSON)
 		@Produces(MediaType.APPLICATION_JSON)
 		@ApiOperation(
@@ -629,13 +615,12 @@ public class QueryVisualizationService extends RESTService {
 						value = "Database information.",
 						required = true) QVDatabase db) {
 			try {
-				L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_1, Context.getCurrent().getMainAgent(),
-						"" + db.getDb_code());
+				Context.get().monitorEvent(this, MonitoringEvent.SERVICE_CUSTOM_MESSAGE_1, "" + db.getDb_code(), true);
 				return addDatabase(databaseKey, SQLDatabaseType.valueOf(db.getDb_code().toUpperCase()),
 						db.getUsername(), db.getPassword(), db.getDatabase(), db.getDbhost(), db.getPort(),
 						VisualizationType.JSON);
 			} catch (Exception e) {
-				L2pLogger.logEvent(service, Event.SERVICE_ERROR, e.toString());
+				Context.get().monitorEvent(service, MonitoringEvent.SERVICE_ERROR, e.toString());
 				return Response.status(Status.BAD_REQUEST)
 						.entity(service.visualizationException.generate(e, "Received invalid JSON")).build();
 			}
@@ -663,7 +648,7 @@ public class QueryVisualizationService extends RESTService {
 				}
 
 				service.initializeDBConnection();
-				long user = Context.getCurrent().getMainAgent().getId();
+				String user = Context.get().getMainAgent().getIdentifier();
 				SQLDatabaseManager databaseManager = service.databaseManagerMap.get(user);
 
 				SQLDatabaseType sqlDatabaseType = databaseTypeCode;
@@ -672,9 +657,7 @@ public class QueryVisualizationService extends RESTService {
 					throw new Exception("Failed to add a database for the user!");
 				}
 
-				// verify that it works (that one can get an instance, probably
-				// its
-				// going to be used later anyways)...
+				// verify that it works (that one can get an instance, probably its going to be used later anyways)...
 				try {
 					if (databaseManager.getDatabaseInstance(databaseKey) == null) {
 						throw new Exception("Failed to get a database instance for " + databaseKey);
@@ -689,8 +672,7 @@ public class QueryVisualizationService extends RESTService {
 				result.setColumnDatatype(Types.VARCHAR);
 				Object[] defaultDatabase = { databaseKey };
 				result.addRow(defaultDatabase);
-				L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_2, Context.getCurrent().getMainAgent(),
-						"" + databaseKey);
+				Context.get().monitorEvent(this, MonitoringEvent.SERVICE_CUSTOM_MESSAGE_2, "" + databaseKey, true);
 				return Response.status(Status.CREATED).entity(
 						service.visualizationManager.getVisualization(visualizationTypeIndex).generate(result, null))
 						.build();
@@ -708,7 +690,7 @@ public class QueryVisualizationService extends RESTService {
 		 * @return success or error message, if possible in the requested encoding/format
 		 */
 		@DELETE
-		@Path("database/{key}")
+		@Path("/database/{key}")
 		@ApiOperation(
 				value = "Removes a database from the user's list of configured databases.")
 		@Produces(MediaType.APPLICATION_JSON)
@@ -732,7 +714,7 @@ public class QueryVisualizationService extends RESTService {
 
 				service.initializeDBConnection();
 
-				long user = Context.getCurrent().getMainAgent().getId();
+				String user = Context.get().getMainAgent().getIdentifier();
 				SQLDatabaseManager databaseManager = service.databaseManagerMap.get(user);
 				QueryManager queryManager = service.queryManagerMap.get(user);
 				SQLFilterManager filterManager = service.filterManagerMap.get(user);
@@ -755,13 +737,12 @@ public class QueryVisualizationService extends RESTService {
 				Object[] defaultDatabase = { databaseKey };
 				result.addRow(defaultDatabase);
 
-				L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_3, Context.getCurrent().getMainAgent(),
-						"" + databaseKey);
+				Context.get().monitorEvent(this, MonitoringEvent.SERVICE_CUSTOM_MESSAGE_3, "" + databaseKey, true);
 				return Response.status(Status.OK).entity(
 						service.visualizationManager.getVisualization(VisualizationType.JSON).generate(result, null))
 						.build();
 			} catch (Exception e) {
-				L2pLogger.logEvent(service, Event.SERVICE_ERROR, e.toString());
+				Context.get().monitorEvent(service, MonitoringEvent.SERVICE_ERROR, e.toString());
 				return Response.status(Status.BAD_REQUEST).entity(service.visualizationException.generate(e, null))
 						.build();
 			}
@@ -774,7 +755,7 @@ public class QueryVisualizationService extends RESTService {
 		 * @return success or error message, if possible in the requested encoding/format
 		 */
 		@GET
-		@Path("database")
+		@Path("/database")
 		@Produces({ MediaType.APPLICATION_JSON, MediaType.TEXT_HTML })
 		@ApiOperation(
 				value = "This method returns a list/table of the keys of all available/configured databases of the user.")
@@ -794,7 +775,7 @@ public class QueryVisualizationService extends RESTService {
 				allowableValues = "JSON,HTMLTABLE,CSV,XML") @QueryParam("format") @DefaultValue("JSON") String visualizationTypeIndex) {
 			try {
 				service.initializeDBConnection();
-				long user = Context.getCurrent().getMainAgent().getId();
+				String user = Context.get().getMainAgent().getIdentifier();
 				SQLDatabaseManager databaseManager = service.databaseManagerMap.get(user);
 				List<String> keyList = databaseManager.getDatabaseKeyList();
 
@@ -821,11 +802,10 @@ public class QueryVisualizationService extends RESTService {
 				VisualizationType t = VisualizationType.valueOf(visualizationTypeIndex.toUpperCase());
 				Visualization vis = service.visualizationManager.getVisualization(t);
 				String visString = vis.generate(result, null);
-				L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_4, Context.getCurrent().getMainAgent(),
-						"Get Database Keys");
+				Context.get().monitorEvent(this, MonitoringEvent.SERVICE_CUSTOM_MESSAGE_4, "Get Database Keys", true);
 				return Response.status(Status.OK).entity(visString).build();
 			} catch (Exception e) {
-				L2pLogger.logEvent(service, Event.SERVICE_ERROR, e.toString());
+				Context.get().monitorEvent(service, MonitoringEvent.SERVICE_ERROR, e.toString());
 				return Response.status(Status.BAD_REQUEST).entity(service.visualizationException.generate(e, null))
 						.build();
 			}
@@ -838,7 +818,7 @@ public class QueryVisualizationService extends RESTService {
 		 * @return success or error message, if possible in the requested encoding/format
 		 */
 		@GET
-		@Path("filter")
+		@Path("/filter")
 		@Produces(MediaType.APPLICATION_JSON)
 		@ApiOperation(
 				value = "This method returns a list/table of all filters the user has configured.",
@@ -858,7 +838,7 @@ public class QueryVisualizationService extends RESTService {
 			try {
 				service.initializeDBConnection();
 
-				long user = Context.getCurrent().getMainAgent().getId();
+				String user = Context.get().getMainAgent().getIdentifier();
 				SQLFilterManager filterManager = service.filterManagerMap.get(user);
 				if (filterManager == null) {
 					// initialize filter manager
@@ -888,11 +868,11 @@ public class QueryVisualizationService extends RESTService {
 					Object[] currentRow = { filterKey, databaseKey };
 					result.addRow(currentRow);
 				}
-				L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_5, Context.getCurrent().getMainAgent(), "Get Filter.");
+				Context.get().monitorEvent(this, MonitoringEvent.SERVICE_CUSTOM_MESSAGE_5, "Get Filter.", true);
 				return Response.status(Status.OK)
 						.entity(service.visualizationManager.getVisualization(vtypei).generate(result, null)).build();
 			} catch (Exception e) {
-				L2pLogger.logEvent(service, Event.SERVICE_ERROR, e.toString());
+				Context.get().monitorEvent(service, MonitoringEvent.SERVICE_ERROR, e.toString());
 				return Response.status(Status.BAD_REQUEST).entity(service.visualizationException.generate(e, null))
 						.build();
 			}
@@ -907,7 +887,7 @@ public class QueryVisualizationService extends RESTService {
 		 * @return success or error message, if possible in the requested encoding/format
 		 */
 		@GET
-		@Path("filter/{database}/{key}")
+		@Path("/filter/{database}/{key}")
 		@Produces(MediaType.APPLICATION_JSON)
 		@ApiOperation(
 				value = "Retrieves the values for a specific filter of the current user.")
@@ -931,7 +911,7 @@ public class QueryVisualizationService extends RESTService {
 						required = true) @PathParam("key") String filterKey,
 				@ApiParam(
 						value = "Visualization type.") @QueryParam("format") @DefaultValue("JSON") String visualizationTypeIndex) {
-			return getFilterValuesOfUser(dbKey, filterKey, Context.getCurrent().getMainAgent().getId(),
+			return getFilterValuesOfUser(dbKey, filterKey, Context.getCurrent().getMainAgent().getIdentifier(),
 					visualizationTypeIndex);
 		}
 
@@ -942,7 +922,7 @@ public class QueryVisualizationService extends RESTService {
 		 * @return success or error message, if possible in the requested encoding/format
 		 */
 		@GET
-		@Path("query/{query}/filter")
+		@Path("/query/{query}/filter")
 		@Produces(MediaType.APPLICATION_JSON)
 		@ApiOperation(
 				value = "Retrieves the filter keys for a specific query by ID.")
@@ -963,16 +943,15 @@ public class QueryVisualizationService extends RESTService {
 				required = true) @PathParam("query") String queryKey) {
 			try {
 				service.initializeDBConnection();
-				QueryManager queryManager = service.queryManagerMap.get(Context.getCurrent().getMainAgent().getId());
+				QueryManager queryManager = service.queryManagerMap
+						.get(Context.getCurrent().getMainAgent().getIdentifier());
 				Query q = queryManager.getQuery(queryKey);
 				String[] params = q.getQueryParameters();
 				String statement = q.getQueryStatement();
 
-				ArrayList<String> filterNames = new ArrayList<String>();
+				ArrayList<String> filterNames = new ArrayList<>();
 
-				// go through the query, replace placeholders by the values from
-				// the
-				// query parameters
+				// go through the query, replace placeholders by the values from the query parameters
 				int parameterCount = params == null ? 0 : params.length;
 				Pattern placeholderPattern = Pattern.compile("\\$\\$.*?\\$\\$}");
 				Matcher m = placeholderPattern.matcher(statement);
@@ -982,7 +961,7 @@ public class QueryVisualizationService extends RESTService {
 					filterNames.add(param.substring(1, param.length() - 1));
 				}
 				String dbKey = q.getDatabaseKey();
-				long user = q.getUser();
+				String user = q.getUser();
 
 				SQLDatabaseManager dbManager = service.databaseManagerMap.get(user);
 				if (dbManager == null) {
@@ -990,7 +969,7 @@ public class QueryVisualizationService extends RESTService {
 				}
 				SQLDatabaseSettings db = dbManager.getDatabaseSettings(dbKey);
 
-				ArrayList<StringPair> filters = new ArrayList<StringPair>();
+				ArrayList<StringPair> filters = new ArrayList<>();
 				for (String filter : filterNames) {
 					filters.add(new StringPair(db.getKey(), filter));
 				}
@@ -1009,15 +988,15 @@ public class QueryVisualizationService extends RESTService {
 					Object[] currentRow = { filterKey, databaseKey, "" + user };
 					result.addRow(currentRow);
 				}
-				L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_6, Context.getCurrent().getMainAgent(),
-						"Get Filter for " + queryKey);
+				Context.get().monitorEvent(this, MonitoringEvent.SERVICE_CUSTOM_MESSAGE_6, "Get Filter for " + queryKey,
+						true);
 				return Response.status(Status.OK).entity(
 						service.visualizationManager.getVisualization(VisualizationType.JSON).generate(result, null))
 						.build();
 			} catch (DoesNotExistException e) {
 				return Response.status(Status.NOT_FOUND).entity("Query " + queryKey + " does not exist.").build();
 			} catch (Exception e) {
-				L2pLogger.logEvent(service, Event.SERVICE_ERROR, e.toString());
+				Context.get().monitorEvent(service, MonitoringEvent.SERVICE_ERROR, e.toString());
 				return Response.status(Status.BAD_REQUEST).entity(service.visualizationException.generate(e, null))
 						.build();
 			}
@@ -1033,7 +1012,7 @@ public class QueryVisualizationService extends RESTService {
 		 * @return success or error message, if possible in the requested encoding/format
 		 */
 		@GET
-		@Path("filter/{database}/{key}/{user}")
+		@Path("/filter/{database}/{key}/{user}")
 		@Produces(MediaType.APPLICATION_JSON)
 		@ApiOperation(
 				value = "Retrieves the values for a specific filter of a chosen user.")
@@ -1058,7 +1037,7 @@ public class QueryVisualizationService extends RESTService {
 						required = true) @PathParam("key") String filterKey,
 				@ApiParam(
 						value = "Agent id of the user.",
-						required = true) @PathParam("user") long user,
+						required = true) @PathParam("user") String user,
 				@ApiParam(
 						value = "Visualization type.") @QueryParam("format") @DefaultValue("JSON") String visualizationTypeIndex) {
 			try {
@@ -1066,25 +1045,23 @@ public class QueryVisualizationService extends RESTService {
 				service.initializeDBConnection();
 				SQLFilterManager filterManager = service.filterManagerMap.get(user);
 				if (filterManager == null) {
-					if (((UserAgent) Context.getCurrent().getMainAgent()).getUserData() == null) {
+					if (Context.get().getMainAgent() instanceof AnonymousAgent) {
 						filterManager = new SQLFilterManager(service.storageDatabase, user);
-						// throw new DoesNotExistException("Anonymous user
-						// requested
-						// non-existant filter");
+						// throw new DoesNotExistException("Anonymous user requested non-existant filter");
 					} else {
 						// initialize filter manager
 						filterManager = new SQLFilterManager(service.storageDatabase);
 						service.filterManagerMap.put(user, filterManager);
 					}
 				}
-				L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_7, Context.getCurrent().getMainAgent(),
-						"Get values for Filter " + filterKey + ", user " + user);
+				Context.get().monitorEvent(this, MonitoringEvent.SERVICE_CUSTOM_MESSAGE_7,
+						"Get values for Filter " + filterKey + ", user " + user, true);
 				return Response.status(Status.OK)
 						.entity(filterManager.getFilterValues(dbKey, filterKey, vtypei, service)).build();
 			} catch (DoesNotExistException e) {
 				return Response.status(Status.NOT_FOUND).entity("Filter " + filterKey + " does not exist.").build();
 			} catch (Exception e) {
-				L2pLogger.logEvent(service, Event.SERVICE_ERROR, e.toString());
+				Context.get().monitorEvent(service, MonitoringEvent.SERVICE_ERROR, e.toString());
 				return Response.status(Status.BAD_REQUEST).entity(service.visualizationException.generate(e, null))
 						.build();
 
@@ -1101,7 +1078,7 @@ public class QueryVisualizationService extends RESTService {
 		 * @return success or error message, if possible in the requested encoding/format
 		 */
 		@PUT
-		@Path("filter/{database}/{key}")
+		@Path("/filter/{database}/{key}")
 		@Produces(MediaType.APPLICATION_JSON)
 		@Consumes(MediaType.APPLICATION_JSON)
 		@ApiOperation(
@@ -1128,7 +1105,7 @@ public class QueryVisualizationService extends RESTService {
 				VisualizationType vtypei = VisualizationType.JSON;
 				return addFilter(dbKey, filterName, query.getQuery(), vtypei);
 			} catch (Exception e) {
-				L2pLogger.logEvent(service, Event.SERVICE_ERROR, e.toString());
+				Context.get().monitorEvent(service, MonitoringEvent.SERVICE_ERROR, e.toString());
 				return Response.status(Status.BAD_REQUEST)
 						.entity(service.visualizationException.generate(e, "Received invalid JSON")).build();
 			}
@@ -1139,7 +1116,7 @@ public class QueryVisualizationService extends RESTService {
 			try {
 				service.initializeDBConnection();
 				// TODO: parameter sanity checks
-				long user = Context.getCurrent().getMainAgent().getId();
+				String user = Context.get().getMainAgent().getIdentifier();
 				SQLFilterManager filterManager = service.filterManagerMap.get(user);
 
 				if (filterManager == null) {
@@ -1152,9 +1129,7 @@ public class QueryVisualizationService extends RESTService {
 					throw new Exception("Failed to add a database for the user!");
 				}
 
-				// verify that it works (that one can get an instance, probably
-				// its
-				// going to be used later anyways)...
+				// verify that it works (that one can get an instance, probably its going to be used later anyways)...
 				try {
 					if (filterManager.getFilterValues(databaseKey, filterKey, visualizationTypeIndex,
 							service) == null) {
@@ -1171,12 +1146,12 @@ public class QueryVisualizationService extends RESTService {
 				Object[] addedFilter = { filterKey };
 				result.addRow(addedFilter);
 
-				L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_8, Context.getCurrent().getMainAgent(), "" + user);
+				Context.get().monitorEvent(this, MonitoringEvent.SERVICE_CUSTOM_MESSAGE_8, "" + user, true);
 				return Response.status(Status.CREATED).entity(
 						service.visualizationManager.getVisualization(visualizationTypeIndex).generate(result, null))
 						.build();
 			} catch (Exception e) {
-				L2pLogger.logEvent(service, Event.SERVICE_ERROR, e.toString());
+				Context.get().monitorEvent(service, MonitoringEvent.SERVICE_ERROR, e.toString());
 				return Response.status(Status.BAD_REQUEST).entity(service.visualizationException.generate(e, null))
 						.build();
 			}
@@ -1190,7 +1165,7 @@ public class QueryVisualizationService extends RESTService {
 		 * @return success or error message, if possible in the requested encoding/format
 		 */
 		@DELETE
-		@Path("filter/{database}/{key}")
+		@Path("/filter/{database}/{key}")
 		@Produces(MediaType.APPLICATION_JSON)
 		@ApiOperation(
 				value = "Deletes a filter from the user's settings/profile.")
@@ -1211,7 +1186,7 @@ public class QueryVisualizationService extends RESTService {
 						required = true) @PathParam("key") String filterKey) {
 			try {
 				service.initializeDBConnection();
-				long user = Context.getCurrent().getMainAgent().getId();
+				String user = Context.get().getMainAgent().getIdentifier();
 				SQLFilterManager filterManager = service.filterManagerMap.get(user);
 				if (filterManager == null) {
 					// initialize filter manager
@@ -1229,19 +1204,19 @@ public class QueryVisualizationService extends RESTService {
 				Object[] deletedDatabase = { filterKey };
 				result.addRow(deletedDatabase);
 
-				L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_9, Context.getCurrent().getMainAgent(), "" + user);
+				Context.get().monitorEvent(this, MonitoringEvent.SERVICE_CUSTOM_MESSAGE_9, "" + user, true);
 				return Response.status(Status.OK).entity(
 						service.visualizationManager.getVisualization(VisualizationType.JSON).generate(result, null))
 						.build();
 			} catch (Exception e) {
-				L2pLogger.logEvent(service, Event.SERVICE_ERROR, e.toString());
+				Context.get().monitorEvent(service, MonitoringEvent.SERVICE_ERROR, e.toString());
 				return Response.status(Status.BAD_REQUEST).entity(service.visualizationException.generate(e, null))
 						.build();
 			}
 		}
 
 		@POST
-		@Path("query/visualize")
+		@Path("/query/visualize")
 		@Produces({ MediaType.TEXT_HTML, "image/png" })
 		@Consumes(MediaType.APPLICATION_JSON)
 		@ApiOperation(
@@ -1265,17 +1240,17 @@ public class QueryVisualizationService extends RESTService {
 						content.isCache(), content.getModtypei(), v, content.getTitle(), content.getWidth(),
 						content.getHeight(), false);
 
-				L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_10, Context.getCurrent().getMainAgent(), "" + vtypei);
+				Context.get().monitorEvent(this, MonitoringEvent.SERVICE_CUSTOM_MESSAGE_10, "" + vtypei, true);
 				return res;
 			} catch (Exception e) {
-				L2pLogger.logEvent(service, Event.SERVICE_ERROR, e.toString());
+				Context.get().monitorEvent(service, MonitoringEvent.SERVICE_ERROR, e.toString());
 				return Response.status(Status.BAD_REQUEST)
 						.entity(service.visualizationException.generate(e, "Received invalid JSON")).build();
 			}
 		}
 
 		@POST
-		@Path("query")
+		@Path("/query")
 		@Produces(MediaType.APPLICATION_JSON)
 		@Consumes(MediaType.APPLICATION_JSON)
 		@ApiOperation(
@@ -1299,11 +1274,11 @@ public class QueryVisualizationService extends RESTService {
 						content.isCache(), content.getModtypei(), v, content.getTitle(), content.getWidth(),
 						content.getHeight(), true);
 
-				L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_11, Context.getCurrent().getMainAgent(),
-						"" + content.getQuery());
+				Context.get().monitorEvent(this, MonitoringEvent.SERVICE_CUSTOM_MESSAGE_11, "" + content.getQuery(),
+						true);
 				return res;
 			} catch (Exception e) {
-				L2pLogger.logEvent(service, Event.SERVICE_ERROR, e.toString());
+				Context.get().monitorEvent(service, MonitoringEvent.SERVICE_ERROR, e.toString());
 				return Response.status(Status.BAD_REQUEST)
 						.entity(service.visualizationException.generate(e, "Received invalid JSON")).build();
 
@@ -1329,7 +1304,7 @@ public class QueryVisualizationService extends RESTService {
 		 * @return success or error message, if possible in the requested encoding/format
 		 */
 		@GET
-		@Path("query")
+		@Path("/query")
 		@Produces(MediaType.APPLICATION_JSON)
 		@ApiOperation(
 				value = "Returns a list/table of the keys of all available/configured databases of the user.")
@@ -1346,7 +1321,7 @@ public class QueryVisualizationService extends RESTService {
 				value = "Visualization type.") @QueryParam("format") @DefaultValue("JSON") String visualizationTypeIndex) {
 			try {
 				service.initializeDBConnection();
-				long user = Context.getCurrent().getMainAgent().getId();
+				String user = Context.get().getMainAgent().getIdentifier();
 				QueryManager queryManager = service.queryManagerMap.get(user);
 				List<Query> keyList = queryManager.getQueryList();
 
@@ -1372,14 +1347,14 @@ public class QueryVisualizationService extends RESTService {
 					result.addRow(currentRow);
 				}
 
-				L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_12, Context.getCurrent().getMainAgent(), "" + user);
+				Context.get().monitorEvent(this, MonitoringEvent.SERVICE_CUSTOM_MESSAGE_12, "" + user, true);
 				return Response.status(Status.OK)
 						.entity(service.visualizationManager
 								.getVisualization(VisualizationType.valueOf(visualizationTypeIndex.toUpperCase()))
 								.generate(result, null))
 						.build();
 			} catch (Exception e) {
-				L2pLogger.logEvent(service, Event.SERVICE_ERROR, e.toString());
+				Context.get().monitorEvent(service, MonitoringEvent.SERVICE_ERROR, e.toString());
 				return Response.status(Status.BAD_REQUEST).entity(service.visualizationException.generate(e, null))
 						.build();
 			}
@@ -1392,7 +1367,7 @@ public class QueryVisualizationService extends RESTService {
 		 * @return success or error message, if possible in the requested encoding/format
 		 */
 		@DELETE
-		@Path("query/{key}")
+		@Path("/query/{key}")
 		@Produces(MediaType.APPLICATION_JSON)
 		@ApiOperation(
 				value = "Deletes a filter from the user's settings/profile.")
@@ -1409,7 +1384,7 @@ public class QueryVisualizationService extends RESTService {
 				value = "Key of the query.") @PathParam("key") String queryKey) {
 			try {
 				service.initializeDBConnection();
-				long user = Context.getCurrent().getMainAgent().getId();
+				String user = Context.get().getMainAgent().getIdentifier();
 				QueryManager queryManager = service.queryManagerMap.get(user);
 				if (queryManager == null) {
 					throw new Exception("Query Manager is null");
@@ -1423,12 +1398,12 @@ public class QueryVisualizationService extends RESTService {
 				Object[] deletedQuery = { queryKey };
 				result.addRow(deletedQuery);
 
-				L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_13, Context.getCurrent().getMainAgent(), "" + user);
+				Context.get().monitorEvent(this, MonitoringEvent.SERVICE_CUSTOM_MESSAGE_13, "" + user, true);
 				return Response.status(Status.OK).entity(
 						service.visualizationManager.getVisualization(VisualizationType.JSON).generate(result, null))
 						.build();
 			} catch (Exception e) {
-				L2pLogger.logEvent(service, Event.SERVICE_ERROR, e.toString());
+				Context.get().monitorEvent(service, MonitoringEvent.SERVICE_ERROR, e.toString());
 				return Response.status(Status.BAD_REQUEST).entity(service.visualizationException.generate(e, null))
 						.build();
 			}
@@ -1444,7 +1419,7 @@ public class QueryVisualizationService extends RESTService {
 		 * @return Result of the query in the given output format
 		 */
 		@GET
-		@Path("query/{key}")
+		@Path("/query/{key}")
 		@Produces(MediaType.APPLICATION_JSON)
 		@ApiOperation(
 				value = "Executes a stored query on the specified database.")
@@ -1467,10 +1442,9 @@ public class QueryVisualizationService extends RESTService {
 			service.initializeDBConnection();
 
 			try {
-				// VisualizationType vtypei =
-				// VisualizationType.valueOf(format.toUpperCase());
+				// VisualizationType vtypei = VisualizationType.valueOf(format.toUpperCase());
 				service.initializeDBConnection();
-				long user = Context.getCurrent().getMainAgent().getId();
+				String user = Context.get().getMainAgent().getIdentifier();
 				QueryManager queryManager = service.queryManagerMap.get(user);
 				if (queryManager == null) {
 					// initialize query manager
@@ -1482,20 +1456,20 @@ public class QueryVisualizationService extends RESTService {
 				}
 				JSONObject o = queryManager.toJSON(q);
 
-				L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_14, Context.getCurrent().getMainAgent(), "" + user);
+				Context.get().monitorEvent(this, MonitoringEvent.SERVICE_CUSTOM_MESSAGE_14, "" + user, true);
 				return Response.status(Status.OK).entity(o.toJSONString()).build();
 			} catch (DoesNotExistException e) {
-				L2pLogger.logEvent(service, Event.SERVICE_ERROR, e.toString());
+				Context.get().monitorEvent(service, MonitoringEvent.SERVICE_ERROR, e.toString());
 				return Response.status(Status.NOT_FOUND).entity("Query " + key + " does not exist.").build();
 			} catch (DBDoesNotExistException e) {
-				L2pLogger.logEvent(service, Event.SERVICE_ERROR, e.toString());
-				long user = Context.getCurrent().getMainAgent().getId();
+				Context.get().monitorEvent(service, MonitoringEvent.SERVICE_ERROR, e.toString());
+				String user = Context.get().getMainAgent().getIdentifier();
 				QueryManager queryManager = service.queryManagerMap.get(user);
 				queryManager.removeQ(key);
 				return Response.status(Status.BAD_REQUEST).entity(service.visualizationException.generate(e, null))
 						.build();
 			} catch (Exception e) {
-				L2pLogger.logEvent(service, Event.SERVICE_ERROR, e.toString());
+				Context.get().monitorEvent(service, MonitoringEvent.SERVICE_ERROR, e.toString());
 				return Response.status(Status.BAD_REQUEST).entity(service.visualizationException.generate(e, null))
 						.build();
 			}
@@ -1513,7 +1487,7 @@ public class QueryVisualizationService extends RESTService {
 		 */
 		@POST
 		@Consumes(MediaType.APPLICATION_JSON)
-		@Path("query/{key}/visualize")
+		@Path("/query/{key}/visualize")
 		@ApiOperation(
 				value = "Executes a stored query on the specified database.")
 		@ApiResponses(
@@ -1546,7 +1520,7 @@ public class QueryVisualizationService extends RESTService {
 		 */
 		@GET
 		@Consumes(MediaType.APPLICATION_JSON)
-		@Path("query/{key}/visualize")
+		@Path("/query/{key}/visualize")
 		@ApiOperation(
 				value = "Executes a stored query on the specified database.")
 		@ApiResponses(
@@ -1570,7 +1544,7 @@ public class QueryVisualizationService extends RESTService {
 			Query query = null;
 			String[] queryParameters = null;
 			try {
-				long user = Context.getCurrent().getMainAgent().getId();
+				String user = Context.get().getMainAgent().getIdentifier();
 				try {
 					queryParameters = content.getQueryparams();
 				} catch (Exception e) {
@@ -1584,7 +1558,7 @@ public class QueryVisualizationService extends RESTService {
 					throw new DoesNotExistException("Query does not exist!");
 				}
 			} catch (DoesNotExistException e) {
-				L2pLogger.logEvent(service, Event.SERVICE_ERROR, e.toString());
+				Context.get().monitorEvent(service, MonitoringEvent.SERVICE_ERROR, e.toString());
 				return Response.status(Status.NOT_FOUND).entity("Query " + key + " does not exist").build();
 			} catch (Exception e) {
 				return Response.status(Status.BAD_REQUEST).entity(service.visualizationException.generate(e,
@@ -1592,7 +1566,7 @@ public class QueryVisualizationService extends RESTService {
 			}
 
 			try {
-				L2pLogger.logEvent(Event.SERVICE_CUSTOM_MESSAGE_15, Context.getCurrent().getMainAgent(), "" + query);
+				Context.get().monitorEvent(this, MonitoringEvent.SERVICE_CUSTOM_MESSAGE_15, "" + query, true);
 				String res = service.visualizeQuery(query, queryParameters, format.toUpperCase());
 				if (format.equals("PNG")) {
 					HtmlImageGenerator imageGenerator = new HtmlImageGenerator();
@@ -1607,7 +1581,7 @@ public class QueryVisualizationService extends RESTService {
 				}
 				return Response.status(Status.OK).entity(res).build();
 			} catch (Exception e) {
-				L2pLogger.logEvent(service, Event.SERVICE_ERROR, e.toString());
+				Context.get().monitorEvent(service, MonitoringEvent.SERVICE_ERROR, e.toString());
 				return Response.status(Status.BAD_REQUEST).entity(service.visualizationException.generate(e,
 						"Encountered a Problem while trying to visualize Query!")).build();
 			}
@@ -1621,14 +1595,12 @@ public class QueryVisualizationService extends RESTService {
 		 * @return status of login
 		 */
 		@GET
-		@Path("validate")
+		@Path("/validate")
 		@ApiOperation(
 				value = "Validates a user login.")
 		public Response validateLogin() {
-			String returnString = "";
-			returnString += "You are " + ((UserAgent) Context.getCurrent().getMainAgent()).getUserData()
+			String returnString = "You are " + ((UserAgent) Context.getCurrent().getMainAgent()).getLoginName()
 					+ " and your login is valid!";
-
 			return Response.status(Status.OK).entity(returnString).build();
 		}
 	}

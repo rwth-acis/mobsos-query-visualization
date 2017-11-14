@@ -13,11 +13,11 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import i5.las2peer.execution.L2pServiceException;
-import i5.las2peer.logging.L2pLogger;
-import i5.las2peer.logging.NodeObserver.Event;
-import i5.las2peer.persistency.MalformedXMLException;
-import i5.las2peer.persistency.XmlAble;
+import i5.las2peer.api.Context;
+import i5.las2peer.api.ServiceException;
+import i5.las2peer.api.logging.MonitoringEvent;
+import i5.las2peer.serialization.MalformedXMLException;
+import i5.las2peer.serialization.XmlAble;
 import i5.las2peer.services.mobsos.queryVisualization.database.SQLDatabaseType;
 import i5.las2peer.services.mobsos.queryVisualization.encoding.VisualizationType;
 
@@ -32,7 +32,7 @@ public class Query implements XmlAble, Serializable {
 	private static final String qpDelim = "¦¦¦";
 
 	private String key = null;
-	private long user = 0;
+	private String user = "";
 	private String username = null;
 	private String password = null;
 	private SQLDatabaseType jdbcInfo;
@@ -49,7 +49,7 @@ public class Query implements XmlAble, Serializable {
 	private int width = 0;
 	private int height = 0;
 
-	public Query(long user, SQLDatabaseType jdbcInfo, String username, String password, String databaseKey,
+	public Query(String user, SQLDatabaseType jdbcInfo, String username, String password, String databaseKey,
 			String database, String host, int port, String queryStatement, String[] queryParameters, boolean useCache,
 			int modificationTypeIndex, VisualizationType visualizationTypeIndex, String[] visualizationParameters,
 			String key) {
@@ -77,7 +77,7 @@ public class Query implements XmlAble, Serializable {
 
 	}
 
-	public long getUser() {
+	public String getUser() {
 		return user;
 	}
 
@@ -134,10 +134,9 @@ public class Query implements XmlAble, Serializable {
 				if (queryParameters[i] == null) {
 					queryParameters[i] = params[i];
 				}
-				;
 			}
 			return insertParameters(queryStatement, queryParameters);
-		} catch (L2pServiceException e) {
+		} catch (ServiceException e) {
 			// TODO Auto-generated catch block
 			return null;
 		}
@@ -214,7 +213,8 @@ public class Query implements XmlAble, Serializable {
 			}
 
 		} catch (Exception e) {
-			L2pLogger.logEvent(this, Event.SERVICE_ERROR, "Query, setStateFromXML: " + e.getMessage());
+			Context.get().monitorEvent(this, MonitoringEvent.SERVICE_ERROR,
+					"Query, setStateFromXML: " + e.getMessage());
 		}
 	}
 
@@ -256,7 +256,7 @@ public class Query implements XmlAble, Serializable {
 		}
 
 		s.setString(1, key);
-		s.setLong(2, user);
+		s.setString(2, user);
 		s.setString(3, username);
 		s.setString(4, password);
 		s.setInt(5, jdbcInfo.getCode());
@@ -284,11 +284,11 @@ public class Query implements XmlAble, Serializable {
 	}
 
 	public static Query[] fromResultSet(ResultSet set) {
-		LinkedList<Query> qs = new LinkedList<Query>();
+		LinkedList<Query> qs = new LinkedList<>();
 		try {
 			while (set.next()) {
 				String key = set.getString("KEY");
-				long user = set.getLong("USER");
+				String user = set.getString("USER");
 				String username = set.getString("USERNAME");
 				String password = set.getString("PASSWORD");
 				SQLDatabaseType jdbcInfo = SQLDatabaseType.getSQLDatabaseType(set.getInt("JDBCINFO"));
@@ -329,15 +329,16 @@ public class Query implements XmlAble, Serializable {
 	 * @param queryParameters the corresponding query parameters
 	 * 
 	 * @return the query with the inserted query parameters
-	 * @throws L2pServiceException las2peer exception
+	 * @throws ServiceException las2peer exception
 	 * 
 	 */
-	public static String insertParameters(String query, String[] queryParameters) throws L2pServiceException {
+	public static String insertParameters(String query, String[] queryParameters) throws ServiceException {
 		try {
 			// Check, if the Array is empty, then no parameters have to be
 			// inserted
-			if (queryParameters == null)
+			if (queryParameters == null) {
 				return query;
+			}
 
 			// go through the query, replace placeholders by the values from the
 			// query parameters
@@ -348,7 +349,7 @@ public class Query implements XmlAble, Serializable {
 			}
 			return query;
 		} catch (Exception e) {
-			throw new L2pServiceException("exception in insertParameters", e);
+			throw new ServiceException("exception in insertParameters", e);
 		}
 	}
 

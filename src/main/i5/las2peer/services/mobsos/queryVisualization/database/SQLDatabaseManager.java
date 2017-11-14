@@ -9,10 +9,10 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import i5.las2peer.api.Context;
 import i5.las2peer.api.Service;
-import i5.las2peer.logging.NodeObserver.Event;
-import i5.las2peer.p2p.Node;
-import i5.las2peer.security.Agent;
+import i5.las2peer.api.logging.MonitoringEvent;
+import i5.las2peer.api.security.Agent;
 
 /**
  * 
@@ -23,21 +23,20 @@ import i5.las2peer.security.Agent;
 public class SQLDatabaseManager {
 	// used to store (and retrieve during execution) the settings for the users'
 	// databases
-	private HashMap<String, SQLDatabaseSettings> userDatabaseMap = new HashMap<String, SQLDatabaseSettings>();
-	private HashMap<String, SQLDatabase> loadedDatabases = new HashMap<String, SQLDatabase>();
+	private HashMap<String, SQLDatabaseSettings> userDatabaseMap = new HashMap<>();
+	private HashMap<String, SQLDatabase> loadedDatabases = new HashMap<>();
 
 	private SQLDatabase storageDatabase = null;
-	private Service service = null;
 
 	private boolean initializeUser() {
 		try {
 			Connection c = storageDatabase.getConnection();
 			PreparedStatement p = c.prepareStatement("SELECT DISTINCT ID FROM USERS WHERE ID = ?");
-			p.setLong(1, getActiveAgent().getId());
+			p.setString(1, Context.get().getMainAgent().getIdentifier());
 			ResultSet s = p.executeQuery();
 			if (!s.next()) {
 				p = c.prepareStatement("REPLACE INTO USERS (ID) VALUES (?)");
-				p.setLong(1, getActiveAgent().getId());
+				p.setString(1, Context.get().getMainAgent().getIdentifier());
 				p.executeUpdate();
 			}
 			c.close();
@@ -62,7 +61,7 @@ public class SQLDatabaseManager {
 	 * @return active agent
 	 */
 	protected Agent getActiveAgent() {
-		return service.getContext().getMainAgent();
+		return Context.get().getMainAgent();
 	}
 
 	/**
@@ -71,16 +70,7 @@ public class SQLDatabaseManager {
 	 * @param message Message that will be logged
 	 */
 	protected void logMessage(String message) {
-		getActiveNode().observerNotice(Event.SERVICE_MESSAGE, this.getClass().getName() + ": " + message);
-	}
-
-	/**
-	 * get the currently active l2p node (from the current thread context)
-	 * 
-	 * @return the currently active las2peer node
-	 */
-	protected Node getActiveNode() {
-		return service.getContext().getLocalNode();
+		Context.get().monitorEvent(MonitoringEvent.SERVICE_MESSAGE, this.getClass().getName() + ": " + message);
 	}
 
 	/**************************
@@ -94,11 +84,10 @@ public class SQLDatabaseManager {
 	 * @return String with the user id
 	 */
 	public static String getEnvelopeId(Agent user) {
-		return "userDBs-" + user.getId();
+		return "userDBs-" + user.getIdentifier();
 	}
 
 	public SQLDatabaseManager(Service service, SQLDatabase storageDatabase) {
-		this.service = service;
 		this.storageDatabase = storageDatabase;
 		// get the user's security object which contains the database
 		// information
@@ -110,7 +99,7 @@ public class SQLDatabaseManager {
 		try {
 			Connection c = storageDatabase.getConnection();
 			PreparedStatement p = c.prepareStatement("SELECT * FROM DATABASE_CONNECTIONS WHERE USER = ?;");
-			p.setLong(1, getActiveAgent().getId());
+			p.setString(1, Context.get().getMainAgent().getIdentifier());
 			ResultSet databases = p.executeQuery();
 			settings = SQLDatabaseSettings.fromResultSet(databases);
 			c.close();
@@ -118,8 +107,9 @@ public class SQLDatabaseManager {
 			logMessage("Failed to get the users' SQL settings. " + e.getMessage());
 		}
 
-		for (SQLDatabaseSettings setting : settings)
+		for (SQLDatabaseSettings setting : settings) {
 			userDatabaseMap.put(setting.getKey(), setting);
+		}
 	}
 
 	// add database to users' security object
@@ -145,7 +135,7 @@ public class SQLDatabaseManager {
 			p.setString(5, databaseSettings.getDatabase());
 			p.setString(6, databaseSettings.getHost());
 			p.setInt(7, databaseSettings.getPort());
-			p.setLong(8, getActiveAgent().getId());
+			p.setString(8, Context.get().getMainAgent().getIdentifier());
 			p.executeUpdate();
 			userDatabaseMap.put(databaseSettings.getKey(), databaseSettings);
 			c.close();
@@ -197,7 +187,7 @@ public class SQLDatabaseManager {
 	// get a list of the names of all databases of the user
 	public List<String> getDatabaseKeyList() {
 		try {
-			LinkedList<String> keyList = new LinkedList<String>();
+			LinkedList<String> keyList = new LinkedList<>();
 			Iterator<String> iterator = this.userDatabaseMap.keySet().iterator();
 			while (iterator.hasNext()) {
 				keyList.add(iterator.next());
@@ -214,7 +204,7 @@ public class SQLDatabaseManager {
 	// returns a list of all database settings elements
 	public List<SQLDatabaseSettings> getDatabaseSettingsList() {
 		try {
-			LinkedList<SQLDatabaseSettings> settingsList = new LinkedList<SQLDatabaseSettings>();
+			LinkedList<SQLDatabaseSettings> settingsList = new LinkedList<>();
 			Iterator<SQLDatabaseSettings> iterator = this.userDatabaseMap.values().iterator();
 			while (iterator.hasNext()) {
 				settingsList.add(iterator.next());
@@ -316,7 +306,7 @@ public class SQLDatabaseManager {
 			PreparedStatement s = c
 					.prepareStatement("DELETE FROM `DATABASE_CONNECTIONS` WHERE `KEY` = ? AND `USER` = ?");
 			s.setString(1, databaseKey);
-			s.setLong(2, getActiveAgent().getId());
+			s.setString(2, Context.get().getMainAgent().getIdentifier());
 			s.executeUpdate();
 			c.close();
 		} catch (Exception e) {

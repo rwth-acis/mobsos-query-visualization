@@ -5,8 +5,8 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.ListIterator;
 
-import i5.las2peer.logging.L2pLogger;
-import i5.las2peer.logging.NodeObserver.Event;
+import i5.las2peer.api.Context;
+import i5.las2peer.api.logging.MonitoringEvent;
 
 /**
  * VisualizationJSON.java
@@ -21,6 +21,7 @@ public class VisualizationJSON extends Visualization {
 		super(VisualizationType.JSON);
 	}
 
+	@Override
 	public String generate(MethodResult methodResult, String[] visualizationParameters) {
 		try {
 			if (methodResult == null) {
@@ -77,7 +78,6 @@ public class VisualizationJSON extends Visualization {
 					// do nothing, just treat it as string
 					break;
 				}
-				;
 
 				jsonString.append("\"" + columnTypeString + "\"");
 			}
@@ -92,8 +92,9 @@ public class VisualizationJSON extends Visualization {
 
 				Object[] currentRow = iterator.next();
 				for (int i = 0; i < columnCount; i++) {
-					if (i > 0)
+					if (i > 0) {
 						jsonString.append(", ");
+					}
 					switch (columnTypes[i]) {
 					case Types.DATE:
 						// TODO: this is wrong, it starts counting the month at 0...
@@ -132,7 +133,6 @@ public class VisualizationJSON extends Visualization {
 						jsonString.append("\"" + value + "\"");
 						break;
 					}
-					;
 				}
 				jsonString.append("]");
 			}
@@ -140,17 +140,18 @@ public class VisualizationJSON extends Visualization {
 
 			return jsonString.toString();
 		} catch (Exception e) {
-			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.getMessage().toString());
+			Context.get().monitorEvent(this, MonitoringEvent.SERVICE_ERROR, e.getMessage().toString());
 			try {
 				return super.visualizationException.generate(e, "Encoding into JSON format failed.");
 			} catch (Exception ex) {
-				L2pLogger.logEvent(this, Event.SERVICE_ERROR, ex.getMessage().toString());
+				Context.get().monitorEvent(this, MonitoringEvent.SERVICE_ERROR, ex.getMessage().toString());
 				return "Unknown/handled error occurred!";
 			}
 		}
 	}
 
 	// Always true
+	@Override
 	public boolean check(MethodResult methodResult, String[] visualizationParameters) {
 		return true;
 	}

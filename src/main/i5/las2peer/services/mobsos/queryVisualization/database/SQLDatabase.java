@@ -7,8 +7,8 @@ import java.sql.Statement;
 
 import org.apache.commons.dbcp2.BasicDataSource;
 
-import i5.las2peer.logging.L2pLogger;
-import i5.las2peer.logging.NodeObserver.Event;
+import i5.las2peer.api.Context;
+import i5.las2peer.api.logging.MonitoringEvent;
 import i5.las2peer.services.mobsos.queryVisualization.query.Query;
 
 /**
@@ -124,7 +124,7 @@ public class SQLDatabase {
 			throw ex;
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
-			L2pLogger.logEvent(this, Event.SERVICE_ERROR, e.toString());
+			Context.get().monitorEvent(this, MonitoringEvent.SERVICE_ERROR, e.toString());
 			throw e;
 		}
 	}

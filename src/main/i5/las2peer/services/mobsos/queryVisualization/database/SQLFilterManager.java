@@ -8,10 +8,9 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-import i5.las2peer.execution.L2pThread;
-import i5.las2peer.logging.NodeObserver.Event;
-import i5.las2peer.p2p.Node;
-import i5.las2peer.security.Agent;
+import i5.las2peer.api.Context;
+import i5.las2peer.api.logging.MonitoringEvent;
+import i5.las2peer.api.security.Agent;
 import i5.las2peer.services.mobsos.queryVisualization.QueryVisualizationService;
 import i5.las2peer.services.mobsos.queryVisualization.encoding.ModificationType;
 import i5.las2peer.services.mobsos.queryVisualization.encoding.VisualizationType;
@@ -23,25 +22,11 @@ import i5.las2peer.services.mobsos.queryVisualization.encoding.VisualizationType
 public class SQLFilterManager {
 
 	private FilterMap userFilterMap = new FilterMap();
-	private HashMap<StringPair, String> loadedFilterValues = new HashMap<StringPair, String>();
+	private HashMap<StringPair, String> loadedFilterValues = new HashMap<>();
 
 	private SQLDatabase storageDatabase;
 
 	/*************** "service" helper methods *************************/
-
-	/**
-	 * get the current l2p thread
-	 * 
-	 * @return the L2pThread we're currently running in
-	 */
-	public final L2pThread getL2pThread() {
-		Thread t = Thread.currentThread();
-
-		if (!(t instanceof L2pThread))
-			throw new IllegalStateException("Not executed in a L2pThread environment!");
-
-		return (L2pThread) t;
-	}
 
 	/**
 	 * get the currently active agent
@@ -49,8 +34,7 @@ public class SQLFilterManager {
 	 * @return active agent
 	 */
 	protected Agent getActiveAgent() {
-		getL2pThread();
-		return L2pThread.getCurrent().getMainAgent();
+		return Context.get().getMainAgent();
 	}
 
 	/**
@@ -59,17 +43,7 @@ public class SQLFilterManager {
 	 * @param message Message that will be logged
 	 */
 	protected void logMessage(String message) {
-		getActiveNode().observerNotice(Event.SERVICE_MESSAGE, this.getClass().getName() + ": " + message);
-	}
-
-	/**
-	 * get the currently active l2p node (from the current thread context)
-	 * 
-	 * @return the currently active las2peer node
-	 */
-	protected Node getActiveNode() {
-		getL2pThread();
-		return L2pThread.getCurrent().getLocalNode();
+		Context.get().monitorEvent(MonitoringEvent.SERVICE_MESSAGE, this.getClass().getName() + ": " + message);
 	}
 
 	/**************************
@@ -82,12 +56,12 @@ public class SQLFilterManager {
 	 * @param storageDatabase database for the storage
 	 * @param user User id
 	 */
-	public SQLFilterManager(SQLDatabase storageDatabase, long user) {
+	public SQLFilterManager(SQLDatabase storageDatabase, String user) {
 		this.storageDatabase = storageDatabase;
-		if (user == 0) {
+		if (user == null || user.isEmpty()) {
 			// get the user's security object which contains the database
 			// information
-			user = getActiveAgent().getId();
+			user = Context.get().getMainAgent().getIdentifier();
 		}
 
 		SQLFilterSettings[] settings = null;
@@ -95,7 +69,7 @@ public class SQLFilterManager {
 		try {
 			Connection c = storageDatabase.getConnection();
 			PreparedStatement p = c.prepareStatement("SELECT * FROM FILTERS WHERE USER = ?;");
-			p.setLong(1, user);
+			p.setString(1, user);
 			ResultSet set = p.executeQuery();
 			settings = SQLFilterSettings.fromResultSet(set);
 			c.close();
@@ -106,14 +80,15 @@ public class SQLFilterManager {
 		if (settings == null || settings.length <= 0) {
 			// there no database settings available yet...
 		} else {
-			for (SQLFilterSettings setting : settings)
+			for (SQLFilterSettings setting : settings) {
 				userFilterMap.put(setting.getKey(), setting);
+			}
 		}
 
 	}
 
 	public SQLFilterManager(SQLDatabase storageDatabase) {
-		this(storageDatabase, 0);
+		this(storageDatabase, null);
 	}
 
 	public boolean addFilter(String databaseKey, String filterName, String sqlQuery) throws Exception {
@@ -130,7 +105,7 @@ public class SQLFilterManager {
 					"INSERT INTO `FILTERS` (`KEY`, `QUERY`, `USER`, `DB_KEY`) VALUES (?,	?,	?,	?);");
 			p.setString(1, filterName);
 			p.setString(2, sqlQuery);
-			p.setLong(3, getActiveAgent().getId());
+			p.setString(3, Context.get().getMainAgent().getIdentifier());
 			p.setString(4, databaseKey);
 			p.executeUpdate();
 			userFilterMap.put(filterSettings.getKey(), filterSettings);
@@ -171,7 +146,7 @@ public class SQLFilterManager {
 						.prepareStatement("DELETE FROM `FILTERS` WHERE `KEY` = ? AND `DB_KEY` = ? AND `USER` = ?");
 				s.setString(1, filterName);
 				s.setString(2, dbKey);
-				s.setLong(3, getActiveAgent().getId());
+				s.setString(3, Context.get().getMainAgent().getIdentifier());
 				s.executeUpdate();
 				userFilterMap.remove(filterKey);
 				c.close();
@@ -205,7 +180,7 @@ public class SQLFilterManager {
 
 	public List<StringPair> getFilterKeyList() {
 		try {
-			LinkedList<StringPair> keyList = new LinkedList<StringPair>();
+			LinkedList<StringPair> keyList = new LinkedList<>();
 			Iterator<StringPair> iterator = this.userFilterMap.keySet().iterator();
 			while (iterator.hasNext()) {
 				keyList.add(iterator.next());
