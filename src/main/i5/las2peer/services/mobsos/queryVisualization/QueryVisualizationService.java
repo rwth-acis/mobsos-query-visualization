@@ -1,36 +1,5 @@
 package i5.las2peer.services.mobsos.queryVisualization;
 
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Types;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.imageio.ImageIO;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.ResponseBuilder;
-import javax.ws.rs.core.Response.Status;
-
 import gui.ava.html.image.generator.HtmlImageGenerator;
 import i5.las2peer.api.Context;
 import i5.las2peer.api.ManualDeployment;
@@ -45,47 +14,29 @@ import i5.las2peer.services.mobsos.queryVisualization.dal.QVDatabase;
 import i5.las2peer.services.mobsos.queryVisualization.dal.QVQuery;
 import i5.las2peer.services.mobsos.queryVisualization.dal.QVQueryInformation;
 import i5.las2peer.services.mobsos.queryVisualization.dal.QVQueryparameter;
-import i5.las2peer.services.mobsos.queryVisualization.database.DBDoesNotExistException;
-import i5.las2peer.services.mobsos.queryVisualization.database.DoesNotExistException;
-import i5.las2peer.services.mobsos.queryVisualization.database.SQLDatabase;
-import i5.las2peer.services.mobsos.queryVisualization.database.SQLDatabaseManager;
-import i5.las2peer.services.mobsos.queryVisualization.database.SQLDatabaseSettings;
-import i5.las2peer.services.mobsos.queryVisualization.database.SQLDatabaseType;
-import i5.las2peer.services.mobsos.queryVisualization.database.SQLFilterManager;
-import i5.las2peer.services.mobsos.queryVisualization.database.StringPair;
-import i5.las2peer.services.mobsos.queryVisualization.encoding.MethodResult;
-import i5.las2peer.services.mobsos.queryVisualization.encoding.Modification;
-import i5.las2peer.services.mobsos.queryVisualization.encoding.ModificationIdentity;
-import i5.las2peer.services.mobsos.queryVisualization.encoding.ModificationLogarithmic;
-import i5.las2peer.services.mobsos.queryVisualization.encoding.ModificationManager;
-import i5.las2peer.services.mobsos.queryVisualization.encoding.ModificationNormalization;
-import i5.las2peer.services.mobsos.queryVisualization.encoding.ModificationType;
-import i5.las2peer.services.mobsos.queryVisualization.encoding.Visualization;
-import i5.las2peer.services.mobsos.queryVisualization.encoding.VisualizationBarChart;
-import i5.las2peer.services.mobsos.queryVisualization.encoding.VisualizationCSV;
-import i5.las2peer.services.mobsos.queryVisualization.encoding.VisualizationException;
-import i5.las2peer.services.mobsos.queryVisualization.encoding.VisualizationGoogleTable;
-import i5.las2peer.services.mobsos.queryVisualization.encoding.VisualizationHTMLTable;
-import i5.las2peer.services.mobsos.queryVisualization.encoding.VisualizationJSON;
-import i5.las2peer.services.mobsos.queryVisualization.encoding.VisualizationLineChart;
-import i5.las2peer.services.mobsos.queryVisualization.encoding.VisualizationManager;
-import i5.las2peer.services.mobsos.queryVisualization.encoding.VisualizationPieChart;
-import i5.las2peer.services.mobsos.queryVisualization.encoding.VisualizationRadarChart;
-import i5.las2peer.services.mobsos.queryVisualization.encoding.VisualizationTimeline;
-import i5.las2peer.services.mobsos.queryVisualization.encoding.VisualizationType;
-import i5.las2peer.services.mobsos.queryVisualization.encoding.VisualizationXML;
+import i5.las2peer.services.mobsos.queryVisualization.database.*;
+import i5.las2peer.services.mobsos.queryVisualization.encoding.*;
 import i5.las2peer.services.mobsos.queryVisualization.query.Query;
 import i5.las2peer.services.mobsos.queryVisualization.query.QueryManager;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
-import io.swagger.annotations.Contact;
-import io.swagger.annotations.Info;
-import io.swagger.annotations.License;
-import io.swagger.annotations.SwaggerDefinition;
+import io.swagger.annotations.*;
 import net.minidev.json.JSONObject;
+
+import javax.imageio.ImageIO;
+import javax.ws.rs.*;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
+import javax.ws.rs.core.Response.Status;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * LAS2peer Service
@@ -560,6 +511,80 @@ public class QueryVisualizationService extends RESTService {
 		}
 	}
 
+	/**
+	 * Callable via RMI to get a list of all database keys of the current user's stored databases.
+	 * @return
+	 * @throws Exception
+	 */
+	public List<String> getDatabaseKeys() throws Exception {
+		this.initializeDBConnection();
+		String user = Context.get().getMainAgent().getIdentifier();
+		SQLDatabaseManager databaseManager = this.databaseManagerMap.get(user);
+		List<String> keyList = databaseManager.getDatabaseKeyList();
+
+		if (keyList == null) {
+			throw new Exception("Failed to get the key list for the users' databases!");
+		}
+		return keyList;
+	}
+
+	/**
+	 * Simplifies RMI invocation of addDatabase by using commonly accessible types.
+	 *
+	 * @param databaseKey
+	 * @param databaseTypeCode
+	 * @param username
+	 * @param password
+	 * @param database
+	 * @param host
+	 * @param port
+	 * @throws Exception
+	 */
+	public void addDatabase(String databaseKey, Integer databaseTypeCode, String username,
+							String password, String database, String host, Integer port) throws Exception {
+
+		SQLDatabaseType type = SQLDatabaseType.getSQLDatabaseType(databaseTypeCode);
+		addDatabase(databaseKey, type, username, password, database, host, port);
+	}
+
+	/**
+	 * Callable via RMI to add database credentials to a user's accessible databases.
+	 *
+	 * @param databaseKey
+	 * @param databaseTypeCode
+	 * @param username
+	 * @param password
+	 * @param database
+	 * @param host
+	 * @param port
+	 * @throws Exception
+	 */
+	public void addDatabase(String databaseKey, SQLDatabaseType databaseTypeCode, String username, String password, String database, String host, Integer port) throws Exception {
+		if (databaseKey == null || databaseKey.length() < 2) {
+			throw new Exception("Databasekey is too short (Use at least 2 characters).");
+		}
+
+		this.initializeDBConnection();
+		String user = Context.get().getMainAgent().getIdentifier();
+		SQLDatabaseManager databaseManager = this.databaseManagerMap.get(user);
+
+		SQLDatabaseType sqlDatabaseType = databaseTypeCode;
+		if (!databaseManager.addDatabase(databaseKey, sqlDatabaseType, username, password, database, host,
+				port)) {
+			throw new Exception("Failed to add a database for the user!");
+		}
+
+		// verify that it works (that one can get an instance, probably its going to be used later anyways)...
+		try {
+			if (databaseManager.getDatabaseInstance(databaseKey) == null) {
+				throw new Exception("Failed to get a database instance for " + databaseKey);
+			}
+		} catch (Exception e) {
+			databaseManager.removeDatabase(databaseKey);
+			throw e;
+		}
+	}
+
 	@Override
 	protected void initResources() {
 		getResourceConfig().register(Resource.class);
@@ -641,36 +666,13 @@ public class QueryVisualizationService extends RESTService {
 		 * @return success or error message, if possible in the requested encoding/format
 		 */
 		public Response addDatabase(String databaseKey, SQLDatabaseType databaseTypeCode, String username,
-				String password, String database, String host, Integer port, VisualizationType visualizationTypeIndex) {
+									String password, String database, String host, Integer port, VisualizationType visualizationTypeIndex) {
 			try {
-				if (databaseKey == null || databaseKey.length() < 2) {
-					throw new Exception("Databasekey is too short (Use at least 2 characters).");
-				}
-
-				service.initializeDBConnection();
-				String user = Context.get().getMainAgent().getIdentifier();
-				SQLDatabaseManager databaseManager = service.databaseManagerMap.get(user);
-
-				SQLDatabaseType sqlDatabaseType = databaseTypeCode;
-				if (!databaseManager.addDatabase(databaseKey, sqlDatabaseType, username, password, database, host,
-						port)) {
-					throw new Exception("Failed to add a database for the user!");
-				}
-
-				// verify that it works (that one can get an instance, probably its going to be used later anyways)...
-				try {
-					if (databaseManager.getDatabaseInstance(databaseKey) == null) {
-						throw new Exception("Failed to get a database instance for " + databaseKey);
-					}
-				} catch (Exception e) {
-					databaseManager.removeDatabase(databaseKey);
-					throw e;
-				}
-
+				service.addDatabase(databaseKey, databaseTypeCode, username, password, database, host, port);
 				MethodResult result = new MethodResult();
 				result.setColumnName("AddedDatabase");
 				result.setColumnDatatype(Types.VARCHAR);
-				Object[] defaultDatabase = { databaseKey };
+				Object[] defaultDatabase = {databaseKey};
 				result.addRow(defaultDatabase);
 				Context.get().monitorEvent(this, MonitoringEvent.SERVICE_CUSTOM_MESSAGE_2, "" + databaseKey, true);
 				return Response.status(Status.CREATED).entity(
@@ -774,14 +776,7 @@ public class QueryVisualizationService extends RESTService {
 				required = false,
 				allowableValues = "JSON,HTMLTABLE,CSV,XML") @QueryParam("format") @DefaultValue("JSON") String visualizationTypeIndex) {
 			try {
-				service.initializeDBConnection();
-				String user = Context.get().getMainAgent().getIdentifier();
-				SQLDatabaseManager databaseManager = service.databaseManagerMap.get(user);
-				List<String> keyList = databaseManager.getDatabaseKeyList();
-
-				if (keyList == null) {
-					throw new Exception("Failed to get the key list for the users' databases!");
-				}
+				List<String> keyList = service.getDatabaseKeys();
 
 				MethodResult result = new MethodResult();
 				result.setColumnName("DatabaseKeys");
