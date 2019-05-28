@@ -136,9 +136,7 @@ public class VisualizationLineChart extends Visualization {
 		if (visualizationParameters == null || visualizationParameters.length != 3) {
 			return false;
 		}
-		if (!methodResult.getRowIterator().hasNext()) {
-			return false; // needs at least one column
-		}
+
 		HashSet<Integer> acceptedValues = new HashSet<>();
 		acceptedValues.add(Types.BIGINT);
 		acceptedValues.add(Types.DECIMAL);
