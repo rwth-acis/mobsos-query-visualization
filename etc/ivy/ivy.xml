@@ -9,7 +9,7 @@
         <artifact type="jar" ext="jar" conf="*" />
     </publications>
     <dependencies>
-        <dependency org="i5" name="las2peer-bundle" rev="0.7.1" changing="true" conf="platform->*" />
+        <dependency org="i5" name="las2peer-bundle" rev="0.8-SNAPSHOT" changing="true" conf="platform->*" />
         <dependency org="junit" name="junit" rev="4.12" conf="platform->*" />
         <dependency org="org.jacoco" name="org.jacoco.ant" rev="0.7.9" conf="platform->default" />
 
@@ -23,8 +23,6 @@
         <dependency org="org.apache.derby" name="derbyclient" rev="10.12.1.1" />
         <dependency org="org.apache.commons" name="commons-pool2" rev="2.4.2" />
         <dependency org="org.apache.commons" name="commons-dbcp2" rev="2.1.1" />
-        <dependency org="net.minidev" name="json-smart" rev="2.2" />
-        <dependency org="com.googlecode.json-simple" name="json-simple" rev="1.1.1" />
         <dependency org="com.google.guava" name="guava" rev="19.0" />
         <dependency org="org.bouncycastle" name="bcprov-jdk15on" rev="1.54" />
         <dependency org="commons-dbcp" name="commons-dbcp" rev="1.4" />
