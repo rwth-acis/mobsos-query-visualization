@@ -9,7 +9,7 @@ fi
 
 # set some helpful variables
 export SERVICE_PROPERTY_FILE='etc/i5.las2peer.services.mobsos.queryVisualization.QueryVisualizationService.properties'
-export WEB_CONNECTOR_PROPERTY_FILE='etc/i5.las2peer.webConnector.WebConnector.properties'
+export WEB_CONNECTOR_PROPERTY_FILE='etc/i5.las2peer.connectors.webConnector.WebConnector.properties'
 export SERVICE_VERSION=$(awk -F "=" '/service.version/ {print $2}' etc/ant_configuration/service.properties)
 export SERVICE_NAME=$(awk -F "=" '/service.name/ {print $2}' etc/ant_configuration/service.properties)
 export SERVICE_CLASS=$(awk -F "=" '/service.class/ {print $2}' etc/ant_configuration/service.properties)
