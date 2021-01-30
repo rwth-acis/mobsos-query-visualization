@@ -23,9 +23,12 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.imageio.ImageIO;
@@ -35,12 +38,15 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
+import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
+import net.minidev.json.parser.JSONParser;
 
 /**
  * LAS2peer Service
  *
- * This is a template for a very basic LAS2peer service that uses the LAS2peer Web-Connector for RESTful access to it.
+ * This is a template for a very basic LAS2peer service that uses the LAS2peer
+ * Web-Connector for RESTful access to it.
  *
  */
 @ManualDeployment
@@ -184,24 +190,30 @@ public class QueryVisualizationService extends RESTService {
   }
 
   /**
-   * Generates a query on the specified database. The query may contain placeholders that have to be replaced by the
-   * parameters. <br>
-   * This is the main services entry point that should be used to generate and save queries. A placeholder is set by
-   * $placeholder$ and will be replaced by the corresponding element in the query parameters. The query parameter
-   * array has to contain the elements in the same order as they appear in the query.
+   * Generates a query on the specified database. The query may contain
+   * placeholders that have to be replaced by the parameters. <br>
+   * This is the main services entry point that should be used to generate and
+   * save queries. A placeholder is set by $placeholder$ and will be replaced by
+   * the corresponding element in the query parameters. The query parameter array
+   * has to contain the elements in the same order as they appear in the query.
    *
-   * @param query a String containing the query
-   * @param queryParameters the query parameters as an array of Strings that contain the content of the placeholders
-   * @param databaseKey a String containing the database key
-   * @param useCache if true, a cached result is returned (if available) instead of performing the query again (does
-   *            only affect stored queries!)
-   * @param modificationTypeIndex the desired modification function
-   * @param visualizationTypeIndex the desired visualization
-   * @param visualizationParameters an array of additional parameters for the visualization, including title, height
-   *            and weight
-   * @param save if set, the query will be saved and the return statement will be the query id.
+   * @param query                   a String containing the query
+   * @param queryParameters         the query parameters as an array of Strings
+   *                                that contain the content of the placeholders
+   * @param databaseKey             a String containing the database key
+   * @param useCache                if true, a cached result is returned (if
+   *                                available) instead of performing the query
+   *                                again (does only affect stored queries!)
+   * @param modificationTypeIndex   the desired modification function
+   * @param visualizationTypeIndex  the desired visualization
+   * @param visualizationParameters an array of additional parameters for the
+   *                                visualization, including title, height and
+   *                                weight
+   * @param save                    if set, the query will be saved and the return
+   *                                statement will be the query id.
    *
-   * @return Result of the query in the requested output format or the id of the saved query
+   * @return Result of the query in the requested output format or the id of the
+   *         saved query
    */
   public String createQueryString(
     String query,
@@ -253,9 +265,11 @@ public class QueryVisualizationService extends RESTService {
         databaseKey.equalsIgnoreCase("MonitoringDefault")
       ) {
         databaseKey = stDbKey;
-        // logMessage("No database key has been provided. Using default DB: " + databaseKey);
+        // logMessage("No database key has been provided. Using default DB: " +
+        // databaseKey);
       }
       String user = Context.get().getMainAgent().getIdentifier();
+
       SQLDatabaseManager databaseManager = databaseManagerMap.get(user);
 
       if (databaseManager == null) {
@@ -324,12 +338,14 @@ public class QueryVisualizationService extends RESTService {
 
   /**
    *
-   * Executes a sql query on the specified database. Warning: only a very simple checking mechanism for escape
-   * characters is implemented. Only queries from trusted sources should be executed!
+   * Executes a sql query on the specified database. Warning: only a very simple
+   * checking mechanism for escape characters is implemented. Only queries from
+   * trusted sources should be executed!
    *
-   * @param sqlQuery the query (has to be "ready to execute")
+   * @param sqlQuery    the query (has to be "ready to execute")
    * @param databaseKey the key of the database which is to be queried
-   * @param cacheKey the key which should be used to cache the query result (if empty, result is not cached)
+   * @param cacheKey    the key which should be used to cache the query result (if
+   *                    empty, result is not cached)
    *
    * @return a Method Result
    */
@@ -359,9 +375,10 @@ public class QueryVisualizationService extends RESTService {
 
   /**
    * Execute an sql-query and returns the corresponding result set. <br>
-   * The actual database access is done here (by calling sqlDatabase.executeQuery).
+   * The actual database access is done here (by calling
+   * sqlDatabase.executeQuery).
    *
-   * @param sqlQuery the query
+   * @param sqlQuery    the query
    * @param databaseKey the key of the database
    *
    * @return ResultSet of the database query
@@ -400,7 +417,7 @@ public class QueryVisualizationService extends RESTService {
    * Transforms a SQL-ResultSet to a MethodResult.
    *
    * @param resultSet the Result Set
-   * @param cacheKey the key which should be used to cache the query result
+   * @param cacheKey  the key which should be used to cache the query result
    *
    * @return a Method Result
    *
@@ -439,7 +456,8 @@ public class QueryVisualizationService extends RESTService {
           columnTypes[i - 1] = resultSetMetaData.getColumnType(i);
 
           if (columnNames[i - 1] == null) {
-            // logMessage("Invalid SQL Datatype for column: " + i + ". Fallback to Object...");
+            // logMessage("Invalid SQL Datatype for column: " + i + ". Fallback to
+            // Object...");
           }
         }
         methodResult.setColumnDatatypes(columnTypes);
@@ -501,7 +519,8 @@ public class QueryVisualizationService extends RESTService {
                 break;
             }
 
-            // Note: this is a little DANGEROUS because it does not match the column datatype. BUT:
+            // Note: this is a little DANGEROUS because it does not match the column
+            // datatype. BUT:
             // toString() works on it
             if (currentRow[i - 1] == null) {
               currentRow[i - 1] = "";
@@ -550,16 +569,94 @@ public class QueryVisualizationService extends RESTService {
     }
   }
 
+  private MethodResult transformToMethodResult(JSONObject json)
+    throws ServiceException {
+    try {
+      MethodResult methodResult = new MethodResult();
+      JSONArray data = null;
+      JSONParser p = new JSONParser(JSONParser.MODE_PERMISSIVE);
+
+      try {
+        if (json == null) {
+          throw new Exception("Tried to transform an invalid json array!");
+        }
+        String key = json.keySet().iterator().next(); // get the key of the data array
+        if (key == null) {
+          throw new Exception("No data key present");
+        }
+        Object val = json.get(key);
+        if (val instanceof String) {
+          data = (JSONArray) p.parse((String) val);
+        } else {
+          data = (JSONArray) json.get(key);
+        }
+
+        if (data == null || !(data.get(0) instanceof JSONObject)) {
+          throw new Exception("Data is empty or malformed");
+        }
+        Set<String> keyset = ((JSONObject) data.get(0)).keySet(); // keyset of jsonobjects in the array
+        // first row contains the column names
+        String[] columnNames = new String[keyset.size()];
+        // Iterator it = keyset.iterator();
+
+        // for (int i = 0; it.hasNext(); i++) {
+        //   columnNames[i] = (String) it.next();
+        //   System.out.println(columnNames[i]);
+        // }
+        columnNames = keyset.toArray(columnNames);
+        methodResult.setColumnDatatypes(new Integer[keyset.size()]);
+        methodResult.setColumnNames(columnNames);
+
+        // Object[] currRow = new Object[keyset.size()];
+        for (Object obj : data) {
+          JSONObject entry = (JSONObject) obj;
+          // it = entry.values().iterator();
+
+          // for (int i = 0; it.hasNext(); i++) {
+          //   currRow[i] = (String) it.next();
+          //   System.out.println(currRow[i]);
+          // }
+
+          methodResult.addRow(entry.values().toArray());
+        }
+      } catch (Exception e) {
+        e.printStackTrace();
+        Context
+          .get()
+          .monitorEvent(
+            this,
+            MonitoringEvent.SERVICE_ERROR,
+            "Exception when trying to handle an SQL query result: " +
+            e.getMessage()
+          );
+      }
+
+      return methodResult;
+    } catch (Exception e) {
+      Context
+        .get()
+        .monitorEvent(
+          this,
+          MonitoringEvent.SERVICE_ERROR,
+          e.getMessage().toString()
+        );
+      throw new ServiceException("Exception in Transform to Method Result", e);
+    }
+  }
+
   /**
    * Saves a query. <br>
    *
-   * @param queryStatement a String containing the query
-   * @param databaseKey the key to the database
-   * @param useCache if true, a cached result is returned (if available) instead of performing the query again
-   * @param modificationTypeIndex the desired modification function
-   * @param visualizationTypeIndex the desired visualization
-   * @param visualizationParamaters an array of additional parameters for the visualization, including title, height
-   *            and weight
+   * @param queryStatement          a String containing the query
+   * @param databaseKey             the key to the database
+   * @param useCache                if true, a cached result is returned (if
+   *                                available) instead of performing the query
+   *                                again
+   * @param modificationTypeIndex   the desired modification function
+   * @param visualizationTypeIndex  the desired visualization
+   * @param visualizationParamaters an array of additional parameters for the
+   *                                visualization, including title, height and
+   *                                weight
    *
    * @return The id of the saved query as a String
    */
@@ -710,7 +807,9 @@ public class QueryVisualizationService extends RESTService {
   }
 
   /**
-   * Callable via RMI to get a list of all database keys of the current user's stored databases.
+   * Callable via RMI to get a list of all database keys of the current user's
+   * stored databases.
+   *
    * @return
    * @throws Exception
    */
@@ -755,7 +854,8 @@ public class QueryVisualizationService extends RESTService {
   }
 
   /**
-   * Callable via RMI to add database credentials to a user's accessible databases.
+   * Callable via RMI to add database credentials to a user's accessible
+   * databases.
    *
    * @param databaseKey
    * @param databaseTypeCode
@@ -801,7 +901,8 @@ public class QueryVisualizationService extends RESTService {
       throw new Exception("Failed to add a database for the user!");
     }
 
-    // verify that it works (that one can get an instance, probably its going to be used later anyways)...
+    // verify that it works (that one can get an instance, probably its going to be
+    // used later anyways)...
     try {
       if (databaseManager.getDatabaseInstance(databaseKey) == null) {
         throw new Exception(
@@ -848,12 +949,14 @@ public class QueryVisualizationService extends RESTService {
       .getService();
 
     /**
-     * Adds a sql database to the users available/usable databases (via the sqldatabase manager).
+     * Adds a sql database to the users available/usable databases (via the
+     * sqldatabase manager).
      *
      * @param databaseKey key which is later used to identify the database
-     * @param db Credentials for the database
+     * @param db          Credentials for the database
      *
-     * @return success or error message, if possible in the requested encoding/format
+     * @return success or error message, if possible in the requested
+     *         encoding/format
      */
     @PUT
     @Path("/database/{key}")
@@ -907,18 +1010,21 @@ public class QueryVisualizationService extends RESTService {
     }
 
     /**
-     * Adds a sql database to the users available/usable databases (via the sqldatabase manager).
+     * Adds a sql database to the users available/usable databases (via the
+     * sqldatabase manager).
      *
-     * @param databaseKey key which is later used to identify the database
-     * @param databaseTypeCode type of the database (DB2, MySql, ...)
-     * @param username the username for the database
-     * @param password the password for the database
-     * @param database the name of the database
-     * @param host the database address
-     * @param port the database port
+     * @param databaseKey            key which is later used to identify the
+     *                               database
+     * @param databaseTypeCode       type of the database (DB2, MySql, ...)
+     * @param username               the username for the database
+     * @param password               the password for the database
+     * @param database               the name of the database
+     * @param host                   the database address
+     * @param port                   the database port
      * @param visualizationTypeIndex encoding of the returned message
      *
-     * @return success or error message, if possible in the requested encoding/format
+     * @return success or error message, if possible in the requested
+     *         encoding/format
      */
     public Response addDatabase(
       String databaseKey,
@@ -970,11 +1076,13 @@ public class QueryVisualizationService extends RESTService {
     }
 
     /**
-     * Removes a database from the user's list of configured databases (so that the user can not access the database
-     * anymore). Other user's database settings are not changed.
+     * Removes a database from the user's list of configured databases (so that the
+     * user can not access the database anymore). Other user's database settings are
+     * not changed.
      *
      * @param databaseKey the key of the database
-     * @return success or error message, if possible in the requested encoding/format
+     * @return success or error message, if possible in the requested
+     *         encoding/format
      */
     @DELETE
     @Path("/database/{key}")
@@ -1056,10 +1164,12 @@ public class QueryVisualizationService extends RESTService {
     }
 
     /**
-     * Returns a list/table of the keys of all available/configured databases of the user.
+     * Returns a list/table of the keys of all available/configured databases of the
+     * user.
      *
      * @param visualizationTypeIndex encoding of the returned message
-     * @return success or error message, if possible in the requested encoding/format
+     * @return success or error message, if possible in the requested
+     *         encoding/format
      */
     @GET
     @Path("/database")
@@ -1139,7 +1249,8 @@ public class QueryVisualizationService extends RESTService {
      * Returns a list/table of all filters the user has configured.
      *
      * @param visualizationTypeIndex encoding of the returned message
-     * @return success or error message, if possible in the requested encoding/format
+     * @return success or error message, if possible in the requested
+     *         encoding/format
      */
     @GET
     @Path("/filter")
@@ -1231,10 +1342,11 @@ public class QueryVisualizationService extends RESTService {
     /**
      * Retrieves the values for a specific filter of the current user.
      *
-     * @param filterKey Key for the filter
+     * @param filterKey              Key for the filter
      * @param visualizationTypeIndex encoding of the returned message
-     * @param dbKey Key for database
-     * @return success or error message, if possible in the requested encoding/format
+     * @param dbKey                  Key for database
+     * @return success or error message, if possible in the requested
+     *         encoding/format
      */
     @GET
     @Path("/filter/{database}/{key}")
@@ -1277,7 +1389,8 @@ public class QueryVisualizationService extends RESTService {
      * Retrieves the filter keys for a specific query by ID.
      *
      * @param queryKey Key of the query
-     * @return success or error message, if possible in the requested encoding/format
+     * @return success or error message, if possible in the requested
+     *         encoding/format
      */
     @GET
     @Path("/query/{query}/filter")
@@ -1313,7 +1426,8 @@ public class QueryVisualizationService extends RESTService {
 
         ArrayList<String> filterNames = new ArrayList<>();
 
-        // go through the query, replace placeholders by the values from the query parameters
+        // go through the query, replace placeholders by the values from the query
+        // parameters
         int parameterCount = params == null ? 0 : params.length;
         Pattern placeholderPattern = Pattern.compile("\\$\\$.*?\\$\\$}");
         Matcher m = placeholderPattern.matcher(statement);
@@ -1385,11 +1499,12 @@ public class QueryVisualizationService extends RESTService {
     /**
      * Retrieves the values for a specific filter of a chosen user.
      *
-     * @param dbKey Key for database
-     * @param filterKey Key for the filter
+     * @param dbKey                  Key for database
+     * @param filterKey              Key for the filter
      * @param visualizationTypeIndex encoding of the returned message
-     * @param user AgentID of the user
-     * @return success or error message, if possible in the requested encoding/format
+     * @param user                   AgentID of the user
+     * @return success or error message, if possible in the requested
+     *         encoding/format
      */
     @GET
     @Path("/filter/{database}/{key}/{user}")
@@ -1432,7 +1547,8 @@ public class QueryVisualizationService extends RESTService {
         if (filterManager == null) {
           if (Context.get().getMainAgent() instanceof AnonymousAgent) {
             filterManager = new SQLFilterManager(service.storageDatabase, user);
-            // throw new DoesNotExistException("Anonymous user requested non-existant filter");
+            // throw new DoesNotExistException("Anonymous user requested non-existant
+            // filter");
           } else {
             // initialize filter manager
             filterManager = new SQLFilterManager(service.storageDatabase);
@@ -1472,11 +1588,13 @@ public class QueryVisualizationService extends RESTService {
     /**
      * Adds a filter to the user's settings/profile.
      *
-     * @param dbKey key of the database for which the filter has been configured
+     * @param dbKey      key of the database for which the filter has been
+     *                   configured
      * @param filterName the Key that should be used for this filter
-     * @param query SQL query
+     * @param query      SQL query
      *
-     * @return success or error message, if possible in the requested encoding/format
+     * @return success or error message, if possible in the requested
+     *         encoding/format
      */
     @PUT
     @Path("/filter/{database}/{key}")
@@ -1545,7 +1663,8 @@ public class QueryVisualizationService extends RESTService {
           throw new Exception("Failed to add a database for the user!");
         }
 
-        // verify that it works (that one can get an instance, probably its going to be used later anyways)...
+        // verify that it works (that one can get an instance, probably its going to be
+        // used later anyways)...
         try {
           if (
             filterManager.getFilterValues(
@@ -1599,9 +1718,10 @@ public class QueryVisualizationService extends RESTService {
     /**
      * Deletes a filter from the user's settings/profile.
      *
-     * @param dbKey the key of the database
+     * @param dbKey     the key of the database
      * @param filterKey the key of the filter
-     * @return success or error message, if possible in the requested encoding/format
+     * @return success or error message, if possible in the requested
+     *         encoding/format
      */
     @DELETE
     @Path("/filter/{database}/{key}")
@@ -1740,6 +1860,82 @@ public class QueryVisualizationService extends RESTService {
     }
 
     @POST
+    @Path("/data/visualize")
+    @Produces({ MediaType.TEXT_HTML, "image/png" })
+    @Consumes(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Returns the chosen visualization.")
+    @ApiResponses(
+      value = {
+        @ApiResponse(
+          code = 200,
+          message = "Created query.",
+          response = String.class
+        ),
+        @ApiResponse(code = 400, message = "Creating Query failed."),
+      }
+    )
+    public Response visualize(
+      @ApiParam(value = "Visualization type.") @QueryParam(
+        "format"
+      ) @DefaultValue("GOOGLEPIECHART") String vtype,
+      @QueryParam("title") @DefaultValue("Sample chart") String title,
+      @QueryParam("width") @DefaultValue("300") String width,
+      @QueryParam("height") @DefaultValue("200") String height,
+      @ApiParam(value = "Query information.", required = true) JSONObject json
+    ) {
+      try {
+        VisualizationType v = VisualizationType.valueOf(vtype.toUpperCase());
+        Response res = null;
+
+        if (service.visualizationManager == null) {
+          this.service.initializeDBConnection(); //initializes the visualizationManager
+        }
+        Visualization visualization = service.visualizationManager.getVisualization(
+          v
+        );
+        MethodResult methodResult = service.transformToMethodResult(json);
+        System.out.println(methodResult.toString());
+
+        String[] visualizationParamters = new String[] { title, height, width };
+
+        String htmlString = visualization.generate(
+          methodResult,
+          visualizationParamters
+        );
+
+        Context
+          .get()
+          .monitorEvent(
+            this,
+            MonitoringEvent.SERVICE_CUSTOM_MESSAGE_10,
+            "" + vtype,
+            true
+          );
+
+        HtmlImageGenerator imageGenerator = new HtmlImageGenerator();
+        imageGenerator.loadHtml(htmlString);
+        BufferedImage image = imageGenerator.getBufferedImage();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ImageIO.write(image, "png", baos);
+        byte[] imageData = baos.toByteArray();
+        ResponseBuilder responseBuilder = Response.ok(imageData);
+        responseBuilder.header(HttpHeaders.CONTENT_TYPE, "image/png");
+        return responseBuilder.build();
+      } catch (Exception e) {
+        e.printStackTrace();
+        Context
+          .get()
+          .monitorEvent(service, MonitoringEvent.SERVICE_ERROR, e.toString());
+        return Response
+          .status(Status.BAD_REQUEST)
+          .entity(
+            service.visualizationException.generate(e, "Received invalid JSON")
+          )
+          .build();
+      }
+    }
+
+    @POST
     @Path("/query")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
@@ -1828,10 +2024,12 @@ public class QueryVisualizationService extends RESTService {
     }
 
     /**
-     * Returns a list/table of the keys of all available/configured databases of the user.
+     * Returns a list/table of the keys of all available/configured databases of the
+     * user.
      *
      * @param visualizationTypeIndex encoding of the returned message
-     * @return success or error message, if possible in the requested encoding/format
+     * @return success or error message, if possible in the requested
+     *         encoding/format
      */
     @GET
     @Path("/query")
@@ -1928,7 +2126,8 @@ public class QueryVisualizationService extends RESTService {
      * Deletes a filter from the user's settings/profile.
      *
      * @param queryKey the key of the query
-     * @return success or error message, if possible in the requested encoding/format
+     * @return success or error message, if possible in the requested
+     *         encoding/format
      */
     @DELETE
     @Path("/query/{key}")
@@ -1993,9 +2192,10 @@ public class QueryVisualizationService extends RESTService {
 
     /**
      * Executes a stored query on the specified database. <br>
-     * This is the main services entry point that should be used to visualize saved queries.
+     * This is the main services entry point that should be used to visualize saved
+     * queries.
      *
-     * @param key a String that contains the id of the query
+     * @param key    a String that contains the id of the query
      * @param format currently not used, default JSON
      *
      * @return Result of the query in the given output format
@@ -2080,10 +2280,11 @@ public class QueryVisualizationService extends RESTService {
 
     /**
      * Executes a stored query on the specified database. <br>
-     * This is the main services entry point that should be used to visualize saved queries.
+     * This is the main services entry point that should be used to visualize saved
+     * queries.
      *
-     * @param key a String that contains the id of the query
-     * @param format currently not used
+     * @param key     a String that contains the id of the query
+     * @param format  currently not used
      * @param content containing the query parameters
      *
      * @return Result of the query in the given output format
@@ -2111,10 +2312,11 @@ public class QueryVisualizationService extends RESTService {
 
     /**
      * Executes a stored query on the specified database. <br>
-     * This is the main services entry point that should be used to visualize saved queries.
+     * This is the main services entry point that should be used to visualize saved
+     * queries.
      *
-     * @param key a String that contains the id of the query
-     * @param format currently not used
+     * @param key     a String that contains the id of the query
+     * @param format  currently not used
      * @param content containing the query parameters
      * @return Result of the query in the given output format
      */
@@ -2219,9 +2421,10 @@ public class QueryVisualizationService extends RESTService {
     }
 
     /**
-     * Simple function to validate a user login. Basically it only serves as a "calling point" and does not really
-     * validate a user (since this is done previously by LAS2peer itself, the user does not reach this method if he
-     * or she is not authenticated).
+     * Simple function to validate a user login. Basically it only serves as a
+     * "calling point" and does not really validate a user (since this is done
+     * previously by LAS2peer itself, the user does not reach this method if he or
+     * she is not authenticated).
      *
      * @return status of login
      */
