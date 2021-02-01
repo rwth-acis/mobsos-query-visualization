@@ -1878,6 +1878,7 @@ public class QueryVisualizationService extends RESTService {
       @ApiParam(value = "Visualization type.") @QueryParam(
         "format"
       ) @DefaultValue("GOOGLEPIECHART") String vtype,
+      @QueryParam("output") @DefaultValue("png") String output,
       @QueryParam("title") @DefaultValue("Sample chart") String title,
       @QueryParam("width") @DefaultValue("300") String width,
       @QueryParam("height") @DefaultValue("200") String height,
@@ -1902,6 +1903,7 @@ public class QueryVisualizationService extends RESTService {
           methodResult,
           visualizationParamters
         );
+        System.out.println(htmlString);
 
         Context
           .get()
@@ -1911,16 +1913,25 @@ public class QueryVisualizationService extends RESTService {
             "" + vtype,
             true
           );
-
-        HtmlImageGenerator imageGenerator = new HtmlImageGenerator();
-        imageGenerator.loadHtml(htmlString);
-        BufferedImage image = imageGenerator.getBufferedImage();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ImageIO.write(image, "png", baos);
-        byte[] imageData = baos.toByteArray();
-        ResponseBuilder responseBuilder = Response.ok(imageData);
-        responseBuilder.header(HttpHeaders.CONTENT_TYPE, "image/png");
-        return responseBuilder.build();
+        if (output.equals("png")) {
+          HtmlImageGenerator imageGenerator = new HtmlImageGenerator();
+          imageGenerator.loadHtml(
+            "<html><head></head><body>" + htmlString + "</body></html>"
+          );
+          BufferedImage image = imageGenerator.getBufferedImage();
+          System.out.println(image);
+          ByteArrayOutputStream baos = new ByteArrayOutputStream();
+          ImageIO.write(image, "png", baos);
+          byte[] imageData = baos.toByteArray();
+          System.out.println(imageData);
+          ResponseBuilder responseBuilder = Response.ok(image);
+          responseBuilder.header(HttpHeaders.CONTENT_TYPE, "image/png");
+          return responseBuilder.build();
+        } else if (output.equals("html")) {
+          return Response.ok(htmlString).build();
+        } else {
+          return Response.status(400).entity("Unsupported Media type").build();
+        }
       } catch (Exception e) {
         e.printStackTrace();
         Context
