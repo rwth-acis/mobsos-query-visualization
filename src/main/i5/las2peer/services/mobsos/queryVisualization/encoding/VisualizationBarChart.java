@@ -158,4 +158,10 @@ public class VisualizationBarChart extends Visualization {
 		return true;
 	}
 
+	@Override
+	public byte[] generatePNG(MethodResult methodResult, String[] visualizationParamters) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

@@ -26,7 +26,7 @@
         <dependency org="com.google.guava" name="guava" rev="19.0" />
         <dependency org="org.bouncycastle" name="bcprov-jdk15on" rev="1.54" />
         <dependency org="commons-dbcp" name="commons-dbcp" rev="1.4" />
-        <dependency org="com.github.xuwei-k" name="html2image" rev="0.1.0" />
+        <dependency org="org.jfree" name="jfreechart" rev="1.5.2" />
         <dependency org="javax.validation" name="validation-api" rev="1.1.0.Final" />
     </dependencies>
 </ivy-module>
