@@ -14,6 +14,9 @@ WORKDIR /src
 # run the rest as unprivileged user
 USER las2peer
 RUN ant jar
+RUN dos2unix /src/etc/i5.las2peer.services.mobsos.queryVisualization.QueryVisualizationService.properties
+RUN dos2unix /src/etc/ant_configuration/service.properties
+RUN dos2unix /src/docker-entrypoint.sh
 
 EXPOSE $HTTP_PORT
 EXPOSE $HTTPS_PORT
