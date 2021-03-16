@@ -149,9 +149,9 @@ echo external_address = $(curl -s https://ipinfo.io/ip):${LAS2PEER_PORT} > etc/p
 if [[ -z "${@}" ]]
 then
     if [ -n "$LAS2PEER_ETH_HOST" ]; then
-        exec ${LAUNCH_COMMAND} --observer --ethereum-mnemonic "$(selectMnemonic)" uploadStartupDirectory startService\("'""${SERVICE}""'"\) startWebConnector "node=getNodeAsEthereumNode()" "registry=node.getRegistryClient()" "n=getNodeAsEthereumNode()" "r=n.getRegistryClient()"
+        exec ${LAUNCH_COMMAND} --observer --ethereum-mnemonic "$(selectMnemonic)" uploadStartupDirectory startService\("'""${SERVICE}""'"\)  "node=getNodeAsEthereumNode()" "registry=node.getRegistryClient()" "n=getNodeAsEthereumNode()" "r=n.getRegistryClient()"
     else
-        exec ${LAUNCH_COMMAND} --observer uploadStartupDirectory startService\("'""${SERVICE}""'"\) startWebConnector
+        exec ${LAUNCH_COMMAND} --observer uploadStartupDirectory startService\("'""${SERVICE}""'"\) 
     fi
 else
   exec ${LAUNCH_COMMAND} ${@}

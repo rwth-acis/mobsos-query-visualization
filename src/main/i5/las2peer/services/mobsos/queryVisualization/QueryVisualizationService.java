@@ -1,5 +1,5 @@
 package i5.las2peer.services.mobsos.queryVisualization;
-💁
+
 import i5.las2peer.api.Context;
 import i5.las2peer.api.ManualDeployment;
 import i5.las2peer.api.ServiceException;
