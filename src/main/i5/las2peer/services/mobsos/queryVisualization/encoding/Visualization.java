@@ -21,23 +21,28 @@ public abstract class Visualization {
 	/**
 	 * Generates the Visualization (Library Code, XML, CSV, etc.).
 	 * 
-	 * @param methodResult
-	 *            the method result
-	 * @param visualizationParamters
-	 *            an array containing additional information about the
-	 *            visualization
+	 * @param methodResult the method result
+	 * @param visualizationParamters an array containing additional information about the visualization
 	 * 
 	 * @return the generated output
 	 */
 	public abstract String generate(MethodResult methodResult, String[] visualizationParamters);
 
 	/**
+	 * Generates the Visualization (Library Code, XML, CSV, etc.).
+	 * 
+	 * @param methodResult the method result
+	 * @param visualizationParamters an array containing additional information about the visualization
+	 * 
+	 * @return the generated output
+	 */
+	public abstract byte[] generatePNG(MethodResult methodResult, String[] visualizationParamters);
+
+	/**
 	 * Checks, if the Visualization is suitable for the passed method result.
 	 * 
-	 * @param methodResult
-	 *            the method result
-	 * @param visualizationParamters
-	 *            parameters for the visualization
+	 * @param methodResult the method result
+	 * @param visualizationParamters parameters for the visualization
 	 * 
 	 * @return true if visualization is suitable
 	 */

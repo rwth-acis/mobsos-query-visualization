@@ -1,5 +1,9 @@
 package i5.las2peer.services.mobsos.queryVisualization.database;
 
+import i5.las2peer.api.Context;
+import i5.las2peer.api.Service;
+import i5.las2peer.api.logging.MonitoringEvent;
+import i5.las2peer.api.security.Agent;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -9,310 +13,345 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-import i5.las2peer.api.Context;
-import i5.las2peer.api.Service;
-import i5.las2peer.api.logging.MonitoringEvent;
-import i5.las2peer.api.security.Agent;
-
 /**
- * 
+ *
  * SQLDatabaseManager.java <br>
  * The Manager of the SQLDatabases. This Class provides methods to handle the users databases.
- * 
+ *
  */
 public class SQLDatabaseManager {
-	// used to store (and retrieve during execution) the settings for the users'
-	// databases
-	private HashMap<String, SQLDatabaseSettings> userDatabaseMap = new HashMap<>();
-	private HashMap<String, SQLDatabase> loadedDatabases = new HashMap<>();
 
-	private SQLDatabase storageDatabase = null;
+  // used to store (and retrieve during execution) the settings for the users'
+  // databases
+  private HashMap<String, SQLDatabaseSettings> userDatabaseMap = new HashMap<>();
+  private HashMap<String, SQLDatabase> loadedDatabases = new HashMap<>();
 
-	private boolean initializeUser() {
-		try {
-			Connection c = storageDatabase.getConnection();
-			PreparedStatement p = c.prepareStatement("SELECT DISTINCT ID FROM USERS WHERE ID = ?");
-			p.setString(1, Context.get().getMainAgent().getIdentifier());
-			ResultSet s = p.executeQuery();
-			if (!s.next()) {
-				p = c.prepareStatement("REPLACE INTO USERS (ID) VALUES (?)");
-				p.setString(1, Context.get().getMainAgent().getIdentifier());
-				p.executeUpdate();
-			}
-			c.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-			return false;
-		}
-		return true;
-	}
+  private SQLDatabase storageDatabase = null;
 
-	/*************** "service" helper methods *************************/
+  private boolean initializeUser() {
+    try {
+      Connection c = storageDatabase.getConnection();
+      PreparedStatement p = c.prepareStatement(
+        "SELECT DISTINCT ID FROM USERS WHERE ID = ?"
+      );
+      p.setString(1, Context.get().getMainAgent().getIdentifier());
+      ResultSet s = p.executeQuery();
+      if (!s.next()) {
+        p = c.prepareStatement("REPLACE INTO USERS (ID) VALUES (?)");
+        p.setString(1, Context.get().getMainAgent().getIdentifier());
+        p.executeUpdate();
+      }
+      c.close();
+    } catch (Exception e) {
+      e.printStackTrace();
+      return false;
+    }
+    return true;
+  }
 
-	/**
-	 * get the current l2p thread
-	 * 
-	 * @return the L2pThread we're currently running in
-	 */
+  /*************** "service" helper methods *************************/
 
-	/**
-	 * get the currently active agent
-	 * 
-	 * @return active agent
-	 */
-	protected Agent getActiveAgent() {
-		return Context.get().getMainAgent();
-	}
+  /**
+   * get the current l2p thread
+   *
+   * @return the L2pThread we're currently running in
+   */
 
-	/**
-	 * write a log message
-	 * 
-	 * @param message Message that will be logged
-	 */
-	protected void logMessage(String message) {
-		Context.get().monitorEvent(MonitoringEvent.SERVICE_MESSAGE, this.getClass().getName() + ": " + message);
-	}
+  /**
+   * get the currently active agent
+   *
+   * @return active agent
+   */
+  protected Agent getActiveAgent() {
+    return Context.get().getMainAgent();
+  }
 
-	/**************************
-	 * end of service helper methods
-	 ************************************/
+  /**
+   * write a log message
+   *
+   * @param message Message that will be logged
+   */
+  protected void logMessage(String message) {
+    Context
+      .get()
+      .monitorEvent(
+        MonitoringEvent.SERVICE_MESSAGE,
+        this.getClass().getName() + ": " + message
+      );
+  }
 
-	/**
-	 * get an id String for the envelope stored for an user
-	 * 
-	 * @param user UserAgent
-	 * @return String with the user id
-	 */
-	public static String getEnvelopeId(Agent user) {
-		return "userDBs-" + user.getIdentifier();
-	}
+  /**************************
+   * end of service helper methods
+   ************************************/
 
-	public SQLDatabaseManager(Service service, SQLDatabase storageDatabase) {
-		this.storageDatabase = storageDatabase;
-		// get the user's security object which contains the database
-		// information
+  /**
+   * get an id String for the envelope stored for an user
+   *
+   * @param user UserAgent
+   * @return String with the user id
+   */
+  public static String getEnvelopeId(Agent user) {
+    return "userDBs-" + user.getIdentifier();
+  }
 
-		initializeUser();
+  public SQLDatabaseManager(Service service, SQLDatabase storageDatabase) {
+    this.storageDatabase = storageDatabase;
+    // get the user's security object which contains the database
+    // information
 
-		SQLDatabaseSettings[] settings = null;
+    initializeUser();
 
-		try {
-			Connection c = storageDatabase.getConnection();
-			PreparedStatement p = c.prepareStatement("SELECT * FROM DATABASE_CONNECTIONS WHERE USER = ?;");
-			p.setString(1, Context.get().getMainAgent().getIdentifier());
-			ResultSet databases = p.executeQuery();
-			settings = SQLDatabaseSettings.fromResultSet(databases);
-			c.close();
-		} catch (Exception e) {
-			logMessage("Failed to get the users' SQL settings. " + e.getMessage());
-		}
+    SQLDatabaseSettings[] settings = null;
 
-		for (SQLDatabaseSettings setting : settings) {
-			userDatabaseMap.put(setting.getKey(), setting);
-		}
-	}
+    try {
+      Connection c = storageDatabase.getConnection();
+      PreparedStatement p = c.prepareStatement(
+        "SELECT * FROM DATABASE_CONNECTIONS WHERE USER = ?;"
+      );
+      System.out.println(Context.get().getMainAgent().getIdentifier());
+      p.setString(1, Context.get().getMainAgent().getIdentifier());
+      ResultSet databases = p.executeQuery();
+      settings = SQLDatabaseSettings.fromResultSet(databases);
+      c.close();
+    } catch (Exception e) {
+      logMessage("Failed to get the users' SQL settings. " + e.getMessage());
+    }
 
-	// add database to users' security object
-	public boolean addDatabase(String key, SQLDatabaseType jdbcInfo, String username, String password, String database,
-			String host, int port) throws Exception {
-		try {
-			// TODO: sanity checks for the parameters
-			if (databaseExists(key)) {
-				throw new Exception("Database with key " + key + " already exists!");
-			}
+    for (SQLDatabaseSettings setting : settings) {
+      userDatabaseMap.put(setting.getKey(), setting);
+    }
+  }
 
-			SQLDatabaseSettings databaseSettings = new SQLDatabaseSettings(key, jdbcInfo, username, password, database,
-					host, port);
+  // add database to users' security object
+  public boolean addDatabase(
+    String key,
+    SQLDatabaseType jdbcInfo,
+    String username,
+    String password,
+    String database,
+    String host,
+    int port
+  )
+    throws Exception {
+    try {
+      // TODO: sanity checks for the parameters
+      if (databaseExists(key)) {
+        throw new Exception("Database with key " + key + " already exists!");
+      }
 
-			Connection c = storageDatabase.getConnection();
-			PreparedStatement p = c
-					.prepareStatement("REPLACE INTO `DATABASE_CONNECTIONS`(`JDBCINFO`, `KEY`, `USERNAME`, `PASSWORD`,"
-							+ "`DATABASE`, `HOST`, `PORT`, `USER`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-			p.setInt(1, databaseSettings.getJdbcInfo().getCode());
-			p.setString(2, databaseSettings.getKey());
-			p.setString(3, databaseSettings.getUsername());
-			p.setString(4, databaseSettings.getPassword());
-			p.setString(5, databaseSettings.getDatabase());
-			p.setString(6, databaseSettings.getHost());
-			p.setInt(7, databaseSettings.getPort());
-			p.setString(8, Context.get().getMainAgent().getIdentifier());
-			p.executeUpdate();
-			userDatabaseMap.put(databaseSettings.getKey(), databaseSettings);
-			c.close();
-			return true;
-		} catch (Exception e) {
-			e.printStackTrace();
-			logMessage(e.getMessage());
-			throw e;
-		}
-	}
+      SQLDatabaseSettings databaseSettings = new SQLDatabaseSettings(
+        key,
+        jdbcInfo,
+        username,
+        password,
+        database,
+        host,
+        port
+      );
 
-	// removes a database from the hashmap and the security objects
-	public boolean removeDatabase(String key) throws Exception {
-		try {
-			if (!databaseExists(key)) {
-				// throw new Exception("Database with key " + key + " does not
-				// exists!");
-				return false;
-			}
+      Connection c = storageDatabase.getConnection();
+      PreparedStatement p = c.prepareStatement(
+        "REPLACE INTO `DATABASE_CONNECTIONS`(`JDBCINFO`, `KEY`, `USERNAME`, `PASSWORD`," +
+        "`DATABASE`, `HOST`, `PORT`, `USER`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+      );
+      p.setInt(1, databaseSettings.getJdbcInfo().getCode());
+      p.setString(2, databaseSettings.getKey());
+      p.setString(3, databaseSettings.getUsername());
+      p.setString(4, databaseSettings.getPassword());
+      p.setString(5, databaseSettings.getDatabase());
+      p.setString(6, databaseSettings.getHost());
+      p.setInt(7, databaseSettings.getPort());
+      p.setString(8, Context.get().getMainAgent().getIdentifier());
+      p.executeUpdate();
+      userDatabaseMap.put(databaseSettings.getKey(), databaseSettings);
+      c.close();
+      return true;
+    } catch (Exception e) {
+      e.printStackTrace();
+      logMessage(e.getMessage());
+      throw e;
+    }
+  }
 
-			if (userDatabaseMap != null && userDatabaseMap.containsKey(key)) {
-				// delete from hash map and database
-				removeDB(key);
-				userDatabaseMap.remove(key);
-			}
+  // removes a database from the hashmap and the security objects
+  public boolean removeDatabase(String key) throws Exception {
+    try {
+      if (!databaseExists(key)) {
+        // throw new Exception("Database with key " + key + " does not
+        // exists!");
+        return false;
+      }
 
-			return true;
-		} catch (Exception e) {
-			e.printStackTrace();
-			logMessage(e.getMessage());
-			throw e;
-		}
-	}
+      if (userDatabaseMap != null && userDatabaseMap.containsKey(key)) {
+        // delete from hash map and database
+        removeDB(key);
+        userDatabaseMap.remove(key);
+      }
 
-	public boolean databaseExists(String key) {
-		try {
-			return (userDatabaseMap.get(key) != null);
-		} catch (Exception e) {
-			e.printStackTrace();
-			logMessage(e.getMessage());
-		}
-		return false;
-	}
+      return true;
+    } catch (Exception e) {
+      e.printStackTrace();
+      logMessage(e.getMessage());
+      throw e;
+    }
+  }
 
-	public int getDatabaseCount() {
-		return this.userDatabaseMap.size();
-	}
+  public boolean databaseExists(String key) {
+    try {
+      return (userDatabaseMap.get(key) != null);
+    } catch (Exception e) {
+      e.printStackTrace();
+      logMessage(e.getMessage());
+    }
+    return false;
+  }
 
-	// get a list of the names of all databases of the user
-	public List<String> getDatabaseKeyList() {
-		try {
-			LinkedList<String> keyList = new LinkedList<>();
-			Iterator<String> iterator = this.userDatabaseMap.keySet().iterator();
-			while (iterator.hasNext()) {
-				keyList.add(iterator.next());
-			}
+  public int getDatabaseCount() {
+    return this.userDatabaseMap.size();
+  }
 
-			return keyList;
-		} catch (Exception e) {
-			e.printStackTrace();
-			logMessage(e.getMessage());
-		}
-		return null;
-	}
+  // get a list of the names of all databases of the user
+  public List<String> getDatabaseKeyList() {
+    try {
+      LinkedList<String> keyList = new LinkedList<>();
+      Iterator<String> iterator = this.userDatabaseMap.keySet().iterator();
+      while (iterator.hasNext()) {
+        keyList.add(iterator.next());
+      }
 
-	// returns a list of all database settings elements
-	public List<SQLDatabaseSettings> getDatabaseSettingsList() {
-		try {
-			LinkedList<SQLDatabaseSettings> settingsList = new LinkedList<>();
-			Iterator<SQLDatabaseSettings> iterator = this.userDatabaseMap.values().iterator();
-			while (iterator.hasNext()) {
-				settingsList.add(iterator.next());
-			}
+      return keyList;
+    } catch (Exception e) {
+      e.printStackTrace();
+      logMessage(e.getMessage());
+    }
+    return null;
+  }
 
-			return settingsList;
-		} catch (Exception e) {
-			e.printStackTrace();
-			logMessage(e.getMessage());
-		}
-		return null;
-	}
+  // returns a list of all database settings elements
+  public List<SQLDatabaseSettings> getDatabaseSettingsList() {
+    try {
+      LinkedList<SQLDatabaseSettings> settingsList = new LinkedList<>();
+      Iterator<SQLDatabaseSettings> iterator =
+        this.userDatabaseMap.values().iterator();
+      while (iterator.hasNext()) {
+        settingsList.add(iterator.next());
+      }
 
-	public String getDatabaseIdString(String databaseKey) throws Exception {
-		try {
-			SQLDatabaseSettings databaseSettings = userDatabaseMap.get(databaseKey);
+      return settingsList;
+    } catch (Exception e) {
+      e.printStackTrace();
+      logMessage(e.getMessage());
+    }
+    return null;
+  }
 
-			if (databaseSettings == null) {
-				return null;
-			}
+  public String getDatabaseIdString(String databaseKey) throws Exception {
+    try {
+      SQLDatabaseSettings databaseSettings = userDatabaseMap.get(databaseKey);
 
-			return databaseSettings.getHost() + ":" + databaseSettings.getPort() + "/" + databaseSettings.getDatabase();
-		} catch (Exception e) {
-			e.printStackTrace();
-			logMessage(e.getMessage());
-			throw e;
-		}
-	}
+      if (databaseSettings == null) {
+        return null;
+      }
 
-	/**
-	 * Get Settings of a database by its database name
-	 * 
-	 * @param databaseName Name of the database
-	 * @return Settings of the database
-	 * @throws Exception Exception
-	 */
-	public SQLDatabaseSettings getDatabaseByName(String databaseName) throws Exception {
-		for (SQLDatabaseSettings db : userDatabaseMap.values()) {
-			if (db.getDatabase().equals(databaseName)) {
-				return db;
-			}
-		}
-		return null;
-	}
+      return (
+        databaseSettings.getHost() +
+        ":" +
+        databaseSettings.getPort() +
+        "/" +
+        databaseSettings.getDatabase()
+      );
+    } catch (Exception e) {
+      e.printStackTrace();
+      logMessage(e.getMessage());
+      throw e;
+    }
+  }
 
-	/**
-	 * Get Settings of a database by its database name
-	 * 
-	 * @param databaseKey Key of the database
-	 * @return Settings of the database
-	 * @throws Exception Exception
-	 */
-	public SQLDatabaseSettings getDatabaseSettings(String databaseKey) throws Exception {
-		return userDatabaseMap.get(databaseKey);
-	}
+  /**
+   * Get Settings of a database by its database name
+   *
+   * @param databaseName Name of the database
+   * @return Settings of the database
+   * @throws Exception Exception
+   */
+  public SQLDatabaseSettings getDatabaseByName(String databaseName)
+    throws Exception {
+    for (SQLDatabaseSettings db : userDatabaseMap.values()) {
+      if (db.getDatabase().equals(databaseName)) {
+        return db;
+      }
+    }
+    return null;
+  }
 
-	// get a instance of a SQL database (JDBC based)
-	public SQLDatabase getDatabaseInstance(String databaseKey) throws Exception {
-		try {
-			SQLDatabase sqlDatabase = loadedDatabases.get(databaseKey);
+  /**
+   * Get Settings of a database by its database name
+   *
+   * @param databaseKey Key of the database
+   * @return Settings of the database
+   * @throws Exception Exception
+   */
+  public SQLDatabaseSettings getDatabaseSettings(String databaseKey)
+    throws Exception {
+    return userDatabaseMap.get(databaseKey);
+  }
 
-			if (sqlDatabase != null) {
-				// TODO: check that the database is still open/valid
-			} else {
-				SQLDatabaseSettings databaseSettings = userDatabaseMap.get(databaseKey);
+  // get a instance of a SQL database (JDBC based)
+  public SQLDatabase getDatabaseInstance(String databaseKey) throws Exception {
+    try {
+      SQLDatabase sqlDatabase = loadedDatabases.get(databaseKey);
 
-				if (databaseSettings == null) {
-					// the requested database is not known
-					String dbKeyListString = "";
-					Iterator<String> iterator = getDatabaseKeyList().iterator();
-					while (iterator.hasNext()) {
-						dbKeyListString += " " + iterator.next();
-					}
+      if (sqlDatabase != null) {
+        // TODO: check that the database is still open/valid
+      } else {
+        SQLDatabaseSettings databaseSettings = userDatabaseMap.get(databaseKey);
 
-					throw new Exception("The requested database is not known/configured! (Requested:" + databaseKey
-							+ ", Available: " + dbKeyListString + ")");
-				}
+        if (databaseSettings == null) {
+          // the requested database is not known
+          String dbKeyListString = "";
+          Iterator<String> iterator = getDatabaseKeyList().iterator();
+          while (iterator.hasNext()) {
+            dbKeyListString += " " + iterator.next();
+          }
 
-				sqlDatabase = new SQLDatabase(databaseSettings);
+          throw new Exception(
+            "The requested database is not known/configured! (Requested:" +
+            databaseKey +
+            ", Available: " +
+            dbKeyListString +
+            ")"
+          );
+        }
 
-				// try to connect ...
-				// sqlDatabase.connect();
-			}
-			return sqlDatabase;
-		} catch (Exception e) {
-			e.printStackTrace();
-			logMessage(e.getMessage());
-			throw e;
-		}
-	}
+        sqlDatabase = new SQLDatabase(databaseSettings);
+        // try to connect ...
+        // sqlDatabase.connect();
+      }
+      return sqlDatabase;
+    } catch (Exception e) {
+      e.printStackTrace();
+      logMessage(e.getMessage());
+      throw e;
+    }
+  }
 
-	/**
-	 * Remove given database from the database
-	 */
-	private void removeDB(String databaseKey) throws SQLException {
-		try {
-
-			Connection c = storageDatabase.getConnection();
-			PreparedStatement s = c
-					.prepareStatement("DELETE FROM `DATABASE_CONNECTIONS` WHERE `KEY` = ? AND `USER` = ?");
-			s.setString(1, databaseKey);
-			s.setString(2, Context.get().getMainAgent().getIdentifier());
-			s.executeUpdate();
-			c.close();
-		} catch (Exception e) {
-			logMessage("Error removing the Database! " + e);
-			System.out.println("QV critical:");
-			e.printStackTrace();
-		}
-	}
+  /**
+   * Remove given database from the database
+   */
+  private void removeDB(String databaseKey) throws SQLException {
+    try {
+      Connection c = storageDatabase.getConnection();
+      PreparedStatement s = c.prepareStatement(
+        "DELETE FROM `DATABASE_CONNECTIONS` WHERE `KEY` = ? AND `USER` = ?"
+      );
+      s.setString(1, databaseKey);
+      s.setString(2, Context.get().getMainAgent().getIdentifier());
+      s.executeUpdate();
+      c.close();
+    } catch (Exception e) {
+      logMessage("Error removing the Database! " + e);
+      System.out.println("QV critical:");
+      e.printStackTrace();
+    }
+  }
 }

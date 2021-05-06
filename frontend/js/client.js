@@ -30,154 +30,238 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 /**
-* Instantiates a new TemplateServiceClient, given its endpoint URL.
-*/
+ * Instantiates a new TemplateServiceClient, given its endpoint URL.
+ */
 function TemplateServiceClient(endpointUrl) {
-	// care for trailing slash in endpoint URL
-	if(endpointUrl.endsWith("/")) {
-		this._serviceEndpoint = endpointUrl.substr(0,endpointUrl.length-1);
-	} else {
-		this._serviceEndpoint = endpointUrl;
-	}
+  // care for trailing slash in endpoint URL
+  if (endpointUrl.endsWith('/')) {
+    this._serviceEndpoint = endpointUrl.substr(0, endpointUrl.length - 1);
+  } else {
+    this._serviceEndpoint = endpointUrl;
+  }
 }
 
 /**
-* An example function demonstrating a GET request on resource <endpointUrl>/example/validate
-*/
-TemplateServiceClient.prototype.getMethod = function(successCallback, errorCallback) {
-	this.get("QVS/validate", {}, "text/html","text/html",null ,successCallback, errorCallback);
+ * An example function demonstrating a GET request on resource <endpointUrl>/example/validate
+ */
+TemplateServiceClient.prototype.getMethod = function (successCallback, errorCallback) {
+  this.get('QVS/validate', {}, 'text/html', 'text/html', null, successCallback, errorCallback);
 };
 
 /**
-* An example function demonstrating a POST request on resource <endpointUrl>/example/myMethodPath/<input>
-*/
-TemplateServiceClient.prototype.postMethod = function(input, successCallback, errorCallback) {
-	this.post("QVS/myMethodPath/" + input, {}, successCallback, errorCallback);
+ * An example function demonstrating a POST request on resource <endpointUrl>/example/myMethodPath/<input>
+ */
+TemplateServiceClient.prototype.postMethod = function (input, successCallback, errorCallback) {
+  this.post('QVS/myMethodPath/' + input, {}, successCallback, errorCallback);
 };
 
 /**
-* Convenience functions for sending a GET, POST, PUT and DELETE request.
-* Parameters:
-*   - relativePath: the path relative to the client's endpoint URL
-*   - content: the content to be sent in the HTTP request's body
-*   - successCallback: a callback function invoked in case the request succeeded. Expects three parameters "data", "type" and "status", where "data" represents the content of the response, "type" describes the MIME-type of the response and "status" contains the HTTP return code.
-*   - errorCallback: a callback function invoked in case the request failed. Expects two parameters "error" and "status" representing the error occurred and "status" containing the HTTP error return code.
-*/
-TemplateServiceClient.prototype.get = function(path, content, mime, mtype,queryParams, successCallback, errorCallback) {
-	this.sendRequest("GET", path, content, mime, mtype, queryParams, null, successCallback, errorCallback);
+ * Convenience functions for sending a GET, POST, PUT and DELETE request.
+ * Parameters:
+ *   - relativePath: the path relative to the client's endpoint URL
+ *   - content: the content to be sent in the HTTP request's body
+ *   - successCallback: a callback function invoked in case the request succeeded. Expects three parameters "data", "type" and "status", where "data" represents the content of the response, "type" describes the MIME-type of the response and "status" contains the HTTP return code.
+ *   - errorCallback: a callback function invoked in case the request failed. Expects two parameters "error" and "status" representing the error occurred and "status" containing the HTTP error return code.
+ */
+TemplateServiceClient.prototype.get = function (
+  path,
+  content,
+  mime,
+  mtype,
+  queryParams,
+  successCallback,
+  errorCallback
+) {
+  this.sendRequest(
+    'GET',
+    path,
+    content,
+    mime,
+    mtype,
+    queryParams,
+    null,
+    successCallback,
+    errorCallback
+  );
 };
 
-TemplateServiceClient.prototype.post = function(path, content,mime, mtype, queryParams, successCallback, errorCallback) {
-	this.sendRequest("POST", path, content, mime, mtype, queryParams, null, successCallback, errorCallback);
+TemplateServiceClient.prototype.post = function (
+  path,
+  content,
+  mime,
+  mtype,
+  queryParams,
+  successCallback,
+  errorCallback
+) {
+  this.sendRequest(
+    'POST',
+    path,
+    content,
+    mime,
+    mtype,
+    queryParams,
+    null,
+    successCallback,
+    errorCallback
+  );
 };
 
-TemplateServiceClient.prototype.put = function(path, content, mime, mtype, queryParams, successCallback, errorCallback) {
-	this.sendRequest("PUT", path, content, mime, mtype, queryParams, null, successCallback, errorCallback);
+TemplateServiceClient.prototype.put = function (
+  path,
+  content,
+  mime,
+  mtype,
+  queryParams,
+  successCallback,
+  errorCallback
+) {
+  this.sendRequest(
+    'PUT',
+    path,
+    content,
+    mime,
+    mtype,
+    queryParams,
+    null,
+    successCallback,
+    errorCallback
+  );
 };
 
-TemplateServiceClient.prototype.delete = function(path, content, mime, mtype, queryParams, successCallback, errorCallback) {
-	this.sendRequest("DELETE", path, content, mime, mtype, queryParams, null, successCallback, errorCallback);
+TemplateServiceClient.prototype.delete = function (
+  path,
+  content,
+  mime,
+  mtype,
+  queryParams,
+  successCallback,
+  errorCallback
+) {
+  this.sendRequest(
+    'DELETE',
+    path,
+    content,
+    mime,
+    mtype,
+    queryParams,
+    null,
+    successCallback,
+    errorCallback
+  );
 };
 
 /**
-* sends an AJAX request to a resource.
-* Parameters:
-*   - method: the HTTP method used
-*	- relativePath: the path relative to the client's endpoint URL
-*   - content: the content to be sent in the HTTP request's body
-*   - queryParams: Parameters that are added to the URL.
-*   - mime: the MIME-type of the content
-*   - customHeaders: a JSON string with additional header parameters to be sent
-*   - successCallback: a callback function invoked in case the request succeeded. Expects three parameters "data", "type" and "status", where "data" represents the content of the response, "type" describes the MIME-type of the response and "status" contains the HTTP return code.
-*   - errorCallback: a callback function invoked in case the request failed. Expects two parameters "error" and "status" representing the error occurred and "status" containing the HTTP error return code.
-*
-*/
-TemplateServiceClient.prototype.sendRequest = function(method, relativePath, content, mime, mtype, queryParams, customHeaders, successCallback, errorCallback) {
-	if(typeof mtype == "undefined") {
-		mtype = "text/plain; charset=UTF-8";
-	}
-	if(typeof mime == "undefined") {
-		mime = "text/plain; charset=UTF-8";
-	}
+ * sends an AJAX request to a resource.
+ * Parameters:
+ *   - method: the HTTP method used
+ *	- relativePath: the path relative to the client's endpoint URL
+ *   - content: the content to be sent in the HTTP request's body
+ *   - queryParams: Parameters that are added to the URL.
+ *   - mime: the MIME-type of the content
+ *   - customHeaders: a JSON string with additional header parameters to be sent
+ *   - successCallback: a callback function invoked in case the request succeeded. Expects three parameters "data", "type" and "status", where "data" represents the content of the response, "type" describes the MIME-type of the response and "status" contains the HTTP return code.
+ *   - errorCallback: a callback function invoked in case the request failed. Expects two parameters "error" and "status" representing the error occurred and "status" containing the HTTP error return code.
+ *
+ */
+TemplateServiceClient.prototype.sendRequest = function (
+  method,
+  relativePath,
+  content,
+  mime,
+  mtype,
+  queryParams,
+  customHeaders,
+  successCallback,
+  errorCallback
+) {
+  if (typeof mtype == 'undefined') {
+    mtype = 'text/plain; charset=UTF-8';
+  }
+  if (typeof mime == 'undefined') {
+    mime = 'text/plain; charset=UTF-8';
+  }
 
-	var rurl = this._serviceEndpoint + "/" + relativePath;
+  var rurl = this._serviceEndpoint + '/' + relativePath;
 
-	if(this.loggedIn()){
-		console.log("Authenticated request");
-		if(rurl.indexOf("?") > 0){
-			rurl += "&access_token=" + window.localStorage.access_token;
-		} else {
-			rurl += "?access_token=" + window.localStorage.access_token;
-		}
-	} else {
-		console.log("Anonymous request... ");
-	}
-
-    if (typeof queryParams == "object") {
-        for (var param in queryParams) {
-            if(rurl.indexOf("?") > 0){
-                rurl += "&" + param + "=" + queryParams[param];
-            } else {
-                rurl += "?" + param + "=" + queryParams[param];
-            }
-        }
+  if (this.loggedIn()) {
+    if (rurl.indexOf('?') > 0) {
+      rurl += '&access_token=' + window.localStorage.access_token;
+    } else {
+      rurl += '?access_token=' + window.localStorage.access_token;
     }
+  } else {
+    console.log('Anonymous request... ');
+  }
 
-	var ajaxObj = {
-		url: rurl,
-		type: method.toUpperCase(),
-		contentType: mime,
-		headers: {          
-    		Accept: mtype
-    	},
-		crossDomain: true,
-
-		error: function (xhr, errorType, error) {
-			console.log(error);
-			var errorText = error;
-			if (xhr.responseText !== null && xhr.responseText.trim().length > 0) {
-				errorText = xhr.responseText;
-			}
-			errorCallback(errorText, xhr.status);
-		},
-		success: function (data, status, xhr) {
-			var type = xhr.getResponseHeader("Content-Type");
-			successCallback(data, type, xhr.status);
-		},
-	};
-
-    if (content) {
-        ajaxObj.data = JSON.stringify(content);
+  if (typeof queryParams == 'object') {
+    for (var param in queryParams) {
+      if (rurl.indexOf('?') > 0) {
+        rurl += '&' + param + '=' + queryParams[param];
+      } else {
+        rurl += '?' + param + '=' + queryParams[param];
+      }
     }
+  }
+  console.log(oidc_userinfo.preferred_username, oidc_userinfo.sub);
 
-	if (typeof customHeaders !== "undefined" && customHeaders !== null) {
-		$.extend(ajaxObj.headers, customHeaders);
-	}
+  var ajaxObj = {
+    url: rurl,
+    type: method.toUpperCase(),
+    contentType: mime,
+    headers: {
+      Accept: mtype,
+      Authorization: 'Basic ' + btoa(oidc_userinfo.preferred_username + ':' + oidc_userinfo.sub),
+      access_token: window.localStorage.access_token,
+    },
+    crossDomain: true,
 
-	$.ajax(ajaxObj);
+    error: function (xhr, errorType, error) {
+      console.log(error);
+      var errorText = error;
+      if (xhr.responseText !== null && xhr.responseText.trim().length > 0) {
+        errorText = xhr.responseText;
+      }
+      errorCallback(errorText, xhr.status);
+    },
+    success: function (data, status, xhr) {
+      var type = xhr.getResponseHeader('Content-Type');
+      successCallback(data, type, xhr.status);
+    },
+  };
+
+  if (content) {
+    ajaxObj.data = JSON.stringify(content);
+  }
+
+  if (typeof customHeaders !== 'undefined' && customHeaders !== null) {
+    $.extend(ajaxObj.headers, customHeaders);
+  }
+
+  $.ajax(ajaxObj);
 };
 
 /**
-* determines if user is authenticated via OpenID Connect or not.
-*/
-TemplateServiceClient.prototype.isAnonymous = function(){
-    return !this.loggedIn();
+ * determines if user is authenticated via OpenID Connect or not.
+ */
+TemplateServiceClient.prototype.isAnonymous = function () {
+  return !this.loggedIn();
 };
 
 /**
-* determines if user is authenticated via OpenID Connect or not in a more obvious way.
-*/
-TemplateServiceClient.prototype.loggedIn = function(){
-	if (typeof oidc_userinfo !== "undefined"){
-		return true;
-	} else {
-		return false;
-	}
+ * determines if user is authenticated via OpenID Connect or not in a more obvious way.
+ */
+TemplateServiceClient.prototype.loggedIn = function () {
+  if (typeof oidc_userinfo !== 'undefined') {
+    return true;
+  } else {
+    return false;
+  }
 };
 
 /**
-* Convenience function to check if a String ends with a given suffix.
-*/
-String.prototype.endsWith = function(suffix) {
-	return this.indexOf(suffix, this.length - suffix.length) !== -1;
+ * Convenience function to check if a String ends with a given suffix.
+ */
+String.prototype.endsWith = function (suffix) {
+  return this.indexOf(suffix, this.length - suffix.length) !== -1;
 };

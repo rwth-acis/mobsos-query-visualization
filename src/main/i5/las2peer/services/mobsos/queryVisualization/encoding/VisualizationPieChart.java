@@ -1,8 +1,20 @@
 package i5.las2peer.services.mobsos.queryVisualization.encoding;
 
+import java.awt.Color;
+import java.awt.GradientPaint;
+import java.awt.Paint;
+import java.awt.Point;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.sql.Types;
 import java.util.HashSet;
 import java.util.ListIterator;
+
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartUtils;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.PiePlot;
+import org.jfree.data.general.DefaultPieDataset;
 
 import i5.las2peer.api.Context;
 import i5.las2peer.api.logging.MonitoringEvent;
@@ -10,7 +22,7 @@ import i5.las2peer.api.logging.MonitoringEvent;
 /**
  * VisualizationPieChart.java <br>
  * Transforms/Converts a methodResult into a Google Pie Chart.
- * 
+ *
  */
 public class VisualizationPieChart extends Visualization {
 
@@ -85,6 +97,7 @@ public class VisualizationPieChart extends Visualization {
 
 			return resultHTML.toString();
 		} catch (Exception e) {
+			e.printStackTrace();
 			Context.get().monitorEvent(this, MonitoringEvent.SERVICE_ERROR, e.getMessage().toString());
 			try {
 				return super.visualizationException.generate(e, "Encoding into Pie Chart failed.");
@@ -109,7 +122,6 @@ public class VisualizationPieChart extends Visualization {
 		}
 
 		return text;
-
 	}
 
 	@Override
@@ -140,4 +152,38 @@ public class VisualizationPieChart extends Visualization {
 		return true;
 	}
 
+	@Override
+	public byte[] generatePNG(MethodResult methodResult, String[] visualizationParamters) {
+		DefaultPieDataset<String> dataset = new DefaultPieDataset<String>();
+		ListIterator<Object[]> iterator = methodResult.getRowIterator();
+		while (iterator.hasNext()) {
+			Object[] currentRow = iterator.next();
+			String firstCell = currentRow[0].toString();
+			String secondCell = currentRow[1].toString();
+			if (firstCell == null || firstCell.equals("null")) {
+				firstCell = "";
+			}
+			dataset.setValue(firstCell, Double.parseDouble(secondCell));
+
+		}
+
+		JFreeChart chart = ChartFactory.createPieChart(visualizationParamters[0], // chart title
+				dataset, // data
+				false, // no legend
+				true, // tooltips
+				false // no URL generation
+		);
+		// set a custom background for the chart
+		Paint p = new GradientPaint(new Point(0, 0), Color.WHITE, new Point(400, 200), Color.WHITE);
+		chart.setBackgroundPaint(p);
+		PiePlot plot = (PiePlot) chart.getPlot();
+		plot.setBackgroundPaint(p);
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		try {
+			ChartUtils.writeChartAsPNG(baos, chart, Integer.parseInt(visualizationParamters[2]),
+					Integer.parseInt(visualizationParamters[1]));
+		} catch (IOException e) {
+		}
+		return baos.toByteArray();
+	}
 }
