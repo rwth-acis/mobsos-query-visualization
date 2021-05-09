@@ -121,6 +121,14 @@ if [[ ! -z "${BOOTSTRAP}" ]]; then
     done
 fi
 
+
+# prevent glob expansion in lib/*
+set -f
+LAUNCH_COMMAND='java -cp lib/* i5.las2peer.tools.L2pNodeLauncher -s service -p '"${LAS2PEER_PORT} ${SERVICE_EXTRA_ARGS}"
+if [[ ! -z "${BOOTSTRAP}" ]]; then
+    LAUNCH_COMMAND="${LAUNCH_COMMAND} -b ${BOOTSTRAP}"
+fi
+
 # it's realistic for different nodes to use different accounts (i.e., to have
 # different node operators). this function echos the N-th mnemonic if the
 # variable WALLET is set to N. If not, first mnemonic is used
@@ -135,23 +143,18 @@ function selectMnemonic {
     fi
 }
 
-# prevent glob expansion in lib/*
-set -f
-LAUNCH_COMMAND='java -cp lib/* i5.las2peer.tools.L2pNodeLauncher -s service -p '"${LAS2PEER_PORT} ${SERVICE_EXTRA_ARGS}"
-if [[ ! -z "${BOOTSTRAP}" ]]; then
-    LAUNCH_COMMAND="${LAUNCH_COMMAND} -b ${BOOTSTRAP}"
-fi
+
 
 #prepare pastry properties
 echo external_address = $(curl -s https://ipinfo.io/ip):${LAS2PEER_PORT} > etc/pastry.properties
-
+echo ${LAUNCH_COMMAND}
 # start the service within a las2peer node
 if [[ -z "${@}" ]]
 then
     if [ -n "$LAS2PEER_ETH_HOST" ]; then
-        exec ${LAUNCH_COMMAND} --observer --node-id-seed $NODE_ID_SEED --ethereum-mnemonic "$(selectMnemonic)" uploadStartupDirectory startService\("'""${SERVICE}""'"\)  "node=getNodeAsEthereumNode()" "registry=node.getRegistryClient()" "n=getNodeAsEthereumNode()" "r=n.getRegistryClient()"
+        exec ${LAUNCH_COMMAND} --observer --node-id-seed $NODE_ID_SEED --ethereum-mnemonic "$(selectMnemonic)"  startService\("'""${SERVICE}""'", "'""${SERVICE_PASSPHRASE}""'"\)   "node=getNodeAsEthereumNode()" "registry=node.getRegistryClient()" "n=getNodeAsEthereumNode()" "r=n.getRegistryClient()"
     else
-        exec ${LAUNCH_COMMAND} --observer --node-id-seed $NODE_ID_SEED uploadStartupDirectory startService\("'""${SERVICE}""'"\) 
+        exec ${LAUNCH_COMMAND} --observer --node-id-seed $NODE_ID_SEED  startService\("'""${SERVICE}""'", "'""${SERVICE_PASSPHRASE}""'"\) 
     fi
 else
   exec ${LAUNCH_COMMAND} ${@}
