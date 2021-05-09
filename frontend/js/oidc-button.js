@@ -187,7 +187,9 @@ function renderButton(signin) {
         '&response_type=id_token%20token&client_id=' +
         encodeURIComponent(oidc_clientid) +
         '&scope=' +
-        encodeURIComponent(oidc_scope);
+        encodeURIComponent(oidc_scope)
+        +'&nonce='+randomNonce(12);
+
       window.location.href = url;
     });
   } else {
@@ -206,6 +208,14 @@ function renderButton(signin) {
       window.location.href = oidc_server;
     });
   }
+}
+function randomNonce(length) {
+  var text = "";
+  var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  for(var i = 0; i < length; i++) {
+    text += possible.charAt(Math.floor(Math.random() * possible.length));
+  }
+  return text;
 }
 
 /**
