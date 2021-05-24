@@ -15,7 +15,6 @@ restMapping.xml
 /out
 .DS_Store
 .DS_Store?
-/bin
 /bin/*
 junit*.properties
 query_visualization/etc/launcher-configuration.ini
