@@ -18,7 +18,6 @@ restMapping.xml
 /bin
 /bin/*
 junit*.properties
-query_visualization/etc/i5.las2peer.services.mobsos.queryVisualization.QueryVisualizationService.properties
 query_visualization/etc/launcher-configuration.ini
 
 # Ignore Gradle project-specific cache directory
