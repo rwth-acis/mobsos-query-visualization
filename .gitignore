@@ -1,15 +1,14 @@
 /output/
-/export
+query_visualization/export
 /tmp
 /.las2peer
 /.settings
 /node-storage
-/startup
-/log
+etc/startup
+query_visualization/log
 /lib
-etc/ivy/ivy.jar
 /service
-/etc/startup
+/query_visualization/etc/startup
 *.iml
 /.idea
 restMapping.xml
@@ -19,8 +18,8 @@ restMapping.xml
 /bin
 /bin/*
 junit*.properties
-etc/i5.las2peer.services.mobsos.queryVisualization.QueryVisualizationService.properties
-etc/launcher-configuration.ini
+query_visualization/etc/i5.las2peer.services.mobsos.queryVisualization.QueryVisualizationService.properties
+query_visualization/etc/launcher-configuration.ini
 
 # Ignore Gradle project-specific cache directory
 .gradle
