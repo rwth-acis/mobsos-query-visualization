@@ -21,7 +21,7 @@ described by meta data such as title or display dimensions.
 
 ## Build
 Before you build the project make sure you have set up a [database](db.sql). 
-Enter the credentials in the [property file](etc/i5.las2peer.services.mobsos.queryVisualization.QueryVisualizationService.properties). 
+Enter the credentials in the [property file](query_visualization/etc/i5.las2peer.services.mobsos.queryVisualization.QueryVisualizationService.properties). 
 The following values are important: 
 
 | Property      | Description                |
