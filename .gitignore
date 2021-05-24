@@ -4,7 +4,7 @@ query_visualization/export
 /.las2peer
 /.settings
 /node-storage
-etc/startup
+/startup
 query_visualization/log
 /lib
 /service
