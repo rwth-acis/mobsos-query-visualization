@@ -21,3 +21,9 @@ restMapping.xml
 junit*.properties
 etc/i5.las2peer.services.mobsos.queryVisualization.QueryVisualizationService.properties
 etc/launcher-configuration.ini
+
+# Ignore Gradle project-specific cache directory
+.gradle
+
+# Ignore Gradle build output directory
+build
