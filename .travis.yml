@@ -1,9 +1,10 @@
 language: java
-jdk: openjdk8
-install: "sudo apt-get install ant ant-optional"
+jdk: openjdk14
+install: skip
 services:
   - mysql
-script: "ant all"
+script:
+  - ./gradlew build -s
 sudo: false
 before_script:
   - mysql -u root -e 'CREATE DATABASE QVS;'
