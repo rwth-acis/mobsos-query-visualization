@@ -21,6 +21,12 @@ described by meta data such as title or display dimensions.
 
 ## Build
 Before you build the project make sure you have set up a [database](db.sql). 
+```
+mysql -u YOUR_USER -p -e 'CREATE DATABASE QVS;'
+mysql -u YOUR_USER -p QVS < db.sql
+mysql -u YOUR_USER -p -e "SET GLOBAL time_zone = '+00:00';"
+```
+
 Enter the credentials in the [property file](query_visualization/etc/i5.las2peer.services.mobsos.queryVisualization.QueryVisualizationService.properties). 
 The following values are important: 
 
