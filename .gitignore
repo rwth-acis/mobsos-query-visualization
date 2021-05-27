@@ -24,3 +24,8 @@ query_visualization/etc/launcher-configuration.ini
 
 # Ignore Gradle build output directory
 build
+etc/startup/*
+export/test_reports/TEST-i5.las2peer.services.mobsos.queryVisualization.ServiceTest.txt
+log/*
+export/jacoco.exec
+etc/ivy/ivy.jar
