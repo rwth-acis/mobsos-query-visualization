@@ -145,6 +145,14 @@ Example:
 </button>
 ```
 
+You also need to adjust the REST API endpoint. In `frontend/js/queryviz.js`,adjust the `LASHOST` variable to reflect the url on which your endpoint is reachable.
+
+Example:
+
+```js
+var LASHOST 'https://127.0.0.1:8080/';
+```
+
 ### Volumes
 
 The following places should be persisted in volumes in productive scenarios:
