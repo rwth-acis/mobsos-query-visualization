@@ -131,27 +131,29 @@ _httpPort_ and _httpsPort_ are fixed at _8080_ and _8443_.
 
 ### Frontend
 
-In your frontend, make sure to adjust the `data-redirect` attribute in the sign-in button of the `frontend/demo.html` file. The redirect url should be the url at which your port is running and should have the form `http://YOUR_IP:PORT/demo.html`
-
-Example:
+In your frontend, make sure to adjust the `data-redirect` attribute in the sign-in button of the `frontend/demo.html` file. 
 
 ```html
-<button
-  class="oidc-signin"
-  data-redirect="http://localhost:5500/demo.html"
-  data-scope="openid phone email address profile"
->
-  <img style="margin-right:5px;" src="logo.png" height="16px" /> Sign in with
-  <i>Learning Layers</i>
-</button>
+    data-redirect="http://localhost:5500/demo.html"
+```
+
+Also you need to change the `data-clientid`.
+
+```html
+    data-clientid="localtestclient"
 ```
 
 You also need to adjust the REST API endpoint. In `frontend/js/queryviz.js`,adjust the `LASHOST` variable to reflect the url on which your endpoint is reachable.
 
-Example:
-
 ```js
 var LASHOST 'https://127.0.0.1:8080/';
+```
+
+Then you can build and run the frontend server:
+
+```bash
+npm install
+node index.js
 ```
 
 ### Volumes
