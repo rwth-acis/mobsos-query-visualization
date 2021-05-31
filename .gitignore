@@ -29,3 +29,5 @@ export/test_reports/TEST-i5.las2peer.services.mobsos.queryVisualization.ServiceT
 log/*
 export/jacoco.exec
 etc/ivy/ivy.jar
+query_visualization/bin/main/i5.las2peer.services.mobsos.queryVisualization/*
+query_visualization/bin/test/i5.las2peer.services.mobsos.queryVisualization/*
