@@ -47,6 +47,7 @@ Execute the following command on your shell:
 ```shell
 ./gradlew clean build --info
 ```
+_Sometime the tests would fails on the first run, try the above command again if that happened to you_
 
 ## Deploy
 
