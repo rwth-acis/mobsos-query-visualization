@@ -30,7 +30,7 @@ mysql -u YOUR_USER -p QVS < db.sql
 mysql -u YOUR_USER -p -e "SET GLOBAL time_zone = '+00:00';"
 ```
 
-Enter the credentials in the [property file](query_visualization/etc/i5.las2peer.services.mobsos.queryVisualization.QueryVisualizationService.properties).
+Enter the credentials in the [property file](etc/i5.las2peer.services.mobsos.queryVisualization.QueryVisualizationService.properties).
 The following values are important:
 
 | Property     | Description             |
