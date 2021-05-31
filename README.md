@@ -54,11 +54,7 @@ _Sometimes the tests would fail on the first run. try the above command again if
 The start_network.bat script uses the L2PNodeLauncher class to start the service. It does also register
 the content of the "startup" directory and it starts the Web-Connector at port 8080.
 
-Steps to take before launching:
-
-1. Check the LASHOST variable at the queryviz.js (should be ok if you use the default startup script)
-2. Change the address of the "qv_code_template" script (located at the demo.html file) according to your
-   setup. This is needed for exported queries to work.
+For running the frontend server read [#frontend](#frontend)
 
 ## How to run using Docker
 
