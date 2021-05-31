@@ -142,7 +142,7 @@ Also you need to change the `data-clientid`.
 You also need to adjust the REST API endpoint. In `frontend/js/queryviz.js`,adjust the `LASHOST` variable to reflect the url on which your endpoint is reachable.
 
 ```js
-var LASHOST 'https://127.0.0.1:8080/';
+var LASHOST='http://127.0.0.1:8080/';
 ```
 
 Then you can build and run the frontend server:
