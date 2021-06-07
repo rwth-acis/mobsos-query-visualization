@@ -8,7 +8,7 @@ query_visualization/export
 query_visualization/log
 /lib
 /service
-/query_visualization/etc/startup
+etc/startup
 *.iml
 /.idea
 restMapping.xml
@@ -17,7 +17,6 @@ restMapping.xml
 .DS_Store?
 /bin/start_network.*
 junit*.properties
-query_visualization/etc/launcher-configuration.ini
 
 # Ignore Gradle project-specific cache directory
 .gradle
