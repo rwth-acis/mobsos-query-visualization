@@ -14,7 +14,7 @@ WORKDIR /src
 # run the rest as unprivileged user
 USER las2peer
 RUN chmod +x ./gradlew && ./gradlew jar
-RUN dos2unix /src/query_visualization/etc/i5.las2peer.services.mobsos.queryVisualization.QueryVisualizationService.properties
+RUN dos2unix /src/etc/i5.las2peer.services.mobsos.queryVisualization.QueryVisualizationService.properties
 RUN dos2unix /src/docker-entrypoint.sh
 
 EXPOSE $HTTP_PORT

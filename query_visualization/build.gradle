@@ -251,6 +251,8 @@ jacoco {
 }
 
 test {
+    workingDir = file("$rootDir")
+
     finalizedBy jacocoTestReport // report is always generated after tests run
 
     jacoco {
