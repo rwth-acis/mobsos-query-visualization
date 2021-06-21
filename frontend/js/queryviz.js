@@ -187,7 +187,7 @@ var QV = (function (QV) {
      *  private properties  *
      *                  * * */
 
-    var LASHOST = host || 'https://las2peer.tech4comp.dbis.rwth-aachen.de/';
+    var LASHOST = host || "https://git.tech4comp.dbis.rwth-aachen.de/";
     var QVSPATH = path || 'QVS/';
     var LASUSERNAME = 'anonymous';
     var LASPASSWORD = 'anonymous';
