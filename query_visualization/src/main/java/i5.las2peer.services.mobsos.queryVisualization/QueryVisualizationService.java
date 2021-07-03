@@ -260,6 +260,7 @@ public class QueryVisualizationService extends RESTService {
     String[] visualizationParameters,
     boolean save
   ) {
+    long start = System.currentTimeMillis();
     initializeDBConnection();
 
     MethodResult methodResult = null;
@@ -350,6 +351,10 @@ public class QueryVisualizationService extends RESTService {
           visualizationParameters
         );
         c.close();
+        long end = System.currentTimeMillis();
+        JSONObject event = new JSONObject();
+        event.put("duration", end - start);
+        Context.get().monitorEvent( MonitoringEvent.SERVICE_CUSTOM_MESSAGE_19,event.toJSONString() );
         return v;
       } else {
         c.close();
