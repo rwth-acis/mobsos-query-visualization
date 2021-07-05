@@ -35,6 +35,7 @@ export EXAMPLE_DB_TYPE='MySQL'
 [[ -z "${MYSQL_EXAMPLE_PASSWORD}" ]] && export MYSQL_EXAMPLE_PASSWORD='example'
 [[ -z "${MYSQL_EXAMPLE_HOST}" ]] && export MYSQL_EXAMPLE_HOST='mysql'
 [[ -z "${MYSQL_EXAMPLE_PORT}" ]] && export MYSQL_EXAMPLE_PORT='3306'
+[[ -z "${RESULT_TIMEOUT}" ]] && export RESULT_TIMEOUT='360'
 
 
 # set defaults for optional web connector parameters
@@ -63,6 +64,7 @@ set_in_service_config exDatabase ${MYSQL_EXAMPLE_DATABASE}
 set_in_service_config exUser ${MYSQL_EXAMPLE_USER}
 set_in_service_config exPassword ${MYSQL_EXAMPLE_PASSWORD}
 set_in_service_config exType ${EXAMPLE_DB_TYPE}
+set_in_service_config resultTimeout ${RESULT_TIMEOUT}
 
 # configure web connector properties
 
