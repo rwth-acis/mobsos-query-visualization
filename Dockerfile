@@ -14,6 +14,7 @@ WORKDIR /src
 # run the rest as unprivileged user
 USER las2peer
 RUN dos2unix ./gradlew
+RUN dos2unix /src/gradle.properties
 RUN chmod +x ./gradlew && ./gradlew build --exclude-task test
 RUN dos2unix /src/etc/i5.las2peer.services.mobsos.queryVisualization.QueryVisualizationService.properties
 RUN dos2unix /src/docker-entrypoint.sh
