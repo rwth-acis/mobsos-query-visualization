@@ -12,9 +12,9 @@
     <script type="text/javascript" src="js/jquery-1.8.0.min.js"></script>
     <script type="text/javascript" src="js/ICanHaz.min.js"></script>
     <script id="qv_code_template" type="text/html">
-    {{! <!--}}<script src="https://las2peer.dbis.rwth-aachen.de/qv-service/js/jquery-1.11.0.min.js"></script>
-<script src="https://las2peer.dbis.rwth-aachen.de/qv-service/js/client.js"></script>
-<script src="https://las2peer.dbis.rwth-aachen.de/qv-service/js/queryviz.js"></script>
+    {{! <!--}}<script src="js/jquery-1.11.0.min.js"></script>
+<script src=js/client.js"></script>
+<script src="js/queryviz.js"></script>
 <div id="{{eleId}}"></div>
 <script>QV.fromKey("{{key}}", "{{eleId}}");</script>{{! -->}}
     </script>
@@ -27,7 +27,7 @@
 <script>QV.fromKey("{{key}}", "{{eleId}}", "{{filterId}}", "{{host}}", "{{path}}");</script>{{! -->}}
     </script>
     <script id="qv_code_template2" type="text/html">
-    {{! <!--}}<html><script type="text/javascript" src="https://las2peer.dbis.rwth-aachen.de/qv-service/js/queryviz.js"></script>
+    {{! <!--}}<html><script type="text/javascript" src="js/queryviz.js"></script>
 <script type="text/javascript">
     QV.fromKey("{{key}}");
     </script></html>{{! -->}}
@@ -46,12 +46,12 @@
     <Content type="html">
         <![CDATA[
     <script src="http://dbis.rwth-aachen.de/gadgets/query-visualization/JavaScript/openapp.js"></script>
-    <script src="https://las2peer.dbis.rwth-aachen.de/qv-service/js/jquery-1.11.0.min.js"></script>
-    <script src="https://las2peer.dbis.rwth-aachen.de/qv-service/js/client.js"></script>
-    <script src="https://las2peer.dbis.rwth-aachen.de/qv-service/js/queryviz.js"></script>
-    <script src="https://rawgit.com/Gordin/Logexchange/master/js/Gadgets.js"></script>
+    <script src="js/jquery-1.11.0.min.js"></script>
+    <script src="js/client.js"></script>
+    <script src="js/queryviz.js"></script>
+    <script src="js/Gadgets.js"></script>
     <div id="viewer"></div>
-    <script src="https://las2peer.dbis.rwth-aachen.de/qv-service/js/qvsviewer.js"></script>
+    <script src="js/qvsviewer.js"></script>
     <script>var qv = gadget_init("{{key}}", "{{host}}", "{{path}}");</script>
         ]]>
     </Content>
@@ -98,9 +98,10 @@
          data-callback="signinCallback"
          data-name="Learning Layers"
          data-logo="logo.png"
-         data-server="https://api.learning-layers.eu/o/oauth2"
-         data-clientid="e000b840-fe19-4ff4-8d3c-16e4581e3103"
+         data-server="https://api.learning-layers.eu/o/oauth2/"
+         data-clientid="f8622260-875b-499a-82db-db55f89f9deb"
          data-size="sm"
+         data-redirect="https://sbf-dev.tech4comp.dbis.rwth-aachen.de/query-visualizer/"
          data-scope="openid phone email address profile"><img style="margin-right:5px;" src="logo.png" height="16px"> Sign in with <i>Learning Layers</i>
     
     </button>
