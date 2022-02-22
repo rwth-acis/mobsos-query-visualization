@@ -8,6 +8,7 @@ import i5.las2peer.api.security.AnonymousAgent;
 import i5.las2peer.api.security.UserAgent;
 import i5.las2peer.restMapper.RESTService;
 import i5.las2peer.restMapper.annotations.ServicePath;
+import i5.las2peer.logging.L2pLogger;
 import i5.las2peer.services.mobsos.queryVisualization.caching.MethodResultCache;
 import i5.las2peer.services.mobsos.queryVisualization.dal.QVDatabase;
 import i5.las2peer.services.mobsos.queryVisualization.dal.QVQuery;
@@ -44,6 +45,7 @@ import i5.las2peer.services.mobsos.queryVisualization.encoding.VisualizationType
 import i5.las2peer.services.mobsos.queryVisualization.encoding.VisualizationXML;
 import i5.las2peer.services.mobsos.queryVisualization.query.Query;
 import i5.las2peer.services.mobsos.queryVisualization.query.QueryManager;
+
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -62,6 +64,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -109,6 +112,7 @@ public class QueryVisualizationService extends RESTService {
   public static final String DEFAULT_RESULT_TIMEOUT = "90";
   public static final long DEFAULT_SESSION_TIMEOUT = 3600000; // 1h
   public static final long DEFAULT_TIDY_SLEEPTIME_MS = 300000; // 5 min
+  private static final L2pLogger logger = L2pLogger.getInstance(QueryVisualizationService.class.getName());
 
   protected String stDbKey = DEFAULT_DATABASE_KEY;
   protected String stDbHost = DEFAULT_HOST;
@@ -228,6 +232,33 @@ public class QueryVisualizationService extends RESTService {
         .get()
         .monitorEvent(this, MonitoringEvent.SERVICE_ERROR, e.toString());
     }
+  }
+
+  @Override
+  public Map<String, String> getCustomMessageDescriptions() {
+    Map<String, String> descriptions = new HashMap<>();
+    descriptions.put("SERVICE_CUSTOM_MESSAGE_1", "A database was added. Format databaseCode");
+    descriptions.put("SERVICE_CUSTOM_MESSAGE_2", "A database was added. Format databeseKey");
+    descriptions.put("SERVICE_CUSTOM_MESSAGE_3", "A database was removed. Format databeseKey");
+    descriptions.put("SERVICE_CUSTOM_MESSAGE_4", "Database keys were fetched. static string Get database keys");
+    descriptions.put("SERVICE_CUSTOM_MESSAGE_5", "Filters were fetched. static string Get Filter.");
+    descriptions.put("SERVICE_CUSTOM_MESSAGE_6", "Filter for queryKey fetched. string Get Filter for  <queryKey>");
+    descriptions.put("SERVICE_CUSTOM_MESSAGE_7",
+        "Get values for Filter. string Get values for Filter <filterKey> , user <user>");
+    descriptions.put("SERVICE_CUSTOM_MESSAGE_8", "User added a filter. Format: username");
+    descriptions.put("SERVICE_CUSTOM_MESSAGE_9", "User deleted a filter. Format: username");
+    descriptions.put("SERVICE_CUSTOM_MESSAGE_10", "Query was visualized. Format: visualizationType");
+    descriptions.put("SERVICE_CUSTOM_MESSAGE_11", "Query was posted. Format: query");
+    descriptions.put("SERVICE_CUSTOM_MESSAGE_12", "User fetched query keys. Format: username");
+    descriptions.put("SERVICE_CUSTOM_MESSAGE_13", "User deleted query. Format: username");
+    descriptions.put("SERVICE_CUSTOM_MESSAGE_14", "User fetched query values. Format: username");
+    descriptions.put("SERVICE_CUSTOM_MESSAGE_15", "User visualizes query by key. Format: query");
+    descriptions.put("SERVICE_CUSTOM_MESSAGE_16", "Not sure what this is.");
+    descriptions.put("SERVICE_CUSTOM_MESSAGE_17", "The querry was saved. Format: sql query as string");
+    descriptions.put("SERVICE_CUSTOM_MESSAGE_18", "The query was successfully executed. Format: sql query as string");
+    descriptions.put("SERVICE_CUSTOM_MESSAGE_19",
+        "The visualization was successfully generated. Format: json  {query: queryas string; duration: duration in ms that it took}");
+    return descriptions;
   }
 
   /**
@@ -354,6 +385,7 @@ public class QueryVisualizationService extends RESTService {
         long end = System.currentTimeMillis();
         JSONObject event = new JSONObject();
         event.put("duration", end - start);
+        event.put("query", query);
         Context.get().monitorEvent( MonitoringEvent.SERVICE_CUSTOM_MESSAGE_19,event.toJSONString() );
         return v;
       } else {
@@ -730,6 +762,7 @@ public class QueryVisualizationService extends RESTService {
           queryKey
         );
       queryManager.storeQuery(query);
+      logger.info("Query saved");
     } catch (Exception e) {
       Context
         .get()
@@ -1919,6 +1952,8 @@ public class QueryVisualizationService extends RESTService {
     ) {
       try {
         VisualizationType v = VisualizationType.valueOf(vtypei.toUpperCase());
+        logger.info("Query information: " + content.getQuery());
+        logger.info("Cache is set to " + content.isCache());
         Response res = createQuery(
           content.getQuery(),
           content.getQueryparams(),
