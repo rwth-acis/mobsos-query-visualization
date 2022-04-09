@@ -4,7 +4,9 @@ plugins {
     id 'eclipse'
     id 'jacoco'
 }
-
+jacoco {
+    toolVersion = "0.8.7"
+}
 repositories {
     // Use JCenter for resolving dependencies.
     mavenCentral()

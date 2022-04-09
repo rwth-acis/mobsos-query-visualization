@@ -1,12 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="src" path="src/main"/>
-	<classpathentry kind="src" output="tmp/test" path="src/test"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
-	<classpathentry kind="lib" path="lib/las2peer-bundle-1.0.0.jar"/>
-	<classpathentry kind="lib" path="lib/commons-dbcp2-2.1.1.jar"/>
-	<classpathentry kind="lib" path="lib/jfreechart-1.5.2.jar"/>
-	<classpathentry kind="src" path="lib"/>
-	<classpathentry kind="output" path="output"/>
+<classpathentry kind="src" output="app/bin/main" path="app/src/main/java">
+	<attributes>
+		<attribute name="gradle_scope" value="main"/>
+		<attribute name="gradle_used_by_scope" value="main,test"/>
+	</attributes>
+</classpathentry>
+<classpathentry kind="src" output="app/bin/test" path="app/src/test/java">
+	<attributes>
+		<attribute name="gradle_scope" value="test"/>
+		<attribute name="gradle_used_by_scope" value="test"/>
+		<attribute name="test" value="true"/>
+	</attributes>
+</classpathentry>
+<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-17/"/>
+<classpathentry kind="con" path="org.eclipse.buildship.core.gradleclasspathcontainer"/>
+<classpathentry kind="output" path="bin/default"/>
+
 </classpath>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>mobsos-query-visualization</name>
+	<name>app</name>
 	<comment></comment>
 	<projects>
 	</projects>
@@ -16,7 +16,7 @@
 	</natures>
 	<filteredResources>
 		<filter>
-			<id>1611228935002</id>
+			<id>1649526659391</id>
 			<name></name>
 			<type>30</type>
 			<matcher>
