@@ -247,7 +247,7 @@ public class QueryVisualizationService extends RESTService {
         "Get values for Filter. string Get values for Filter <filterKey> , user <user>");
     descriptions.put("SERVICE_CUSTOM_MESSAGE_8", "User added a filter. Format: username");
     descriptions.put("SERVICE_CUSTOM_MESSAGE_9", "User deleted a filter. Format: username");
-    descriptions.put("SERVICE_CUSTOM_MESSAGE_10", "Query was visualized. Format: visualizationType");
+    descriptions.put("SERVICE_CUSTOM_MESSAGE_10", "Query was visualized. Format:json {query;duration;type}");
     descriptions.put("SERVICE_CUSTOM_MESSAGE_11", "Query was posted. Format: query");
     descriptions.put("SERVICE_CUSTOM_MESSAGE_12", "User fetched query keys. Format: username");
     descriptions.put("SERVICE_CUSTOM_MESSAGE_13", "User deleted query. Format: username");
@@ -1950,10 +1950,13 @@ public class QueryVisualizationService extends RESTService {
         required = true
       ) QVQueryInformation content
     ) {
+      int start = System.currentTimeMillis();
+      JSONObject event = new JSONObject();
       try {
         VisualizationType v = VisualizationType.valueOf(vtypei.toUpperCase());
         logger.info("Query information: " + content.getQuery());
         logger.info("Cache is set to " + content.isCache());
+        event.put("query", content.getQuery());
         Response res = createQuery(
           content.getQuery(),
           content.getQueryparams(),
@@ -1966,13 +1969,16 @@ public class QueryVisualizationService extends RESTService {
           content.getHeight(),
           false
         );
+        int duration = System.currentTimeMillis() - start;
+        event.put("duration", duration);
+        event.put("type", vtypei);
 
         Context
           .get()
           .monitorEvent(
             this,
             MonitoringEvent.SERVICE_CUSTOM_MESSAGE_10,
-            "" + vtypei,
+                event,
             true
           );
         return res;
@@ -2526,14 +2532,6 @@ public class QueryVisualizationService extends RESTService {
 
         String[] visualizationParamters = new String[] { title, height, width };
 
-        Context
-          .get()
-          .monitorEvent(
-            this,
-            MonitoringEvent.SERVICE_CUSTOM_MESSAGE_10,
-            "" + vtype,
-            true
-          );
         if (output.equals("png")) {
           byte[] imageData = visualization.generatePNG(
             methodResult,
