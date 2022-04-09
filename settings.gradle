@@ -8,4 +8,4 @@
  */
 
 rootProject.name = 'mobsos-query-visualization'
-include('query_visualization')
+include('mobsos-query-visualization')
