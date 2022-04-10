@@ -1978,7 +1978,7 @@ public class QueryVisualizationService extends RESTService {
           .monitorEvent(
             this,
             MonitoringEvent.SERVICE_CUSTOM_MESSAGE_10,
-                event,
+                event.toString(),
             true
           );
         return res;
