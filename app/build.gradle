@@ -1,18 +1,34 @@
 plugins {
     // Apply the application plugin to add support for building a CLI application in Java.
     id 'application'
-    id 'eclipse'
+    // id 'eclipse'
     id 'jacoco'
 }
+
+sourceSets {
+    main {
+         java {
+            srcDir "$rootDir/lib"
+         }
+    }
+
+    test {
+        java {
+             srcDir "$rootDir/lib"
+        }
+    }
+}
+
+
 jacoco {
  toolVersion = "0.8.7"
 }
 repositories {
-    // Use JCenter for resolving dependencies.
+    // Use MavenCentral for resolving dependencies.
     mavenCentral()
 
     // DBIS Archiva
-    maven {
+    maven { 
         url "https://archiva.dbis.rwth-aachen.de:9911/repository/internal/"
     }
 }
