@@ -1128,12 +1128,6 @@ public class QueryVisualizationService extends RESTService {
             "" + db.getDb_code(),
             true
           );
-        String dbUsername = db.getUsername() == null ? exUser : db.getUsername();
-        String dbPassword = db.getPassword() == null ? exPassword : db.getPassword();
-        String dbDatabase = db.getDatabase() == null ? exDatabase : db.getDatabase();
-        String dbHost = db.getHost() == null ? exHost : db.getHost();
-        Integer dbPort = db.getPort() == null ? exPort : db.getPort();
-
         return addDatabase(
           databaseKey,
           SQLDatabaseType.valueOf(db.getDb_code().toUpperCase()),
