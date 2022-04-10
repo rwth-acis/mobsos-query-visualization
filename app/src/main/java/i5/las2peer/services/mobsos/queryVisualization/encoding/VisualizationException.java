@@ -11,7 +11,8 @@ import i5.las2peer.api.logging.MonitoringEvent;
 
 /**
  * VisualizationException.java <br>
- * Static class that is called if a problem with the visualization has occurred. Logs the exception and returns a string
+ * Static class that is called if a problem with the visualization has occurred.
+ * Logs the exception and returns a string
  * with an optional message.
  * 
  */
@@ -84,7 +85,7 @@ public class VisualizationException {
 			}
 
 			if (e instanceof SQLException) {
-				infoRow[2] = new Integer(((SQLException) e).getErrorCode());
+				infoRow[2] = (Integer) (((SQLException) e).getErrorCode());
 			} else {
 				infoRow[2] = Integer.MIN_VALUE;
 			}
