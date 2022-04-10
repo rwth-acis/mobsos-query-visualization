@@ -6,7 +6,7 @@ set -e
 if [[ ! -z "${DEBUG}" ]]; then
     set -x
 fi
-NODE_ID_SEED=${NODE_ID_SEED:-$RANDOM}
+
 # set some helpful variables
 export SERVICE_PROPERTY_FILE='etc/i5.las2peer.services.mobsos.queryVisualization.QueryVisualizationService.properties'
 export WEB_CONNECTOR_PROPERTY_FILE='etc/i5.las2peer.connectors.webConnector.WebConnector.properties'
@@ -26,6 +26,8 @@ export EXAMPLE_DB_TYPE='MySQL'
     echo "Mandatory variable MYSQL_USER is not set. Add -e MYSQL_USER=myuser to your arguments." && exit 1
 [[ -z "${MYSQL_PASSWORD}" ]] && \
     echo "Mandatory variable MYSQL_PASSWORD is not set. Add -e MYSQL_PASSWORD=mypasswd to your arguments." && exit 1
+[[ -z "${NODE_ID_SEED}" ]] && \
+    echo "NODE_ID_SEED variable is not set. A random id is selected. THIS SHOULD NOT HAPPEN IN PRODUCTION." && NODE_ID_SEED=${NODE_ID_SEED:-$RANDOM}
 
 # set defaults for optional service parameters
 [[ -z "${SERVICE_PASSPHRASE}" ]] && export SERVICE_PASSPHRASE='qvPass'

@@ -100,6 +100,7 @@ public class SQLDatabaseManager {
     // information
 
     initializeUser();
+    System.out.println("Get connections for user " + Context.get().getMainAgent().getIdentifier());
 
     SQLDatabaseSettings[] settings = null;
 
@@ -108,7 +109,6 @@ public class SQLDatabaseManager {
       PreparedStatement p = c.prepareStatement(
         "SELECT * FROM DATABASE_CONNECTIONS WHERE USER = ?;"
       );
-      System.out.println(Context.get().getMainAgent().getIdentifier());
       p.setString(1, Context.get().getMainAgent().getIdentifier());
       ResultSet databases = p.executeQuery();
       settings = SQLDatabaseSettings.fromResultSet(databases);
