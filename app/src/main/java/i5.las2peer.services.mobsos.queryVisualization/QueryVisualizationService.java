@@ -1950,7 +1950,7 @@ public class QueryVisualizationService extends RESTService {
         required = true
       ) QVQueryInformation content
     ) {
-      int start = System.currentTimeMillis();
+      long start = System.currentTimeMillis();
       JSONObject event = new JSONObject();
       try {
         VisualizationType v = VisualizationType.valueOf(vtypei.toUpperCase());
@@ -1969,7 +1969,7 @@ public class QueryVisualizationService extends RESTService {
           content.getHeight(),
           false
         );
-        int duration = System.currentTimeMillis() - start;
+        long duration = System.currentTimeMillis() - start;
         event.put("duration", duration);
         event.put("type", vtypei);
 
