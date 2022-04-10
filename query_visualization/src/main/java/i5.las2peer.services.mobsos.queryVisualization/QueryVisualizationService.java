@@ -147,8 +147,10 @@ public class QueryVisualizationService extends RESTService {
   }
 
   public void initializeDBConnection() {
+    System.out.println("Initializing database connection...");
     String user = Context.get().getMainAgent().getIdentifier();
     if (databaseManagerMap.get(user) != null) {
+      System.out.println("Database connection already initialized.");
       return;
     }
     try {
@@ -987,12 +989,15 @@ public class QueryVisualizationService extends RESTService {
     Integer port
   )
     throws Exception {
+    System.out.println(
+        "Adding database with key " + databaseKey + " to user " +
+            Context.get().getMainAgent().getIdentifier());
     if (databaseKey == null || databaseKey.length() < 2) {
+      System.out.println("Invalid database key!");
       throw new Exception(
         "Databasekey is too short (Use at least 2 characters)."
       );
     }
-
     this.initializeDBConnection();
     String user = Context.get().getMainAgent().getIdentifier();
     SQLDatabaseManager databaseManager = this.databaseManagerMap.get(user);
@@ -1009,6 +1014,7 @@ public class QueryVisualizationService extends RESTService {
         port
       )
     ) {
+      System.out.println("Failed to add database!");
       throw new Exception("Failed to add a database for the user!");
     }
 
@@ -1016,11 +1022,14 @@ public class QueryVisualizationService extends RESTService {
     // used later anyways)...
     try {
       if (databaseManager.getDatabaseInstance(databaseKey) == null) {
+        System.out.println("Failed to get database instance!");
         throw new Exception(
           "Failed to get a database instance for " + databaseKey
         );
       }
     } catch (Exception e) {
+      System.out.println("An exception occured while getting the database instance!");
+      e.printStackTrace();
       databaseManager.removeDatabase(databaseKey);
       throw e;
     }
