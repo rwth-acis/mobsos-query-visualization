@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>query_visualization</name>
-	<comment>Project query_visualization created by Buildship.</comment>
+	<name>app</name>
+	<comment></comment>
 	<projects>
 	</projects>
 	<buildSpec>
@@ -20,15 +20,16 @@
 		<nature>org.eclipse.jdt.core.javanature</nature>
 		<nature>org.eclipse.buildship.core.gradleprojectnature</nature>
 	</natures>
-	<filteredResources>
-		<filter>
-			<id>1622468543899</id>
-			<name></name>
-			<type>30</type>
-			<matcher>
-				<id>org.eclipse.core.resources.regexFilterMatcher</id>
-				<arguments>node_modules|.git|__CREATED_BY_JAVA_LANGUAGE_SERVER__</arguments>
-			</matcher>
-		</filter>
-	</filteredResources>
+	<linkedResources>
+		<link>
+			<name>lib</name>
+			<type>2</type>
+			<location>D:/GitLab/mobsos-query-visualization/lib</location>
+		</link>
+		<link>
+			<name>mobsos-query-visualization-lib</name>
+			<type>2</type>
+			<location>D:/GitLab/mobsos-query-visualization/lib</location>
+		</link>
+	</linkedResources>
 </projectDescription>
