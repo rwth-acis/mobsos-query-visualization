@@ -11,6 +11,7 @@ import i5.las2peer.restMapper.annotations.ServicePath;
 import i5.las2peer.logging.L2pLogger;
 import i5.las2peer.services.mobsos.queryVisualization.caching.MethodResultCache;
 import i5.las2peer.services.mobsos.queryVisualization.dal.QVDatabase;
+import i5.las2peer.services.mobsos.queryVisualization.dal.QVQueriesInformation;
 import i5.las2peer.services.mobsos.queryVisualization.dal.QVQuery;
 import i5.las2peer.services.mobsos.queryVisualization.dal.QVQueryInformation;
 import i5.las2peer.services.mobsos.queryVisualization.dal.QVQueryparameter;
@@ -1921,6 +1922,61 @@ public class QueryVisualizationService extends RESTService {
           .status(Status.BAD_REQUEST)
           .entity(service.visualizationException.generate(e, null))
           .build();
+      }
+    }
+
+    /**
+     * Executes a list of queries and returns the chosen visualization.
+     *
+     * @param visualizationTypeIndex encoding of the returned message
+     * @return success or error message, if possible in the requested
+     *         encoding/format
+     */
+    @POST
+    @Path("/queries/visualize")
+    @Produces({ MediaType.TEXT_HTML, "application/json" })
+    @Consumes(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Executes a query and returns the chosen visualization.")
+    @ApiResponses(value = {
+        @ApiResponse(code = 200, message = "Created query.", response = String.class),
+        @ApiResponse(code = 400, message = "Creating Query failed."),
+    })
+    public Response visualizeModelQueries(
+        @ApiParam(value = "Visualization type.") @QueryParam("format") @DefaultValue("JSON") String vtypei,
+        @ApiParam(value = "Query information.", required = true) QVQueriesInformation content) {
+      try {
+        VisualizationType vtype = VisualizationType.valueOf(vtypei.toUpperCase());
+        JSONArray body = content.getBody();
+        JSONObject responseBody = new JSONObject();
+        for (int i = 0; i < body.size(); i++) {
+          String query = ((JSONObject) body.get(i)).get("query").toString();
+          JSONArray arr = (JSONArray) ((JSONObject) body.get(i)).get("queryParams");
+          String[] queryParams = new String[arr.size()];
+          for (int j = 0; j < arr.size(); j++) {
+            queryParams[j] = arr.get(j).toString();
+          }
+          String qRes = service.createQueryString(
+              query,
+              queryParams,
+              content.getDbkey(),
+              content.isCache(),
+              0,
+              vtype,
+              new String[] { "title", "200px", "300px" },
+              false);
+          responseBody.put(query, qRes);
+        }
+        return Response.status(Status.OK).entity(responseBody.toString()).build();
+
+      } catch (Exception e) {
+        Context
+            .get()
+            .monitorEvent(service, MonitoringEvent.SERVICE_ERROR, e.toString());
+        return Response
+            .status(Status.BAD_REQUEST)
+            .entity(
+                service.visualizationException.generate(e, "Received invalid JSON"))
+            .build();
       }
     }
 
