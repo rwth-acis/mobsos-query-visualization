@@ -99,3 +99,4 @@ public class QVQueryInformation implements Serializable {
 	}
 
 }
+
