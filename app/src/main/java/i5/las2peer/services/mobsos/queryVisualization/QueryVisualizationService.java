@@ -1946,15 +1946,18 @@ public class QueryVisualizationService extends RESTService {
         @ApiParam(value = "Query information.", required = true) QVQueriesInformation content) {
       try {
         VisualizationType vtype = VisualizationType.valueOf(vtypei.toUpperCase());
-        JSONArray body = content.getBody();
+        System.out.println("DEBUG: content:" + content.toString());
+        JSONArray queries = content.getQueries();
         JSONObject responseBody = new JSONObject();
-        for (int i = 0; i < body.size(); i++) {
-          String query = ((JSONObject) body.get(i)).get("query").toString();
-          JSONArray arr = (JSONArray) ((JSONObject) body.get(i)).get("queryParams");
+        for (int i = 0; i < queries.size(); i++) {
+          System.out.println("DEBUG: queries:" + queries.get(i).toString());
+          String query = ((JSONObject) queries.get(i)).get("query").toString();
+          JSONArray arr = (JSONArray) ((JSONObject) queries.get(i)).get("queryParams");
           String[] queryParams = new String[arr.size()];
           for (int j = 0; j < arr.size(); j++) {
             queryParams[j] = arr.get(j).toString();
           }
+
           String qRes = service.createQueryString(
               query,
               queryParams,
@@ -1964,11 +1967,13 @@ public class QueryVisualizationService extends RESTService {
               vtype,
               new String[] { "title", "200px", "300px" },
               false);
+          System.out.println("DEBUG: response for query" + query + ": \n" + qRes);
           responseBody.put(query, qRes);
         }
         return Response.status(Status.OK).entity(responseBody.toString()).build();
 
       } catch (Exception e) {
+        e.printStackTrace();
         Context
             .get()
             .monitorEvent(service, MonitoringEvent.SERVICE_ERROR, e.toString());

@@ -14,7 +14,7 @@ public class QVQueriesInformation implements Serializable {
 	@NotNull
 	private String dbkey;
 	@NotNull
-	private JSONArray body;
+	private JSONArray queries;
 	@NotNull
 	private boolean save;
 
@@ -42,8 +42,8 @@ public class QVQueriesInformation implements Serializable {
 		this.dbkey = dbkey;
 	}
 
-	public JSONArray getBody() {
-		return body;
+	public JSONArray getQueries() {
+		return queries;
 	}
 
 }
