@@ -1928,7 +1928,7 @@ public class QueryVisualizationService extends RESTService {
     /**
      * Executes a list of queries and returns the chosen visualization.
      *
-     * @param visualizationTypeIndex encoding of the returned message
+     * 
      * @return success or error message, if possible in the requested
      *         encoding/format
      */
