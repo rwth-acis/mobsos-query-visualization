@@ -66,6 +66,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.LinkedHashMap;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -1952,8 +1953,8 @@ public class QueryVisualizationService extends RESTService {
         for (int i = 0; i < queries.size(); i++) {
           System.out.println("DEBUG: queries:" + queries.toString());
           System.out.println("DEBUG: class of queries.get(i):" + queries.get(i).getClass());
-          String query = ((JSONObject) queries.get(i)).get("query").toString();
-          JSONArray arr = (JSONArray) ((JSONObject) queries.get(i)).get("queryParams");
+          String query = ((LinkedHashMap<String, String>) queries.get(i)).get("query").toString();
+          JSONArray arr = (JSONArray) ((LinkedHashMap) queries.get(i)).get("queryParams");
           String[] queryParams = new String[arr.size()];
           for (int j = 0; j < arr.size(); j++) {
             queryParams[j] = arr.get(j).toString();
