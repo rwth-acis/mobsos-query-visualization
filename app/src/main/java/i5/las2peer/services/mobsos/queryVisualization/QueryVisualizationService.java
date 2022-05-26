@@ -1947,8 +1947,8 @@ public class QueryVisualizationService extends RESTService {
         @ApiParam(value = "Query information.", required = true) QVQueriesInformation content) {
       try {
         VisualizationType vtype = VisualizationType.valueOf(vtypei.toUpperCase());
-        System.out.println("DEBUG: content:" + content.toString());
         JSONArray queries = content.getQueries();
+        System.out.println("DEBUG: queries size:" + queries.size());
         JSONObject responseBody = new JSONObject();
         for (int i = 0; i < queries.size(); i++) {
           String query = ((LinkedHashMap<String, String>) queries.get(i)).get("query").toString();
