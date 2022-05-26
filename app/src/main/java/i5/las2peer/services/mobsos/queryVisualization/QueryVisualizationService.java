@@ -85,6 +85,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
+
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import net.minidev.json.parser.JSONParser;
@@ -1948,18 +1949,15 @@ public class QueryVisualizationService extends RESTService {
       try {
         VisualizationType vtype = VisualizationType.valueOf(vtypei.toUpperCase());
         JSONArray queries = content.getQueries();
-        System.out.println("DEBUG: queries size:" + queries.size());
         JSONObject responseBody = new JSONObject();
         for (int i = 0; i < queries.size(); i++) {
           String query = ((LinkedHashMap<String, String>) queries.get(i)).get("query").toString();
-          System.out.println("DEBUG: query:" + query);
           Object[] arr = ((ArrayList) ((LinkedHashMap) queries.get(i)).get("queryParams")).toArray();
           String[] queryParams = new String[arr.length];
-          System.out.println("DEBUG: queryParams size:" + arr.length);
+
           for (Object object : arr) {
             queryParams[i] = object.toString();
           }
-          System.out.println("DEBUG: query:" + query);
           String qRes = service.createQueryString(
               query,
               queryParams,
@@ -1969,8 +1967,23 @@ public class QueryVisualizationService extends RESTService {
               vtype,
               new String[] { "title", "200px", "300px" },
               false);
-          System.out.println("DEBUG: response for query" + query + ": \n" + qRes);
-          responseBody.put(query, qRes);
+          try {
+            JSONParser p = new JSONParser(JSONParser.MODE_PERMISSIVE);
+            Object parsed = p.parse(qRes);
+            if (parsed instanceof JSONArray) {
+              JSONArray arrayRes = (JSONArray) parsed;
+              responseBody.put(query, arrayRes);
+            } else if (parsed instanceof String) {
+              responseBody.put(query, parsed);
+            } else {
+              throw new Exception("Invalid response from query");
+            }
+
+          } catch (Exception e) {
+            e.printStackTrace();
+            responseBody.put(query, service.visualizationException.generate(e, "An unknown error occured"));
+          }
+
         }
         System.out.println("DEBUG: responseBody" + responseBody.toString());
         return Response.status(Status.OK).entity(responseBody.toString()).build();
