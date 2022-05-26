@@ -1952,7 +1952,13 @@ public class QueryVisualizationService extends RESTService {
         JSONObject responseBody = new JSONObject();
         for (int i = 0; i < queries.size(); i++) {
           String query = ((LinkedHashMap<String, String>) queries.get(i)).get("query").toString();
-          String[] queryParams = (String[]) ((ArrayList) ((LinkedHashMap) queries.get(i)).get("queryParams")).toArray();
+          System.out.println("DEBUG: query:" + query);
+          Object[] arr = ((ArrayList) ((LinkedHashMap) queries.get(i)).get("queryParams")).toArray();
+          String[] queryParams = new String[arr.length];
+          System.out.println("DEBUG: queryParams size:" + arr.length);
+          for (Object object : arr) {
+            queryParams[i] = object.toString();
+          }
           System.out.println("DEBUG: query:" + query);
           String qRes = service.createQueryString(
               query,
@@ -1966,6 +1972,7 @@ public class QueryVisualizationService extends RESTService {
           System.out.println("DEBUG: response for query" + query + ": \n" + qRes);
           responseBody.put(query, qRes);
         }
+        System.out.println("DEBUG: responseBody" + responseBody.toString());
         return Response.status(Status.OK).entity(responseBody.toString()).build();
 
       } catch (Exception e) {
