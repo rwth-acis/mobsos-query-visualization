@@ -2,5 +2,5 @@
 	<adminName>Admin</adminName>
 	<adminEmail>admin@mail.com</adminEmail>
 	<organization>Advanced Community Information Systems (ACIS) Group, RWTH Aachen University</organization>
-	<description>This node hosts a sample service.</description>
+<description>This node hosts the MobSOS Query Visualization Service</description>
 </las2peerNode>
